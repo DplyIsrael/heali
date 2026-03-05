@@ -1,26 +1,154 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ─── Custom fonts ─────────────────────────────────────────────────────────── */
+
+/* Discovery Fs — body & headings (client to place files in /public/fonts/) */
+@font-face {
+  font-family: "Discovery Fs";
+  src: url("/fonts/DiscoveryFs-Light.woff2") format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
 }
+@font-face {
+  font-family: "Discovery Fs";
+  src: url("/fonts/DiscoveryFs-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Discovery Fs";
+  src: url("/fonts/DiscoveryFs-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Discovery Fs";
+  src: url("/fonts/DiscoveryFs-DemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Discovery Fs";
+  src: url("/fonts/DiscoveryFs-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* PloniMLv2AAA-Bold — logo only */
+@font-face {
+  font-family: "PloniMLv2AAA";
+  src: url("/fonts/PloniMLv2AAA-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ─── Theme ─────────────────────────────────────────────────────────────────  */
+
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  /* Heali font stacks */
+  --font-sans: "Discovery Fs", system-ui, sans-serif;
+  --font-logo: "PloniMLv2AAA", serif;
+  --font-ui: var(--font-poppins), system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  --radius: 0.625rem;
+
+  /* ─── Heali brand tokens ─── */
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+  --card: #ffffff;
+  --card-foreground: #1a1a1a;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a1a;
+  /* primary = teal #21544E */
+  --primary: #21544e;
+  --primary-foreground: #ffffff;
+  /* secondary = light teal tint */
+  --secondary: #e8f2f1;
+  --secondary-foreground: #21544e;
+  /* muted = #9F9F9F */
+  --muted: #f5f5f5;
+  --muted-foreground: #9f9f9f;
+  /* accent = green #7DE4A8 */
+  --accent: #7de4a8;
+  --accent-foreground: #1a1a1a;
+  /* destructive = red #E70202 */
+  --destructive: #e70202;
+  /* border / input = #CDDBDB */
+  --border: #cddbdb;
+  --input: #cddbdb;
+  --ring: #21544e;
+  /* chart */
+  --chart-1: #21544e;
+  --chart-2: #7de4a8;
+  --chart-3: #cddbdb;
+  --chart-4: #9f9f9f;
+  --chart-5: #e70202;
+  /* sidebar */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1a1a1a;
+  --sidebar-primary: #21544e;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #7de4a8;
+  --sidebar-accent-foreground: #1a1a1a;
+  --sidebar-border: #cddbdb;
+  --sidebar-ring: #21544e;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
 }
