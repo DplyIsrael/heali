@@ -104,7 +104,7 @@ function PackageIcon() {
 function PackageCard({ pkg }: { pkg: (typeof PACKAGES)[0] }) {
   return (
     <div
-      className="relative w-[295px] h-[329px] rounded-[16px] border border-white overflow-hidden shrink-0 shadow-[0px_3.525px_17.625px_0px_rgba(100,111,198,0.25)]"
+      className="relative w-[300px] h-[329px] rounded-[16px] border border-white overflow-hidden shrink-0 shadow-[0px_3.525px_17.625px_0px_rgba(100,111,198,0.25)]"
       style={{ background: pkg.gradient }}
     >
       {/* Grid pattern overlay */}
@@ -152,19 +152,20 @@ function PackageCard({ pkg }: { pkg: (typeof PACKAGES)[0] }) {
 
 export function PackagesTeaser() {
   return (
-    <section className="relative mx-auto max-w-[1440px] px-[50px] py-16">
+    <section className="bg-[#FAFAFA] w-full">
+    <div className="relative mx-auto max-w-[1440px] px-[50px] py-16">
       {/* Section header — centered */}
       <div className="flex flex-col items-center gap-[18px] mb-[55px]">
         <h2 className="text-[30px] font-semibold text-black text-center">
           חבילות טיפול
         </h2>
-        <p className="text-[20px] font-light text-muted text-center leading-[26px] max-w-[641px]">
+        <p className="text-[20px] font-light text-[#9f9f9f] text-center leading-[26px] max-w-[641px]">
           לורם איפסום דולור סיט אמט, קונסקטורר אדיפיסינג אלית. סד אאמאט נון קונסקטורר ניבאה, סוליסיטודין קוויס נולה אאקטור.
         </p>
       </div>
 
       {/* Cards row */}
-      <div className="flex gap-[26px] justify-center">
+      <div className="flex gap-10 justify-center">
         {PACKAGES.map((pkg) => (
           <PackageCard key={pkg.id} pkg={pkg} />
         ))}
@@ -172,13 +173,14 @@ export function PackagesTeaser() {
 
       {/* Carousel navigation arrows */}
       {/* Right arrow (first in DOM = right in RTL) */}
-      <button className="absolute right-[10px] top-[calc(50%+40px)] size-[46px] rounded-full border border-border bg-white flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors">
+      <button className="absolute right-[40px] top-[calc(50%+40px)] size-[46px] rounded-full border border-border bg-white flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors">
         <ChevronRight className="size-[22px] text-foreground" />
       </button>
       {/* Left arrow (last in DOM = left in RTL) */}
-      <button className="absolute left-[10px] top-[calc(50%+40px)] size-[46px] rounded-full border border-border bg-white flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors">
+      <button className="absolute left-[40px] top-[calc(50%+40px)] size-[46px] rounded-full border border-border bg-white flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors">
         <ChevronLeft className="size-[22px] text-foreground" />
       </button>
+    </div>
     </section>
   );
 }
