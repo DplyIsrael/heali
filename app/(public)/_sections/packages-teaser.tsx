@@ -1,49 +1,184 @@
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
 
 const PACKAGES = [
-  { name: "חבילת עיסוי מלא", description: "5 טיפולי עיסוי מקצועיים לגוף ולנפש", treatments: 5, price: 220, gradient: "from-[#21544E] to-[#3a8a7a]" },
-  { name: "חבילת רפלקסולוגיה", description: "4 טיפולי רפלקסולוגיה לאיזון ורוגע", treatments: 4, price: 190, gradient: "from-[#7DE4A8] to-[#4fc88e]" },
-  { name: "חבילת ריפוי הוליסטי", description: "6 טיפולים משלימים לבריאות כוללת", treatments: 6, price: 250, gradient: "from-[#6c63ff] to-[#9b8fff]" },
+  {
+    id: "1",
+    name: "לורם איפסום דולור",
+    description: "זהו טקסט דמה שנועד להמחיש את מבנה התוכן העמוד לורם איפסום לורם...",
+    badgeText: "סה\"כ 16 חבילות",
+    gradient: "linear-gradient(to bottom, #ffd28b, #ffc15e)",
+    badgeBg: "#fff6e6",
+    badgeBorder: "#fed085",
+    badgeText2: "#fed085",
+    iconGradient: "radial-gradient(circle at center, #fce2b4 0%, #fecf81 100%)",
+    iconShadow: "0px 4.5px 22.7px 0px #f2bd68",
+  },
+  {
+    id: "2",
+    name: "לורם איפסום דולור",
+    description: "זהו טקסט דמה שנועד להמחיש את מבנה התוכן העמוד לורם איפסום לורם...",
+    badgeText: "סה\"כ 16 חבילות",
+    gradient: "linear-gradient(to bottom, #7de4a8, #4bb377)",
+    badgeBg: "#deffec",
+    badgeBorder: "#4cb578",
+    badgeText2: "#4cb578",
+    iconGradient: "radial-gradient(circle at center, #8de5b2 0%, #6ccd95 50%, #4bb477 100%)",
+    iconShadow: "0px 4.5px 22.7px 0px rgba(100,111,198,0.25)",
+  },
+  {
+    id: "3",
+    name: "לורם איפסום דולור",
+    description: "זהו טקסט דמה שנועד להמחיש את מבנה התוכן העמוד לורם איפסום לורם...",
+    badgeText: "סה\"כ 16 חבילות",
+    gradient: "linear-gradient(to bottom, #ffd2c1, #ffa480)",
+    badgeBg: "#ffdfd2",
+    badgeBorder: "#ffa987",
+    badgeText2: "#ffa987",
+    iconGradient: "radial-gradient(circle at center, #fdd6c6 0%, #febea4 50%, #ffa581 100%)",
+    iconShadow: "0px 4.5px 22.7px 0px #ffb091",
+  },
+  {
+    id: "4",
+    name: "לורם איפסום דולור",
+    description: "זהו טקסט דמה שנועד להמחיש את מבנה התוכן העמוד לורם איפסום לורם...",
+    badgeText: "סה\"כ 16 חבילות",
+    gradient: "linear-gradient(to bottom, #7ac1b9, #3d9b90)",
+    badgeBg: "#b6f0ea",
+    badgeBorder: "#449f94",
+    badgeText2: "#449f94",
+    iconGradient: "radial-gradient(circle at center, #89c8c0 0%, #63b2a8 50%, #3d9b90 100%)",
+    iconShadow: "0px 3.5px 17.5px 0px #43938a",
+  },
 ];
+
+/* Checkerboard grid pattern — alternating filled/border-only squares */
+function GridPattern() {
+  return (
+    <>
+      {/* Top-right grid row */}
+      <div className="absolute left-[146px] top-[-1px] rotate-180 flex items-center opacity-[0.16]">
+        <div className="size-[37.274px] bg-[rgba(243,246,246,0.9)]" />
+        <div className="size-[37.274px] border-[0.852px] border-[rgba(243,246,246,0.9)]" />
+        <div className="size-[37.274px] bg-[rgba(243,246,246,0.9)]" />
+        <div className="size-[37.274px] border-[0.852px] border-[rgba(243,246,246,0.9)]" />
+      </div>
+      {/* Second row */}
+      <div className="absolute left-[146px] top-[36px] flex items-center opacity-[0.16]">
+        <div className="size-[37.274px] bg-[rgba(243,246,246,0.9)]" />
+        <div className="size-[37.274px] border-[0.852px] border-[rgba(243,246,246,0.9)]" />
+        <div className="size-[37.274px] bg-[rgba(243,246,246,0.9)]" />
+        <div className="size-[37.274px] border-[0.852px] border-[rgba(243,246,246,0.9)]" />
+      </div>
+      {/* Bottom-left grid row */}
+      <div className="absolute left-[-12px] top-[258px] rotate-180 flex items-center opacity-[0.10]">
+        <div className="size-[37.274px] bg-[rgba(243,246,246,0.9)]" />
+        <div className="size-[37.274px] border-[0.852px] border-[rgba(243,246,246,0.9)]" />
+        <div className="size-[37.274px] bg-[rgba(243,246,246,0.9)]" />
+        <div className="size-[37.274px] border-[0.852px] border-[rgba(243,246,246,0.9)]" />
+      </div>
+      {/* Bottom row */}
+      <div className="absolute left-[-12px] top-[295px] flex items-center opacity-[0.16]">
+        <div className="size-[37.274px] bg-[rgba(243,246,246,0.9)]" />
+        <div className="size-[37.274px] border-[0.852px] border-[rgba(243,246,246,0.9)]" />
+        <div className="size-[37.274px] bg-[rgba(243,246,246,0.9)]" />
+        <div className="size-[37.274px] border-[0.852px] border-[rgba(243,246,246,0.9)]" />
+      </div>
+    </>
+  );
+}
+
+/* Placeholder icon — leaf/wellness shape */
+function PackageIcon() {
+  return (
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22l1-2.3A4.49 4.49 0 0 0 8 20c4 0 8.71-3.13 9-9.34.81 1.92 1.46 3.79 1.72 5.84 2.47-1.55 4.39-4.32 3.28-8.5z"
+        fill="white"
+        opacity="0.9"
+      />
+    </svg>
+  );
+}
+
+function PackageCard({ pkg }: { pkg: (typeof PACKAGES)[0] }) {
+  return (
+    <div
+      className="relative w-[295px] h-[329px] rounded-[16px] border border-white overflow-hidden shrink-0 shadow-[0px_3.525px_17.625px_0px_rgba(100,111,198,0.25)]"
+      style={{ background: pkg.gradient }}
+    >
+      {/* Grid pattern overlay */}
+      <GridPattern />
+
+      {/* Center icon — frosted glass circle */}
+      <div
+        className="absolute left-1/2 top-[calc(50%-35.5px)] -translate-x-1/2 -translate-y-1/2 size-[110px] rounded-full border-[3.4px] border-white flex items-center justify-center backdrop-blur-[11px]"
+        style={{
+          background: pkg.iconGradient,
+          boxShadow: pkg.iconShadow,
+        }}
+      >
+        <PackageIcon />
+      </div>
+
+      {/* Badge — top-right (RTL: first in DOM, positioned absolute right/top) */}
+      <div
+        className="absolute right-[17px] top-[17px] flex items-center h-[28px] px-[10px] py-[2px] rounded-full"
+        style={{
+          backgroundColor: pkg.badgeBg,
+          borderWidth: "0.7px",
+          borderStyle: "solid",
+          borderColor: pkg.badgeBorder,
+        }}
+      >
+        <span className="text-[14px] whitespace-nowrap" style={{ color: pkg.badgeText2 }}>
+          {pkg.badgeText}
+        </span>
+      </div>
+
+      {/* Bottom content — text right-aligned */}
+      <div className="absolute right-[24px] top-[211px] flex flex-col gap-[8px] w-[252px] text-right text-white">
+        <p className="text-[20px] font-bold leading-normal">{pkg.name}</p>
+        <p className="text-[14px] font-light leading-[19.17px]">{pkg.description}</p>
+      </div>
+
+      {/* Arrow circle — bottom-left (RTL: last, positioned absolute left/bottom) */}
+      <div className="absolute left-[17px] top-[272px] size-[38px] rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+        <ArrowLeft className="size-[18px] text-white" />
+      </div>
+    </div>
+  );
+}
 
 export function PackagesTeaser() {
   return (
-    <section className="mx-auto max-w-[1440px] px-[50px] py-16">
-      <div className="mb-8 flex items-end justify-between">
-        {/* Title first → right in RTL */}
-        <div className="text-right">
-          <h2 className="text-[32px] font-medium text-foreground">חבילות טיפול</h2>
-          <p className="mt-1 text-[14px] font-light text-muted-foreground">כ 16 חבילות</p>
-        </div>
-        {/* Link second → left in RTL */}
-        <Link href="/packages" className="flex items-center gap-1 text-[14px] font-medium text-primary hover:underline">
-          <ArrowLeft className="size-4" />
-          לכל החבילות
-        </Link>
+    <section className="relative mx-auto max-w-[1440px] px-[50px] py-16">
+      {/* Section header — centered */}
+      <div className="flex flex-col items-center gap-[18px] mb-[55px]">
+        <h2 className="text-[30px] font-semibold text-black text-center">
+          חבילות טיפול
+        </h2>
+        <p className="text-[20px] font-light text-muted text-center leading-[26px] max-w-[641px]">
+          לורם איפסום דולור סיט אמט, קונסקטורר אדיפיסינג אלית. סד אאמאט נון קונסקטורר ניבאה, סוליסיטודין קוויס נולה אאקטור.
+        </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      {/* Cards row */}
+      <div className="flex gap-[26px] justify-center">
         {PACKAGES.map((pkg) => (
-          <Link
-            key={pkg.name}
-            href="/packages"
-            className={`group relative overflow-hidden rounded-[20px] bg-gradient-to-br ${pkg.gradient} p-8 text-white transition-transform hover:scale-[1.02]`}
-          >
-            {/* Glassmorphism icon */}
-            <div className="mb-4 flex size-14 items-center justify-center rounded-[16px] bg-white/20 backdrop-blur-sm text-2xl">
-              🌿
-            </div>
-            <h3 className="text-[20px] font-semibold">{pkg.name}</h3>
-            <p className="mt-2 text-[14px] font-light text-white/80">{pkg.description}</p>
-            <div className="mt-4 flex items-center justify-between">
-              <span className="text-[18px] font-bold">₪{pkg.price} / טיפול</span>
-              <span className="text-[13px] text-white/70">{pkg.treatments} טיפולים</span>
-            </div>
-            <ArrowLeft className="absolute bottom-6 left-6 size-5 opacity-60 transition-opacity group-hover:opacity-100" />
-          </Link>
+          <PackageCard key={pkg.id} pkg={pkg} />
         ))}
       </div>
+
+      {/* Carousel navigation arrows */}
+      {/* Right arrow (first in DOM = right in RTL) */}
+      <button className="absolute right-[10px] top-[calc(50%+40px)] size-[46px] rounded-full border border-border bg-white flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors">
+        <ChevronRight className="size-[22px] text-foreground" />
+      </button>
+      {/* Left arrow (last in DOM = left in RTL) */}
+      <button className="absolute left-[10px] top-[calc(50%+40px)] size-[46px] rounded-full border border-border bg-white flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors">
+        <ChevronLeft className="size-[22px] text-foreground" />
+      </button>
     </section>
   );
 }

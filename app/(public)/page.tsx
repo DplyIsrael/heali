@@ -5,6 +5,7 @@ import { PackagesTeaser } from "./_sections/packages-teaser";
 import { HelpBanner } from "./_sections/help-banner";
 import { Testimonials } from "./_sections/testimonials";
 import { Faq } from "./_sections/faq";
+import { ArticlesTeaser } from "./_sections/articles-teaser";
 import { Newsletter } from "./_sections/newsletter";
 
 export default function HomePage() {
@@ -25,11 +26,14 @@ export default function HomePage() {
       {/* Section 6.6 — Help Banner */}
       <HelpBanner />
 
-      {/* Section 6.7 — Testimonials */}
+      {/* Section 6.7 — Video Testimonials */}
       <Testimonials />
 
       {/* Section 6.8 — FAQ */}
       <Faq />
+
+      {/* Section — Articles Teaser */}
+      <ArticlesTeaser />
 
       {/* Section 6.9 — Newsletter */}
       <Newsletter />
