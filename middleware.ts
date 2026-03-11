@@ -55,9 +55,47 @@ export async function middleware(request: NextRequest) {
 
   // Redirect authenticated users away from login/register
   if (isAuthPage && user) {
+    // Fetch user role from the users table to determine redirect target
+    const { data: profile } = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    if (profile?.role === "admin") {
+      url.pathname = "/admin";
+    } else if (profile?.role === "practitioner") {
+      url.pathname = "/dashboard";
+    } else {
+      url.pathname = "/";
+    }
     return NextResponse.redirect(url);
+  }
+
+  // Role-based route protection: prevent wrong role from accessing other role's routes
+  if (user && isProtected) {
+    const { data: profile } = await supabase
+      .from("users")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+
+    const role = profile?.role;
+    const url = request.nextUrl.clone();
+
+    if (pathname.startsWith("/admin") && role !== "admin") {
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
+    if (pathname.startsWith("/practitioner") && role !== "practitioner" && role !== "admin") {
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
+    if (pathname.startsWith("/patient") && role !== "patient" && role !== "admin") {
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;

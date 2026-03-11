@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/shared/logo";
+import { MobileNav } from "@/components/shared/mobile-nav";
 
 const NAV_ITEMS = [
   { label: "חיפוש מטפלים", href: "/discovery" },
@@ -24,8 +25,8 @@ export function PublicHeader() {
         <div className="flex items-center gap-[83px]">
           {/* Logo first → rightmost in RTL */}
           <Logo />
-          {/* Nav second → left of logo in RTL */}
-          <nav className="flex items-center gap-[50px]">
+          {/* Nav second → left of logo in RTL (hidden on mobile) */}
+          <nav className="hidden items-center gap-[50px] lg:flex">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
@@ -41,16 +42,14 @@ export function PublicHeader() {
           </nav>
         </div>
 
-        {/* LEFT side in RTL (second in DOM): auth buttons */}
-        <div className="flex items-center gap-[11px]">
-          {/* התחברות first → right of the auth group */}
+        {/* LEFT side in RTL (second in DOM): auth buttons (hidden on mobile) */}
+        <div className="hidden items-center gap-[11px] lg:flex">
           <Link
             href="/login"
             className="flex h-[42px] w-[125px] items-center justify-center rounded-full bg-[#7de4a8] text-[16px] text-[#102424] whitespace-nowrap"
           >
             התחברות
           </Link>
-          {/* הרשמה second → left of the auth group */}
           <Link
             href="/register"
             className="flex h-[42px] w-[125px] items-center justify-center rounded-full bg-[#f4f7f7] text-[16px] text-[#102424] whitespace-nowrap"
@@ -58,6 +57,9 @@ export function PublicHeader() {
             הרשמה
           </Link>
         </div>
+
+        {/* Mobile hamburger menu */}
+        <MobileNav />
 
       </div>
     </header>

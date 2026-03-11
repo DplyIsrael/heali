@@ -1,92 +1,105 @@
+"use client";
+
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 const ARTICLES = [
   {
-    id: "1",
-    title: "5 יתרונות של רפלקסולוגיה שלא הכרתם",
-    category: "רפלקסולוגיה",
-    excerpt: "רפלקסולוגיה היא הרבה יותר מעיסוי כפות רגליים. גלו איך היא יכולה לשפר את איכות השינה, להפחית מתח ולחזק את המערכת החיסונית.",
-    gradient: "from-[#21544E]/20 to-[#7DE4A8]/10",
-    accentColor: "bg-primary",
-  },
-  {
-    id: "2",
-    title: "מדיטציה למתחילים: המדריך המלא",
-    category: "מדיטציה",
-    excerpt: "איך להתחיל לתרגל מדיטציה גם אם מעולם לא ניסיתם? טיפים פרקטיים ותרגילים פשוטים שתוכלו להתחיל עוד היום.",
-    gradient: "from-[#7DE4A8]/20 to-[#21544E]/10",
-    accentColor: "bg-accent",
-  },
-  {
-    id: "3",
-    title: "דיקור סיני: מה אומר המדע?",
+    title: "איך דיקור סיני יכול לעזור לכאבי גב",
+    description: "דיקור סיני הוא שיטה עתיקה שמשלבת החדרת מחטים דקיקות לנקודות ספציפיות בגוף",
     category: "דיקור סיני",
-    excerpt: "סקירה של המחקרים האחרונים בנושא דיקור סיני — מה הוכח מדעית ואיך זה יכול לעזור לכם בטיפול בכאב כרוני.",
-    gradient: "from-[#f49d8e]/15 to-[#21544E]/10",
-    accentColor: "bg-[#f49d8e]",
+    date: "09/10/2025",
+    author: "מאי בוזו",
+    image: null,
+  },
+  {
+    title: "היתרונות של רפלקסולוגיה לבריאות הכללית",
+    description: "רפלקסולוגיה היא טיפול שמבוסס על לחיצה על נקודות בכפות הרגליים והידיים",
+    category: "רפלקסולוגיה",
+    date: "15/10/2025",
+    author: "ליאת גולדנברג",
+    image: null,
+  },
+  {
+    title: "מדיטציה יומית: המדריך למתחילים",
+    description: "מדיטציה היא כלי פשוט וחזק שיכול לשפר את איכות החיים שלכם בצורה משמעותית",
+    category: "מדיטציה",
+    date: "22/10/2025",
+    author: "דוד כהן",
+    image: null,
   },
 ];
 
 export function ArticlesTeaser() {
+  const t = useTranslations("home.articles");
+
   return (
     <section className="mx-auto max-w-[1440px] px-[50px] py-16">
-      {/* Header */}
       <div className="mb-8 flex items-end justify-between">
         {/* Title first → right in RTL */}
-        <div>
-          <h2 className="text-[30px] font-semibold text-foreground">מאמרים אחרונים</h2>
-          <p className="mt-1 text-[14px] font-light text-muted-foreground">
-            תוכן מקצועי שיעזור לכם להבין יותר על עולמות הטיפול
-          </p>
-        </div>
-        {/* CTA link second → left in RTL */}
+        <h2 className="text-[30px] font-semibold text-foreground">
+          {t("title")}
+        </h2>
+        {/* Link second → left in RTL */}
         <Link
           href="/articles"
-          className="flex items-center gap-1.5 text-[14px] font-medium text-primary hover:underline"
+          className="flex items-center gap-1 text-[14px] font-medium text-primary hover:underline"
         >
           <ArrowLeft className="size-4" />
-          לכל המאמרים
+          {t("viewAll")}
         </Link>
       </div>
 
-      {/* Articles grid */}
       <div className="grid grid-cols-3 gap-6">
         {ARTICLES.map((article) => (
           <Link
-            key={article.id}
-            href={`/articles/${article.id}`}
-            className="group flex flex-col overflow-hidden rounded-[16px] border border-border bg-white transition-shadow hover:shadow-md"
+            key={article.title}
+            href="/articles"
+            className="group overflow-hidden rounded-[20px] border border-border-input bg-white transition-shadow hover:shadow-lg"
           >
-            {/* Thumbnail placeholder */}
-            <div className={`relative h-[180px] bg-gradient-to-br ${article.gradient} bg-[#f4f7f7] overflow-hidden`}>
-              {/* Decorative pattern */}
-              <div
-                className="absolute inset-0 opacity-[0.05]"
-                style={{
-                  backgroundImage: `radial-gradient(circle at 1px 1px, #21544E 1px, transparent 0)`,
-                  backgroundSize: "20px 20px",
-                }}
-              />
-              {/* Category tag */}
-              <div className="absolute top-4 right-4">
-                <span className={`${article.accentColor} text-white px-3 py-1 rounded-full text-[12px] font-medium`}>
+            {/* Image area */}
+            <div className="relative h-[184px] w-full bg-gradient-to-br from-primary/20 to-accent/20">
+              {article.image ? (
+                <Image
+                  src={article.image}
+                  alt={article.title}
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-[40px] text-primary/30">
+                  📄
+                </div>
+              )}
+              {/* Tag pills overlaid on image bottom */}
+              <div className="absolute bottom-2 start-2 flex gap-2">
+                <span className="rounded-full bg-accent/90 px-3 py-1 text-[12px] font-medium text-foreground">
                   {article.category}
+                </span>
+                <span className="rounded-full bg-white/90 px-3 py-1 font-poppins text-[12px] text-muted-foreground">
+                  {article.date}
                 </span>
               </div>
             </div>
 
-            {/* Content */}
-            <div className="flex flex-1 flex-col p-5">
-              <h3 className="text-[17px] font-medium text-foreground leading-snug group-hover:text-primary transition-colors">
+            {/* Content area */}
+            <div className="p-4">
+              <h3 className="text-[16px] font-medium text-foreground line-clamp-1">
                 {article.title}
               </h3>
-              <p className="mt-2 text-[13px] font-light text-muted-foreground leading-relaxed line-clamp-3">
-                {article.excerpt}
+              <p className="mt-1 text-[14px] font-light leading-[18px] text-muted-foreground line-clamp-2">
+                {article.description}
               </p>
-              <div className="mt-4 flex items-center gap-1 text-[13px] font-medium text-primary">
-                <span>קראו עוד</span>
-                <ArrowLeft className="size-3.5 transition-transform group-hover:-translate-x-1" />
+              {/* Author row */}
+              <div className="mt-3 flex items-center gap-2">
+                <div className="flex size-[31px] items-center justify-center rounded-full bg-muted text-[12px] font-medium text-white">
+                  {article.author.charAt(0)}
+                </div>
+                <span className="text-[14px] font-light text-foreground">
+                  {t("publishedBy")} {article.author}
+                </span>
               </div>
             </div>
           </Link>

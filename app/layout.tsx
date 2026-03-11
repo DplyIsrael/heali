@@ -27,8 +27,8 @@ export default async function RootLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} dir="rtl">
-      <body className={`${poppins.variable} antialiased`}>
+    <html lang={locale} dir="rtl" suppressHydrationWarning>
+      <body className={`${poppins.variable} antialiased`} suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
           <Providers>{children}</Providers>
         </NextIntlClientProvider>
