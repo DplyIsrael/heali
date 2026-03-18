@@ -2,7 +2,7 @@
 
 **Version:** 1.2
 **Last Updated:** 2026-03-05
-**Progress:** Phase 0 complete. Phase 1 complete. Phase 2 complete. Phase 3 complete. Ready for Phase 4 (Practitioner Onboarding).
+**Progress:** Phase 0 complete. Phase 1 complete. Phase 2 complete. Phase 3 complete. Phase 4 complete. Ready for Phase 5 (Public Pages & Discovery).
 **Stack:** Next.js 15 / TypeScript / Tailwind + shadcn/ui / Supabase / Drizzle ORM / TanStack Query v5 / next-intl / Inngest / Upstash / Resend
 **UI Reference:** `UI_UX_FLOW.md` (37 sections, all Figma screens)
 **Requirements:** `Heali_DEV_PRD_EN.md`, `TECHNICAL_ARCHITECTURE.md`
@@ -310,55 +310,56 @@ All screens: `UI_UX_FLOW.md` Sections 5–12. 6-step flow with progress indicato
 
 `UI_UX_FLOW.md` Sections 13–22. 8-step flow with draft save/resume.
 
-### 4.1 Onboarding Shell
-- [ ] Multi-step shell with step counter (8 steps)
-- [ ] Draft save on every step (update `practitioner_profiles` with current step data)
-- [ ] Resume from last saved step on re-login
-- [ ] Progress bar grows per step
+### 4.1 Onboarding Shell ✅
+- [x] Multi-step shell with step counter (8 steps)
+- [x] Draft save on every step (update `practitioner_profiles` with current step data)
+- [x] Resume from last saved step on re-login
+- [x] Progress bar grows per step
 
-### 4.2 Step 1 — Treatment Domains (Section 13)
-- [ ] Multi-select grid of domains (from `treatment_domains` table)
-- [ ] Validation: at least 1 required
+### 4.2 Step 1 — Treatment Domains (Section 13) ✅
+- [x] Multi-select grid of domains (from `treatment_domains` table)
+- [x] Validation: at least 1 required
 
-### 4.3 Step 2 — Specialties (Section 14)
-- [ ] Filtered by selected domains
-- [ ] Multi-select checkboxes or chips
-- [ ] Validation: at least 1 required
+### 4.3 Step 2 — Specialties (Section 14) ✅
+- [x] Filtered by selected domains
+- [x] Multi-select chips
+- [x] Validation: at least 1 required
 
-### 4.4 Step 3 — Pricing (Section 15)
-- [ ] Pricing model dropdown (per treatment / per hour / per package)
-- [ ] Price input (ILS, numeric)
-- [ ] Currency formatted as ₪
+### 4.4 Step 3 — Pricing (Section 15) ✅
+- [x] Pricing model selector (per treatment / per hour / per package)
+- [x] Price input (ILS, numeric)
+- [x] Currency formatted as ₪
 
-### 4.5 Step 4 — Certificates / Documents (Section 16)
-- [ ] Upload multiple files (PDF, JPG, PNG)
-- [ ] Upload to Supabase Storage `certificates` bucket
-- [ ] List uploaded files with remove option
-- [ ] At least 1 required
+### 4.5 Step 4 — Certificates / Documents (Section 16) ✅
+- [x] Upload multiple files (PDF, JPG, PNG)
+- [x] Upload to Supabase Storage `certificates` bucket
+- [x] List uploaded files with remove option
+- [x] At least 1 required
 
-### 4.6 Step 5 — Languages (Section 17)
-- [ ] Multi-select language chips (from predefined list: Hebrew, English, Arabic, Russian, French, etc.)
+### 4.6 Step 5 — Languages (Section 17) ✅
+- [x] Multi-select language chips (Hebrew, English, Arabic, Russian, French, etc.)
 
-### 4.7 Step 6 — Bio / Profile Summary (Section 18)
-- [ ] Textarea, RTL, min character count
-- [ ] Character counter
+### 4.7 Step 6 — Bio / Profile Summary (Section 18) ✅
+- [x] Textarea, RTL, min character count (50)
+- [x] Character counter
+- [x] Certification description textarea
 
-### 4.8 Step 7 — Practitioner Agreement (Section 19)
-- [ ] Display agreement text (MISSING — placeholder)
-- [ ] Digital signature input or checkbox
-- [ ] Timestamp stored in DB
+### 4.8 Step 7 — Practitioner Agreement (Section 19) ✅
+- [x] Display agreement text (placeholder — pending legal text)
+- [x] Checkbox consent
+- [x] Timestamp stored in DB (`agreement_signed_at`)
 
-### 4.9 Step 8 — Review & Submit (Section 20)
-- [ ] Full summary of all entered data
-- [ ] Submit button → server action: `submitPractitionerForApproval()`
-  - Set `verification_status = SUBMITTED`
-  - Trigger email to practitioner: "פרופיל שלך בבדיקה"
-  - Create admin notification: new practitioner submission
+### 4.9 Step 8 — Review & Submit (Section 20) ✅
+- [x] Full summary of all entered data with edit links
+- [x] Submit button → server action: `submitForApproval()`
+  - [x] Set `verification_status = SUBMITTED`
+  - [x] Create admin notification: new practitioner submission
+  - [ ] Email notification _(requires Resend setup)_
 
-### 4.10 Post-Submission Screens (Sections 21–22)
-- [ ] "Pending approval" status screen — shown after submit
-- [ ] "Account approved" screen — accessed after admin approves (email link or on login)
-- [ ] Welcome email sent via Resend when admin approves
+### 4.10 Post-Submission Screens (Sections 21–22) ✅
+- [x] "Pending approval" status screen — shown after submit
+- [x] "Account approved" screen — with QR download link + enter system CTA
+- [ ] Welcome email sent via Resend when admin approves _(requires Resend setup)_
 
 ---
 
