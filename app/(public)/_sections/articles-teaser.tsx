@@ -36,13 +36,11 @@ export function ArticlesTeaser() {
   const t = useTranslations("home.articles");
 
   return (
-    <section className="mx-auto max-w-[1440px] px-[50px] py-16">
-      <div className="mb-8 flex items-end justify-between">
-        {/* Title first → right in RTL */}
-        <h2 className="text-[30px] font-semibold text-foreground">
+    <section className="mx-auto max-w-[1440px] px-4 md:px-[50px] py-10 md:py-16">
+      <div className="mb-6 md:mb-8 flex items-end justify-between">
+        <h2 className="text-[24px] md:text-[30px] font-semibold text-foreground">
           {t("title")}
         </h2>
-        {/* Link second → left in RTL */}
         <Link
           href="/articles"
           className="flex items-center gap-1 text-[14px] font-medium text-primary hover:underline"
@@ -52,7 +50,7 @@ export function ArticlesTeaser() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {ARTICLES.map((article) => (
           <Link
             key={article.title}
@@ -60,7 +58,7 @@ export function ArticlesTeaser() {
             className="group overflow-hidden rounded-[20px] border border-border-input bg-white transition-shadow hover:shadow-lg"
           >
             {/* Image area */}
-            <div className="relative h-[184px] w-full bg-gradient-to-br from-primary/20 to-accent/20">
+            <div className="relative h-[160px] md:h-[184px] w-full bg-gradient-to-br from-primary/20 to-accent/20">
               {article.image ? (
                 <Image
                   src={article.image}
@@ -73,7 +71,6 @@ export function ArticlesTeaser() {
                   📄
                 </div>
               )}
-              {/* Tag pills overlaid on image bottom */}
               <div className="absolute bottom-2 start-2 flex gap-2">
                 <span className="rounded-full bg-accent/90 px-3 py-1 text-[12px] font-medium text-foreground">
                   {article.category}
@@ -92,7 +89,6 @@ export function ArticlesTeaser() {
               <p className="mt-1 text-[14px] font-light leading-[18px] text-muted-foreground line-clamp-2">
                 {article.description}
               </p>
-              {/* Author row */}
               <div className="mt-3 flex items-center gap-2">
                 <div className="flex size-[31px] items-center justify-center rounded-full bg-muted text-[12px] font-medium text-white">
                   {article.author.charAt(0)}

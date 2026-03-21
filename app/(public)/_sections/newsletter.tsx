@@ -13,20 +13,20 @@ export function Newsletter() {
 
   return (
     <section className="w-full bg-[#08190C]">
-      <div className="mx-auto max-w-[1440px] px-[50px] py-16">
+      <div className="mx-auto max-w-[1440px] px-4 md:px-[50px] py-10 md:py-16">
         <div className="flex flex-col items-center text-center">
-          <h2 className="text-[30px] font-semibold text-white">
+          <h2 className="text-[24px] md:text-[30px] font-semibold text-white">
             רוצה להתעדכן בכל{" "}
             <br />
             מה שעושה טוב לגוף ולנפש?
           </h2>
-          <p className="mt-3 text-[16px] font-light text-white/60 max-w-[500px]">
+          <p className="mt-3 text-[14px] md:text-[16px] font-light text-white/60 max-w-[500px]">
             הירשמו לניוזלטר שלנו וקבלו טיפים, מאמרים והצעות מיוחדות ישירות למייל.
           </p>
 
           <form
             onSubmit={handleSubmit}
-            className="mt-8 flex items-center gap-3"
+            className="mt-6 md:mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto"
           >
             {/* Input first → right in RTL */}
             <input
@@ -34,7 +34,7 @@ export function Newsletter() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="כתובת מייל לקבלת עדכונים"
-              className="h-[48px] w-[340px] rounded-[10px] bg-white/10 border border-white/20 px-4 text-[14px] text-white font-[family-name:var(--font-poppins)] placeholder:text-white/40 outline-none focus:border-accent/60 transition-colors"
+              className="h-[48px] w-full sm:w-[340px] rounded-[10px] bg-white/10 border border-white/20 px-4 text-[14px] text-white font-[family-name:var(--font-poppins)] placeholder:text-white/40 outline-none focus:border-accent/60 transition-colors"
               required
             />
             {/* Button second → left in RTL */}

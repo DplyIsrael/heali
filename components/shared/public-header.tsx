@@ -19,20 +19,18 @@ export function PublicHeader() {
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white">
-      <div className="mx-auto flex h-full max-w-[1440px] items-center justify-between px-[60px] py-[10px]">
+      <div className="mx-auto flex h-full max-w-[1440px] items-center justify-between px-4 md:px-[60px] py-[10px]">
 
         {/* RIGHT side in RTL (first in DOM): logo + nav grouped */}
-        <div className="flex items-center gap-[83px]">
-          {/* Logo first → rightmost in RTL */}
+        <div className="flex items-center gap-6 lg:gap-[83px]">
           <Logo />
-          {/* Nav second → left of logo in RTL (hidden on mobile) */}
-          <nav className="hidden items-center gap-[50px] lg:flex">
+          <nav className="hidden items-center gap-6 xl:gap-[50px] lg:flex">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "text-[18px] text-foreground transition-colors hover:text-primary whitespace-nowrap leading-[1.2]",
+                  "text-[16px] lg:text-[18px] text-foreground transition-colors hover:text-primary whitespace-nowrap leading-[1.2]",
                   pathname.startsWith(item.href) ? "font-medium" : "font-normal"
                 )}
               >

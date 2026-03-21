@@ -52,32 +52,28 @@ const PACKAGES = [
   },
 ];
 
-/* Checkerboard grid pattern — alternating filled/border-only squares */
+/* Checkerboard grid pattern */
 function GridPattern() {
   return (
     <>
-      {/* Top-right grid row */}
       <div className="absolute left-[146px] top-[-1px] rotate-180 flex items-center opacity-[0.16]">
         <div className="size-[37.274px] bg-[rgba(243,246,246,0.9)]" />
         <div className="size-[37.274px] border-[0.852px] border-[rgba(243,246,246,0.9)]" />
         <div className="size-[37.274px] bg-[rgba(243,246,246,0.9)]" />
         <div className="size-[37.274px] border-[0.852px] border-[rgba(243,246,246,0.9)]" />
       </div>
-      {/* Second row */}
       <div className="absolute left-[146px] top-[36px] flex items-center opacity-[0.16]">
         <div className="size-[37.274px] bg-[rgba(243,246,246,0.9)]" />
         <div className="size-[37.274px] border-[0.852px] border-[rgba(243,246,246,0.9)]" />
         <div className="size-[37.274px] bg-[rgba(243,246,246,0.9)]" />
         <div className="size-[37.274px] border-[0.852px] border-[rgba(243,246,246,0.9)]" />
       </div>
-      {/* Bottom-left grid row */}
       <div className="absolute left-[-12px] top-[258px] rotate-180 flex items-center opacity-[0.10]">
         <div className="size-[37.274px] bg-[rgba(243,246,246,0.9)]" />
         <div className="size-[37.274px] border-[0.852px] border-[rgba(243,246,246,0.9)]" />
         <div className="size-[37.274px] bg-[rgba(243,246,246,0.9)]" />
         <div className="size-[37.274px] border-[0.852px] border-[rgba(243,246,246,0.9)]" />
       </div>
-      {/* Bottom row */}
       <div className="absolute left-[-12px] top-[295px] flex items-center opacity-[0.16]">
         <div className="size-[37.274px] bg-[rgba(243,246,246,0.9)]" />
         <div className="size-[37.274px] border-[0.852px] border-[rgba(243,246,246,0.9)]" />
@@ -88,7 +84,6 @@ function GridPattern() {
   );
 }
 
-/* Placeholder icon — leaf/wellness shape */
 function PackageIcon() {
   return (
     <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
@@ -104,13 +99,11 @@ function PackageIcon() {
 function PackageCard({ pkg }: { pkg: (typeof PACKAGES)[0] }) {
   return (
     <div
-      className="relative w-[300px] h-[329px] rounded-[16px] border border-white overflow-hidden shrink-0 shadow-[0px_3.525px_17.625px_0px_rgba(100,111,198,0.25)]"
+      className="relative w-full sm:w-[280px] lg:w-[300px] h-[329px] rounded-[16px] border border-white overflow-hidden shrink-0 shadow-[0px_3.525px_17.625px_0px_rgba(100,111,198,0.25)]"
       style={{ background: pkg.gradient }}
     >
-      {/* Grid pattern overlay */}
       <GridPattern />
 
-      {/* Center icon — frosted glass circle */}
       <div
         className="absolute left-1/2 top-[calc(50%-35.5px)] -translate-x-1/2 -translate-y-1/2 size-[110px] rounded-full border-[3.4px] border-white flex items-center justify-center backdrop-blur-[11px]"
         style={{
@@ -121,7 +114,6 @@ function PackageCard({ pkg }: { pkg: (typeof PACKAGES)[0] }) {
         <PackageIcon />
       </div>
 
-      {/* Badge — top-right (RTL: first in DOM, positioned absolute right/top) */}
       <div
         className="absolute right-[17px] top-[17px] flex items-center h-[28px] px-[10px] py-[2px] rounded-full"
         style={{
@@ -136,13 +128,11 @@ function PackageCard({ pkg }: { pkg: (typeof PACKAGES)[0] }) {
         </span>
       </div>
 
-      {/* Bottom content — text right-aligned */}
       <div className="absolute right-[24px] top-[211px] flex flex-col gap-[8px] w-[252px] text-right text-white">
         <p className="text-[20px] font-bold leading-normal">{pkg.name}</p>
         <p className="text-[14px] font-light leading-[19.17px]">{pkg.description}</p>
       </div>
 
-      {/* Arrow circle — bottom-left (RTL: last, positioned absolute left/bottom) */}
       <div className="absolute left-[17px] top-[272px] size-[38px] rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
         <ArrowLeft className="size-[18px] text-white" />
       </div>
@@ -153,31 +143,31 @@ function PackageCard({ pkg }: { pkg: (typeof PACKAGES)[0] }) {
 export function PackagesTeaser() {
   return (
     <section className="bg-[#FAFAFA] w-full">
-    <div className="relative mx-auto max-w-[1440px] px-[50px] py-16">
-      {/* Section header — centered */}
-      <div className="flex flex-col items-center gap-[18px] mb-[55px]">
-        <h2 className="text-[30px] font-semibold text-black text-center">
+    <div className="relative mx-auto max-w-[1440px] px-4 md:px-[50px] py-10 md:py-16">
+      {/* Section header */}
+      <div className="flex flex-col items-center gap-3 md:gap-[18px] mb-8 md:mb-[55px]">
+        <h2 className="text-[24px] md:text-[30px] font-semibold text-black text-center">
           חבילות טיפול
         </h2>
-        <p className="text-[20px] font-light text-[#9f9f9f] text-center leading-[26px] max-w-[641px]">
+        <p className="text-[16px] md:text-[20px] font-light text-[#9f9f9f] text-center leading-[26px] max-w-[641px]">
           לורם איפסום דולור סיט אמט, קונסקטורר אדיפיסינג אלית. סד אאמאט נון קונסקטורר ניבאה, סוליסיטודין קוויס נולה אאקטור.
         </p>
       </div>
 
-      {/* Cards row */}
-      <div className="flex gap-10 justify-center">
+      {/* Cards row — horizontal scroll on mobile, centered grid on desktop */}
+      <div className="flex gap-4 md:gap-10 justify-start md:justify-center overflow-x-auto pb-4 md:pb-0 md:overflow-visible snap-x snap-mandatory md:snap-none">
         {PACKAGES.map((pkg) => (
-          <PackageCard key={pkg.id} pkg={pkg} />
+          <div key={pkg.id} className="snap-center shrink-0 sm:shrink">
+            <PackageCard pkg={pkg} />
+          </div>
         ))}
       </div>
 
-      {/* Carousel navigation arrows */}
-      {/* Right arrow (first in DOM = right in RTL) */}
-      <button className="absolute right-[40px] top-[calc(50%+40px)] size-[46px] rounded-full border border-border bg-white flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors">
+      {/* Carousel navigation arrows — hidden on mobile */}
+      <button className="hidden md:flex absolute right-[40px] top-[calc(50%+40px)] size-[46px] rounded-full border border-border bg-white items-center justify-center shadow-sm hover:bg-gray-50 transition-colors">
         <ChevronRight className="size-[22px] text-foreground" />
       </button>
-      {/* Left arrow (last in DOM = left in RTL) */}
-      <button className="absolute left-[40px] top-[calc(50%+40px)] size-[46px] rounded-full border border-border bg-white flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors">
+      <button className="hidden md:flex absolute left-[40px] top-[calc(50%+40px)] size-[46px] rounded-full border border-border bg-white items-center justify-center shadow-sm hover:bg-gray-50 transition-colors">
         <ChevronLeft className="size-[22px] text-foreground" />
       </button>
     </div>

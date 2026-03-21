@@ -26,11 +26,11 @@ function TikTokIcon({ className }: { className?: string }) {
 export function PublicFooter() {
   return (
     <footer className="bg-[#08190C] text-white">
-      <div className="mx-auto max-w-[1440px] px-[50px] py-16">
-        <div className="grid grid-cols-3 gap-12">
+      <div className="mx-auto max-w-[1440px] px-4 md:px-[50px] py-10 md:py-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
           {/* Categories — first = right in RTL */}
           <div>
-            <h3 className="mb-5 text-[16px] font-semibold text-white/80">
+            <h3 className="mb-4 md:mb-5 text-[16px] font-semibold text-white/80">
               קטגוריות
             </h3>
             <ul className="space-y-3">
@@ -49,7 +49,7 @@ export function PublicFooter() {
 
           {/* Links — center */}
           <div>
-            <h3 className="mb-5 text-[16px] font-semibold text-white/80">
+            <h3 className="mb-4 md:mb-5 text-[16px] font-semibold text-white/80">
               קישורים
             </h3>
             <ul className="space-y-3">
@@ -77,7 +77,7 @@ export function PublicFooter() {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-14 flex items-center justify-between border-t border-white/10 pt-6">
+        <div className="mt-10 md:mt-14 flex flex-col-reverse sm:flex-row items-center justify-between gap-4 border-t border-white/10 pt-6">
           {/* Social icons — first = right in RTL */}
           <div className="flex items-center gap-4">
             <Link href="#" aria-label="Facebook" className="text-white/40 hover:text-white transition-colors">
@@ -95,7 +95,7 @@ export function PublicFooter() {
           </div>
 
           {/* Legal links — second = left in RTL */}
-          <div className="flex items-center gap-6 text-[13px] text-white/40">
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-[13px] text-white/40">
             <Link href="/accessibility" className="hover:text-white transition-colors">נגישות</Link>
             <Link href="/privacy" className="hover:text-white transition-colors">פרטיות</Link>
             <Link href="/terms" className="hover:text-white transition-colors">תנאי שימוש</Link>

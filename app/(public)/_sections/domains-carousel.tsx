@@ -26,15 +26,15 @@ export function DomainsCarousel() {
   const visible    = DOMAINS.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
 
   return (
-    <section className="mx-auto max-w-[1440px] px-[50px] py-16">
+    <section className="mx-auto max-w-[1440px] px-4 md:px-[50px] py-10 md:py-16">
 
       {/* Header */}
-      <div className="mb-[46px] flex flex-col items-center gap-5">
-        <div className="flex flex-col items-center gap-[18px]">
-          <h2 className="text-[30px] font-semibold text-black text-center">
+      <div className="mb-8 md:mb-[46px] flex flex-col items-center gap-5">
+        <div className="flex flex-col items-center gap-3 md:gap-[18px]">
+          <h2 className="text-[24px] md:text-[30px] font-semibold text-black text-center">
             הכירו את עולמות הריפוי שלנו
           </h2>
-          <p className="text-[20px] font-light text-[#9f9f9f] text-center">
+          <p className="text-[16px] md:text-[20px] font-light text-[#9f9f9f] text-center">
             תתחילו לגלות, לבחור ולהרגיש מה באמת עושה לכם טוב.
           </p>
         </div>
@@ -59,7 +59,7 @@ export function DomainsCarousel() {
       </div>
 
       {/* Cards */}
-      <div className="grid grid-cols-4 gap-[23px]">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-[23px]">
         {visible.map((domain) => {
           const active = hoverId === domain.id;
 
