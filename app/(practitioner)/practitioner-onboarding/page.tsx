@@ -211,7 +211,7 @@ export default function PractitionerOnboardingPage() {
             languages={languages}
             bio={bio}
             certificateCount={certificates.length}
-            onSubmit={() => router.push("/onboarding/pending")}
+            onSubmit={() => router.push("/practitioner-onboarding/pending")}
             onBack={goBack}
             onEditStep={(step) => setCurrentStep(step)}
           />
