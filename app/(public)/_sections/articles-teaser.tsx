@@ -12,7 +12,7 @@ const ARTICLES = [
     category: "דיקור סיני",
     date: "09/10/2025",
     author: "מאי בוזו",
-    image: null,
+    image: "/images/articles/article-1.jpg",
   },
   {
     title: "היתרונות של רפלקסולוגיה לבריאות הכללית",
@@ -20,7 +20,7 @@ const ARTICLES = [
     category: "רפלקסולוגיה",
     date: "15/10/2025",
     author: "ליאת גולדנברג",
-    image: null,
+    image: "/images/articles/article-2.jpg",
   },
   {
     title: "מדיטציה יומית: המדריך למתחילים",
@@ -28,7 +28,7 @@ const ARTICLES = [
     category: "מדיטציה",
     date: "22/10/2025",
     author: "דוד כהן",
-    image: null,
+    image: "/images/articles/article-3.jpg",
   },
 ];
 
@@ -58,19 +58,13 @@ export function ArticlesTeaser() {
             className="group overflow-hidden rounded-[20px] border border-border-input bg-white transition-shadow hover:shadow-lg"
           >
             {/* Image area */}
-            <div className="relative h-[160px] md:h-[184px] w-full bg-gradient-to-br from-primary/20 to-accent/20">
-              {article.image ? (
-                <Image
-                  src={article.image}
-                  alt={article.title}
-                  fill
-                  className="object-cover"
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center text-[40px] text-primary/30">
-                  📄
-                </div>
-              )}
+            <div className="relative h-[160px] md:h-[184px] w-full">
+              <Image
+                src={article.image}
+                alt={article.title}
+                fill
+                className="object-cover"
+              />
               <div className="absolute bottom-2 start-2 flex gap-2">
                 <span className="rounded-full bg-accent/90 px-3 py-1 text-[12px] font-medium text-foreground">
                   {article.category}

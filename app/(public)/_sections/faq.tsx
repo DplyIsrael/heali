@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Star } from "lucide-react";
 import {
   Accordion,
@@ -65,8 +66,8 @@ export function Faq() {
         {/* Testimonial quote card — stacks below on mobile */}
         <div className="w-full lg:w-[320px] lg:shrink-0">
           <div className="rounded-[20px] bg-[#f4f7f7] p-6 md:p-7 flex flex-col">
-            <div className="size-[56px] rounded-full bg-primary/10 flex items-center justify-center text-primary text-lg font-semibold mb-4">
-              ר
+            <div className="size-[56px] rounded-full overflow-hidden mb-4 relative">
+              <Image src="/images/practitioners/practitioner-1.jpg" alt="רחל כהן" fill className="object-cover" />
             </div>
 
             <div className="flex gap-0.5 mb-3">

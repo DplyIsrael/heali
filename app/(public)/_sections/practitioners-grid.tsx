@@ -1,15 +1,16 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Search, ChevronDown, SlidersHorizontal, Star, MapPin } from "lucide-react";
 
 const PRACTITIONERS = [
-  { id: "1", name: "ליאת גולדנברג", domain: "דיקור סיני", price: 146, city: "יפו - תל אביב", rating: "4.8/5", reviews: 500, available: true, bio: "זהו טקסט דמה שנועד להמחיש את מבנה התוכן באתר ניתן להחליפו בטקסט אמיתי בהמשך....", color: "bg-rose-200" },
-  { id: "2", name: "ליאת גולדנברג", domain: "דיקור סיני", price: 146, city: "יפו - תל אביב", rating: "4.8/5", reviews: 500, available: true, bio: "זהו טקסט דמה שנועד להמחיש את מבנה התוכן באתר ניתן להחליפו בטקסט אמיתי בהמשך....", color: "bg-amber-200" },
-  { id: "3", name: "ליאת גולדנברג", domain: "דיקור סיני", price: 146, city: "יפו - תל אביב", rating: "4.8/5", reviews: 500, available: true, bio: "זהו טקסט דמה שנועד להמחיש את מבנה התוכן באתר ניתן להחליפו בטקסט אמיתי בהמשך....", color: "bg-pink-200" },
-  { id: "4", name: "ליאת גולדנברג", domain: "דיקור סיני", price: 146, city: "יפו - תל אביב", rating: "4.8/5", reviews: 500, available: true, bio: "זהו טקסט דמה שנועד להמחיש את מבנה התוכן באתר ניתן להחליפו בטקסט אמיתי בהמשך....", color: "bg-sky-200" },
-  { id: "5", name: "ליאת גולדנברג", domain: "דיקור סיני", price: 146, city: "יפו - תל אביב", rating: "4.8/5", reviews: 500, available: true, bio: "זהו טקסט דמה שנועד להמחיש את מבנה התוכן באתר ניתן להחליפו בטקסט אמיתי בהמשך....", color: "bg-rose-200" },
-  { id: "6", name: "ליאת גולדנברג", domain: "דיקור סיני", price: 146, city: "יפו - תל אביב", rating: "4.8/5", reviews: 500, available: true, bio: "זהו טקסט דמה שנועד להמחיש את מבנה התוכן באתר ניתן להחליפו בטקסט אמיתי בהמשך....", color: "bg-amber-200" },
-  { id: "7", name: "ליאת גולדנברג", domain: "דיקור סיני", price: 146, city: "יפו - תל אביב", rating: "4.8/5", reviews: 500, available: true, bio: "זהו טקסט דמה שנועד להמחיש את מבנה התוכן באתר ניתן להחליפו בטקסט אמיתי בהמשך....", color: "bg-pink-200" },
-  { id: "8", name: "ליאת גולדנברג", domain: "דיקור סיני", price: 146, city: "יפו - תל אביב", rating: "4.8/5", reviews: 500, available: true, bio: "זהו טקסט דמה שנועד להמחיש את מבנה התוכן באתר ניתן להחליפו בטקסט אמיתי בהמשך....", color: "bg-sky-200" },
+  { id: "1", name: "ליאת גולדנברג", domain: "דיקור סיני", price: 146, city: "יפו - תל אביב", rating: "4.8/5", reviews: 500, available: true, bio: "זהו טקסט דמה שנועד להמחיש את מבנה התוכן באתר ניתן להחליפו בטקסט אמיתי בהמשך....", image: "/images/practitioners/practitioner-1.jpg" },
+  { id: "2", name: "דני כהן", domain: "עיסוי טיפולי", price: 180, city: "חיפה", rating: "4.9/5", reviews: 320, available: true, bio: "מטפל מוסמך עם ניסיון של מעל 10 שנים בתחום העיסוי הטיפולי והרפואה המשלימה.", image: "/images/practitioners/practitioner-2.jpg" },
+  { id: "3", name: "שרה לוי", domain: "מדיטציה", price: 120, city: "ירושלים", rating: "4.7/5", reviews: 215, available: true, bio: "מורה למדיטציה ומיינדפולנס, מלווה מטופלים בתהליכי הרפיה והפחתת מתח.", image: "/images/practitioners/practitioner-3.jpg" },
+  { id: "4", name: "יוסי מזרחי", domain: "רפלקסולוגיה", price: 160, city: "רמת גן", rating: "4.6/5", reviews: 180, available: false, bio: "רפלקסולוג מוסמך המתמחה בטיפול בכאבים כרוניים ושיפור מחזור הדם.", image: "/images/practitioners/practitioner-4.jpg" },
+  { id: "5", name: "מיכל אברהם", domain: "יוגה", price: 90, city: "תל אביב", rating: "4.9/5", reviews: 450, available: true, bio: "מורה ליוגה טיפולית עם התמחות ביוגה לנשים בהריון ולאחר לידה.", image: "/images/practitioners/practitioner-5.jpg" },
+  { id: "6", name: "אורי שמש", domain: "היפנוזה טיפולית", price: 200, city: "הרצליה", rating: "4.8/5", reviews: 290, available: true, bio: "מטפל בהיפנוזה קלינית, מסייע בהתמודדות עם חרדות, פחדים והרגלים.", image: "/images/practitioners/practitioner-6.jpg" },
+  { id: "7", name: "נעמי רוזן", domain: "צמחי מרפא", price: 170, city: "כפר סבא", rating: "4.5/5", reviews: 140, available: true, bio: "מומחית לרפואה טבעית וצמחי מרפא, מתמחה בטיפול הוליסטי ומותאם אישית.", image: "/images/practitioners/practitioner-7.jpg" },
+  { id: "8", name: "רון דוד", domain: "פסיכולוגיה", price: 250, city: "באר שבע", rating: "4.7/5", reviews: 380, available: true, bio: "פסיכולוג קליני מומחה בטיפול CBT, מלווה מטופלים בתהליכי שינוי והתפתחות.", image: "/images/practitioners/practitioner-8.jpg" },
 ];
 
 function VerifiedBadge() {
@@ -32,8 +33,8 @@ function PractitionerCard({ p }: { p: typeof PRACTITIONERS[0] }) {
       <div className="relative h-[177px] w-full rounded-t-[20px] overflow-hidden border border-white"
         style={{ background: "linear-gradient(to bottom, #ebecec 4%, white 120%)" }}
       >
-        <div className={`absolute left-1/2 -translate-x-1/2 top-[6px] w-[199px] h-[170px] rounded-[12px] overflow-hidden ${p.color} flex items-end justify-center`}>
-          <div className="w-[120px] h-[140px] bg-foreground/10 rounded-t-full" />
+        <div className="absolute left-1/2 -translate-x-1/2 top-[6px] w-[199px] h-[170px] rounded-[12px] overflow-hidden">
+          <Image src={p.image} alt={p.name} fill className="object-cover" />
         </div>
 
         <div className="absolute left-[10px] top-[9px]">

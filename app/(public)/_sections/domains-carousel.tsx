@@ -1,18 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const DOMAINS = [
-  { id: 1, name: "דיקור סיני",      count: "4,200" },
-  { id: 2, name: "עיסוי טיפולי",    count: "3,800" },
-  { id: 3, name: "מדיטציה",         count: "2,100" },
-  { id: 4, name: "רפלקסולוגיה",     count: "1,500" },
-  { id: 5, name: "יוגה",            count: "5,000" },
-  { id: 6, name: "היפנוזה טיפולית", count: "900"   },
-  { id: 7, name: "פסיכולוגיה",      count: "6,300" },
-  { id: 8, name: "צמחי מרפא",       count: "1,200" },
+  { id: 1, name: "דיקור סיני",      count: "4,200", image: "/images/domains/domain-1.jpg" },
+  { id: 2, name: "עיסוי טיפולי",    count: "3,800", image: "/images/domains/domain-2.jpg" },
+  { id: 3, name: "מדיטציה",         count: "2,100", image: "/images/domains/domain-3.jpg" },
+  { id: 4, name: "רפלקסולוגיה",     count: "1,500", image: "/images/domains/domain-4.jpg" },
+  { id: 5, name: "יוגה",            count: "5,000", image: "/images/domains/domain-5.jpg" },
+  { id: 6, name: "היפנוזה טיפולית", count: "900",   image: "/images/domains/domain-6.jpg" },
+  { id: 7, name: "פסיכולוגיה",      count: "6,300", image: "/images/domains/domain-7.jpg" },
+  { id: 8, name: "צמחי מרפא",       count: "1,200", image: "/images/domains/domain-8.jpg" },
 ];
 
 const PER_PAGE = 4;
@@ -88,6 +89,8 @@ export function DomainsCarousel() {
                   className="relative w-full overflow-hidden rounded-[10px]"
                   style={{ height: "141.642px", background: areaBg }}
                 >
+                  {/* Background image */}
+                  <Image src={domain.image} alt={domain.name} fill className="object-cover opacity-20" />
                   {/* Checkerboard row A — left=0, top=37.47 */}
                   <div className="absolute flex" style={{ left: 0, top: 37.47 }}>
                     {[0,1,2,3].map((i) => (

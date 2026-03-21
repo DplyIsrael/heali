@@ -1,13 +1,14 @@
 "use client";
 
+import Image from "next/image";
 import { Play } from "lucide-react";
 
 const TESTIMONIALS = [
-  { id: 1, name: "רחל כהן", text: "טיפול מדהים שעזר לי להתגבר על כאבי גב כרוניים", tall: true, gradient: "from-[#21544E]/40 to-[#21544E]/20" },
-  { id: 2, name: "דוד לוי", text: "ממליץ בחום! המטפל הכי מקצועי שפגשתי", tall: false, gradient: "from-[#3a8a7a]/30 to-[#7de4a8]/20" },
-  { id: 3, name: "שרה גולד", text: "סוף סוף מצאתי מטפלת שמבינה אותי באמת", tall: true, gradient: "from-[#21544E]/30 to-[#3a8a7a]/20" },
-  { id: 4, name: "יעקב מזרחי", text: "הפלטפורמה הכי נוחה שיש – תהליך הזמנה מהיר ופשוט", tall: false, gradient: "from-[#7de4a8]/30 to-[#21544E]/20" },
-  { id: 5, name: "מירב שלום", text: "חוויה מרגיעה ומחדשת. אחרי טיפול אחד כבר הרגשתי שינוי", tall: true, gradient: "from-[#3a8a7a]/40 to-[#7de4a8]/10" },
+  { id: 1, name: "רחל כהן", text: "טיפול מדהים שעזר לי להתגבר על כאבי גב כרוניים", tall: true, image: "/images/testimonials/testimonial-1.jpg" },
+  { id: 2, name: "דוד לוי", text: "ממליץ בחום! המטפל הכי מקצועי שפגשתי", tall: false, image: "/images/testimonials/testimonial-2.jpg" },
+  { id: 3, name: "שרה גולד", text: "סוף סוף מצאתי מטפלת שמבינה אותי באמת", tall: true, image: "/images/testimonials/testimonial-3.jpg" },
+  { id: 4, name: "יעקב מזרחי", text: "הפלטפורמה הכי נוחה שיש – תהליך הזמנה מהיר ופשוט", tall: false, image: "/images/testimonials/testimonial-4.jpg" },
+  { id: 5, name: "מירב שלום", text: "חוויה מרגיעה ומחדשת. אחרי טיפול אחד כבר הרגשתי שינוי", tall: true, image: "/images/testimonials/testimonial-5.jpg" },
 ];
 
 export function Testimonials() {
@@ -32,17 +33,9 @@ export function Testimonials() {
               item.tall ? "w-[180px] md:w-[220px] h-[280px] md:h-[320px]" : "w-[180px] md:w-[220px] h-[220px] md:h-[260px] self-center"
             }`}
           >
-            {/* Background */}
-            <div className={`absolute inset-0 bg-gradient-to-br ${item.gradient} bg-[#e8eeec]`} />
-
-            {/* Subtle pattern overlay */}
-            <div
-              className="absolute inset-0 opacity-[0.04]"
-              style={{
-                backgroundImage: `radial-gradient(circle at 1px 1px, #21544E 1px, transparent 0)`,
-                backgroundSize: "16px 16px",
-              }}
-            />
+            {/* Background image */}
+            <Image src={item.image} alt={item.name} fill className="object-cover" />
+            <div className="absolute inset-0 bg-black/10" />
 
             {/* Play button — centered */}
             <div className="absolute inset-0 flex items-center justify-center">
