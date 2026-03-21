@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 /* Floating avatar bubble with frosted glass ring */
@@ -6,13 +7,13 @@ function AvatarBubble({
   padding,
   top,
   left,
-  color,
+  image,
 }: {
   size: number;
   padding: number;
   top: string;
   left: string;
-  color: string;
+  image: string;
 }) {
   const outerSize = size + padding * 2;
   return (
@@ -26,17 +27,13 @@ function AvatarBubble({
       }}
     >
       <div
-        className="rounded-full flex items-center justify-center text-white text-[14px] font-medium"
+        className="rounded-full overflow-hidden relative"
         style={{
           width: size,
           height: size,
-          backgroundColor: color,
         }}
       >
-        <svg width={size * 0.5} height={size * 0.5} viewBox="0 0 24 24" fill="currentColor" opacity="0.6">
-          <circle cx="12" cy="8" r="4" />
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-        </svg>
+        <Image src={image} alt="" fill className="object-cover" />
       </div>
     </div>
   );
@@ -76,11 +73,11 @@ export function HelpBanner() {
           <div className="absolute left-[0px] top-[268px] w-[500px] h-px bg-white/[0.05]" />
           <div className="absolute left-[0px] top-[200px] w-[500px] h-px bg-white/[0.05]" />
 
-          <AvatarBubble size={66} padding={28} top="-30px" left="230px" color="#c084a0" />
-          <AvatarBubble size={66} padding={28} top="-5px" left="10px" color="#e8c170" />
-          <AvatarBubble size={66} padding={28} top="190px" left="-30px" color="#d4a0b8" />
-          <AvatarBubble size={66} padding={16} top="105px" left="390px" color="#8bb4c8" />
-          <AvatarBubble size={63} padding={26} top="245px" left="210px" color="#90b8a0" />
+          <AvatarBubble size={66} padding={28} top="-30px" left="230px" image="/images/avatars/avatar-1.jpg" />
+          <AvatarBubble size={66} padding={28} top="-5px" left="10px" image="/images/avatars/avatar-2.jpg" />
+          <AvatarBubble size={66} padding={28} top="190px" left="-30px" image="/images/avatars/avatar-3.jpg" />
+          <AvatarBubble size={66} padding={16} top="105px" left="390px" image="/images/avatars/avatar-4.jpg" />
+          <AvatarBubble size={63} padding={26} top="245px" left="210px" image="/images/avatars/avatar-5.jpg" />
         </div>
 
         {/* Support icon — top-right */}
