@@ -1,4 +1,4 @@
-import { PublicHeader } from "@/components/shared/public-header";
+import { PatientHeader } from "@/components/patient/patient-header";
 import { PublicFooter } from "@/components/shared/public-footer";
 
 export default function PatientLayout({
@@ -8,7 +8,7 @@ export default function PatientLayout({
 }) {
   return (
     <>
-      <PublicHeader />
+      <PatientHeader />
       <main>{children}</main>
       <PublicFooter />
     </>

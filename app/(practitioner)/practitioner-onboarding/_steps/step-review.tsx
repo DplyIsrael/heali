@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Pencil } from "lucide-react";
 import { submitForApproval } from "../actions";
-import type { PricingValues, BioValues } from "@/lib/validations/practitioner-onboarding";
+import type { BioValues } from "@/lib/validations/practitioner-onboarding";
 
 interface StepReviewProps {
   domainNames: string[];

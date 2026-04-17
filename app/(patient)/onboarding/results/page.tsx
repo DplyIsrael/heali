@@ -98,7 +98,7 @@ export default function OnboardingResultsPage() {
                 </span>
                 <Button
                   size="sm"
-                  onClick={() => router.push(`/practitioner/${practitioner.id}`)}
+                  onClick={() => router.push(`/practitioners/${practitioner.id}`)}
                 >
                   צפה בפרופיל
                 </Button>

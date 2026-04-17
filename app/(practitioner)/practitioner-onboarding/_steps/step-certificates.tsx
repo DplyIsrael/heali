@@ -4,7 +4,6 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Upload, Link2, Trash2 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 
 interface UploadedFile {
   name: string;
@@ -24,50 +23,68 @@ export function StepCertificates({ initialFiles, onNext, onBack }: StepCertifica
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const validTypes = ["application/pdf", "image/jpeg", "image/png", "image/jpg"];
-    if (!validTypes.includes(file.type)) {
-      setError("יש לבחור קובץ PDF, JPG או PNG");
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      setError("גודל הקובץ חייב להיות עד 10MB");
-      return;
-    }
-
-    setError("");
-    setIsUploading(true);
-
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setError("לא מחובר"); setIsUploading(false); return; }
+      const fileList = e.target.files;
+      if (!fileList || fileList.length === 0) return;
+      const file = fileList[0];
 
-      const ext = file.name.split(".").pop();
-      const path = `${user.id}/${Date.now()}.${ext}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("certificates")
-        .upload(path, file);
-
-      if (uploadError) {
-        setError("שגיאה בהעלאת הקובץ");
-        setIsUploading(false);
+      // Validate type
+      const name = file.name.toLowerCase();
+      const isValid = name.endsWith(".pdf") || name.endsWith(".jpg") || name.endsWith(".jpeg") ||
+                      name.endsWith(".png") || name.endsWith(".webp") || name.endsWith(".heic");
+      if (!isValid) {
+        setError("יש לבחור קובץ PDF, JPG, PNG או WEBP");
+        if (fileInputRef.current) fileInputRef.current.value = "";
         return;
       }
 
-      const { data: { publicUrl } } = supabase.storage.from("certificates").getPublicUrl(path);
+      // Validate size
+      if (file.size > 10 * 1024 * 1024) {
+        setError("גודל הקובץ חייב להיות עד 10MB");
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
 
-      const sizeStr = file.size > 1024 * 1024
-        ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
-        : `${Math.round(file.size / 1024)} KB`;
+      setError("");
+      setIsUploading(true);
+      doUpload(file);
+    } catch (err) {
+      console.error("handleFileChange error:", err);
+      setError("שגיאה בבחירת הקובץ");
+      setIsUploading(false);
+    }
+  };
 
-      setFiles((prev) => [...prev, { name: file.name, size: sizeStr, url: publicUrl }]);
-    } catch {
-      setError("שגיאה בהעלאת הקובץ");
+  const doUpload = async (file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/upload-certificate", {
+        method: "POST",
+        body: formData,
+      });
+
+      let data: { url?: string; error?: string };
+      try {
+        data = await response.json();
+      } catch {
+        data = { error: "שגיאת שרת" };
+      }
+
+      if (!response.ok || !data.url) {
+        setError(data.error ?? "שגיאה בהעלאת הקובץ");
+      } else {
+        const sizeStr = file.size > 1024 * 1024
+          ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+          : `${Math.round(file.size / 1024)} KB`;
+
+        setFiles((prev) => [...prev, { name: file.name, size: sizeStr, url: data.url! }]);
+      }
+    } catch (err) {
+      console.error("doUpload error:", err);
+      setError("שגיאה בהעלאת הקובץ. נסה שוב.");
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -95,7 +112,6 @@ export function StepCertificates({ initialFiles, onNext, onBack }: StepCertifica
         העלה את תעודות ההסמכה שלך (PDF, JPG או PNG)
       </p>
 
-      {/* Uploaded files */}
       {files.length > 0 && (
         <div className="mt-6 flex flex-col gap-3">
           {files.map((file, i) => (
@@ -116,7 +132,6 @@ export function StepCertificates({ initialFiles, onNext, onBack }: StepCertifica
         </div>
       )}
 
-      {/* Upload button */}
       <button
         type="button"
         onClick={() => fileInputRef.current?.click()}
@@ -130,9 +145,9 @@ export function StepCertificates({ initialFiles, onNext, onBack }: StepCertifica
       <input
         ref={fileInputRef}
         type="file"
-        accept=".pdf,.jpg,.jpeg,.png"
+        accept=".pdf,.jpg,.jpeg,.png,.webp,.heic"
         className="hidden"
-        onChange={handleUpload}
+        onChange={handleFileChange}
       />
 
       {error && <p className="mt-4 text-[14px] text-destructive">{error}</p>}

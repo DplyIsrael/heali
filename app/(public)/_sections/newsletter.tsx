@@ -33,7 +33,7 @@ export function Newsletter() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="כתובת מייל לקבלת עדכונים"
+              placeholder="כתובת המייל שלך"
               className="h-[48px] w-full sm:w-[340px] rounded-[10px] bg-white/10 border border-white/20 px-4 text-[14px] text-white font-[family-name:var(--font-poppins)] placeholder:text-white/40 outline-none focus:border-accent/60 transition-colors"
               required
             />
@@ -42,7 +42,7 @@ export function Newsletter() {
               type="submit"
               className="h-[48px] rounded-[10px] bg-accent px-8 text-[15px] font-semibold text-foreground hover:bg-accent/90 transition-colors"
             >
-              שליחה
+              תרשמו אותי
             </button>
           </form>
         </div>

@@ -8,10 +8,10 @@ import { MobileNav } from "@/components/shared/mobile-nav";
 
 const NAV_ITEMS = [
   { label: "חיפוש מטפלים", href: "/discovery" },
-  { label: "אודות", href: "/about" },
-  { label: "חבילות טיפול", href: "/packages" },
-  { label: "מאמרים", href: "/articles" },
-  { label: "יצירת קשר", href: "/contact" },
+  { label: "חבילות טיפולים", href: "/packages" },
+  { label: "מדברים בריאות", href: "/articles" },
+  { label: "מי אנחנו?", href: "/about" },
+  { label: "בואו נדבר", href: "/contact" },
 ] as const;
 
 export function PublicHeader() {

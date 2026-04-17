@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Bell, MessageSquare, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/shared/logo";
@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { signOut } from "@/app/(public)/auth/actions";
 
 const NAV_ITEMS = [
   { label: "דשבורד", href: "/admin" },
@@ -28,18 +29,15 @@ interface AdminHeaderProps {
   userName?: string;
   userAvatarUrl?: string;
   unreadNotifications?: number;
-  onSignOut?: () => void;
-  onPersonalArea?: () => void;
 }
 
 export function AdminHeader({
   userName = "",
   userAvatarUrl,
   unreadNotifications = 0,
-  onSignOut,
-  onPersonalArea,
 }: AdminHeaderProps) {
   const pathname = usePathname();
+  const router = useRouter();
 
   const isActive = (href: string) => {
     if (href === "/admin") return pathname === "/admin";
@@ -64,12 +62,12 @@ export function AdminHeader({
               <ChevronDown className="size-4 text-muted-foreground" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem onClick={onPersonalArea}>
+              <DropdownMenuItem onClick={() => router.push("/admin/settings")}>
                 אזור אישי
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={onSignOut}
+                onClick={() => signOut()}
                 className="text-destructive focus:text-destructive"
               >
                 התנתקות

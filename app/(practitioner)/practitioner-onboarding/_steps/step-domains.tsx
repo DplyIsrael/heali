@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { saveDomains } from "../actions";
+import { saveDomains, addCustomDomain } from "../actions";
 
 interface Domain {
   id: string;
@@ -17,16 +18,38 @@ interface StepDomainsProps {
   onNext: (domainIds: string[]) => void;
 }
 
-export function StepDomains({ domains, initialSelected, onNext }: StepDomainsProps) {
-  const t = useTranslations("onboarding.practitioner");
+export function StepDomains({ domains: initialDomains, initialSelected, onNext }: StepDomainsProps) {
+  const [domains, setDomains] = useState<Domain[]>(initialDomains);
   const [selected, setSelected] = useState<string[]>(initialSelected);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [customName, setCustomName] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
+  const [showCustomInput, setShowCustomInput] = useState(false);
 
   const toggle = (id: string) => {
     setSelected((prev) =>
       prev.includes(id) ? prev.filter((d) => d !== id) : [...prev, id]
     );
+  };
+
+  const handleAddCustom = async () => {
+    if (!customName.trim()) return;
+    setIsAdding(true);
+    const result = await addCustomDomain(customName.trim());
+    if (result.success && result.id) {
+      // Add to list if not already there
+      if (!domains.find((d) => d.id === result.id)) {
+        setDomains((prev) => [...prev, { id: result.id!, name: customName.trim() }]);
+      }
+      // Auto-select it
+      setSelected((prev) => prev.includes(result.id!) ? prev : [...prev, result.id!]);
+      setCustomName("");
+      setShowCustomInput(false);
+    } else {
+      setError(result.error ?? "שגיאה");
+    }
+    setIsAdding(false);
   };
 
   const handleNext = async () => {
@@ -70,6 +93,44 @@ export function StepDomains({ domains, initialSelected, onNext }: StepDomainsPro
           </button>
         ))}
       </div>
+
+      {/* Add custom domain */}
+      {showCustomInput ? (
+        <div className="mt-4 flex gap-2">
+          <Input
+            value={customName}
+            onChange={(e) => setCustomName(e.target.value)}
+            placeholder="שם תחום הטיפול..."
+            className="flex-1"
+            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddCustom())}
+          />
+          <Button
+            type="button"
+            onClick={handleAddCustom}
+            disabled={isAdding || !customName.trim()}
+            className="bg-accent text-black shrink-0"
+          >
+            {isAdding ? <Spinner size="sm" /> : "הוסף"}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => { setShowCustomInput(false); setCustomName(""); }}
+            className="shrink-0"
+          >
+            ביטול
+          </Button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setShowCustomInput(true)}
+          className="mt-4 flex items-center gap-1.5 text-[15px] text-primary hover:underline self-start"
+        >
+          <Plus className="size-4" />
+          לא מצאת? הוסף תחום טיפול חדש
+        </button>
+      )}
 
       {error && <p className="mt-4 text-[14px] text-destructive">{error}</p>}
 

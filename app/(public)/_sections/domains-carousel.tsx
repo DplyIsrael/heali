@@ -33,10 +33,10 @@ export function DomainsCarousel() {
       <div className="mb-8 md:mb-[46px] flex flex-col items-center gap-5">
         <div className="flex flex-col items-center gap-3 md:gap-[18px]">
           <h2 className="text-[24px] md:text-[30px] font-semibold text-black text-center">
-            הכירו את עולמות הריפוי שלנו
+            הטיפולים שלנו
           </h2>
           <p className="text-[16px] md:text-[20px] font-light text-[#9f9f9f] text-center">
-            תתחילו לגלות, לבחור ולהרגיש מה באמת עושה לכם טוב.
+            זה הזמן להכיר את עולמות הריפוי שלנו ולהבין מה עושה לך טוב
           </p>
         </div>
         <div className="flex items-center gap-5">
@@ -124,7 +124,7 @@ export function DomainsCarousel() {
                     </p>
                     <p className="w-full text-right text-[14px] font-light leading-[19.17px] whitespace-nowrap"
                        style={{ color: subCl }}>
-                      סה&quot;כ מטפלים נמצאו בתחום: {domain.count}
+                      ({domain.count}) מטפלים בתחום
                     </p>
                   </div>
                 </div>
@@ -138,7 +138,7 @@ export function DomainsCarousel() {
                   className="flex h-[35px] w-fit items-center justify-end gap-[6.39px] rounded-full border border-[#cddbdb] px-[10.65px] text-[16px] font-light text-black transition-colors"
                   style={{ background: pillBg }}
                 >
-                  <span className="whitespace-nowrap">צפייה בכל המטפלים</span>
+                  <span className="whitespace-nowrap">לצפייה בכל המטפלים</span>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src="/images/domain-arrow.svg" alt="" width={19} height={19} />
                 </Link>

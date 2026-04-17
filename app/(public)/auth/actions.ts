@@ -1,17 +1,20 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 
 interface ActionResult {
   success: boolean;
   error?: string;
+  needsVerification?: boolean;
+  canResume?: boolean;
 }
 
 export async function signIn(
   email: string,
   password: string
-): Promise<ActionResult> {
+): Promise<ActionResult & { redirectTo?: string }> {
   const supabase = await createClient();
 
   const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -26,7 +29,7 @@ export async function signIn(
     return { success: false, error: error.message };
   }
 
-  // Fetch role for redirect
+  // Fetch role to determine redirect
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -39,15 +42,18 @@ export async function signIn(
       .single();
 
     if (profile?.role === "admin") {
-      redirect("/admin");
+      return { success: true, redirectTo: "/admin" };
     } else if (profile?.role === "practitioner") {
-      redirect("/dashboard");
+      if (!profile.onboarding_completed) {
+        return { success: true, redirectTo: "/practitioner-onboarding" };
+      }
+      return { success: true, redirectTo: "/dashboard" };
     } else if (profile?.role === "patient" && !profile.onboarding_completed) {
-      redirect("/onboarding");
+      return { success: true, redirectTo: "/onboarding" };
     }
   }
 
-  redirect("/");
+  return { success: true, redirectTo: "/" };
 }
 
 export async function signUpPatient(
@@ -55,26 +61,31 @@ export async function signUpPatient(
   email: string,
   password: string
 ): Promise<ActionResult> {
-  const supabase = await createClient();
+  const admin = createAdminClient();
 
-  const { data: authData, error: authError } = await supabase.auth.signUp({
+  // Check if user already exists
+  const { data: existingUsers } = await admin.from("users").select("id, onboarding_completed").eq("email", email).limit(1);
+  if (existingUsers && existingUsers.length > 0) {
+    return { success: false, error: "כתובת מייל זו כבר רשומה במערכת. נסה להתחבר." };
+  }
+
+  // Use admin API — still requires email verification
+  const { data: authData, error: authError } = await admin.auth.admin.createUser({
     email,
     password,
-    options: {
-      data: { full_name: fullName, role: "patient" },
-    },
+    email_confirm: false, // Require email verification
+    user_metadata: { full_name: fullName, role: "patient" },
   });
 
   if (authError) {
-    if (authError.message.includes("already registered")) {
-      return { success: false, error: "כתובת מייל זו כבר רשומה במערכת" };
+    if (authError.message.includes("already been registered") || authError.message.includes("already exists")) {
+      return { success: false, error: "כתובת מייל זו כבר רשומה במערכת. נסה להתחבר." };
     }
     return { success: false, error: authError.message };
   }
 
   if (authData.user) {
-    // Create user row in our users table
-    const { error: insertError } = await supabase.from("users").insert({
+    const { error: insertError } = await admin.from("users").insert({
       id: authData.user.id,
       email,
       full_name: fullName,
@@ -83,11 +94,16 @@ export async function signUpPatient(
     });
 
     if (insertError) {
-      return { success: false, error: "שגיאה ביצירת החשבון" };
+      console.error("Patient insert error:", insertError);
+      return { success: false, error: `DB error: ${insertError.message}` };
     }
+
+    // Send verification email
+    const supabase = await createClient();
+    await supabase.auth.resend({ type: "signup", email });
   }
 
-  return { success: true };
+  return { success: true, needsVerification: true };
 }
 
 export async function signUpPractitioner(
@@ -95,28 +111,60 @@ export async function signUpPractitioner(
   email: string,
   password: string,
   phone: string,
-  city: string
+  cities: string[],
+  gender: string
 ): Promise<ActionResult> {
-  const supabase = await createClient();
+  const admin = createAdminClient();
 
+  // Check if user already exists with incomplete onboarding
+  const { data: existingUsers } = await admin.from("users").select("id, onboarding_completed, role").eq("email", email).limit(1);
+  if (existingUsers && existingUsers.length > 0) {
+    const existing = existingUsers[0];
+    if (existing.role === "practitioner" && !existing.onboarding_completed) {
+      // Allow them to resume — sign them in
+      return {
+        success: false,
+        canResume: true,
+        error: "כתובת מייל זו כבר רשומה במערכת. נסה להתחבר כדי להמשיך את תהליך ההרשמה.",
+      };
+    }
+    return { success: false, error: "כתובת מייל זו כבר רשומה במערכת. נסה להתחבר." };
+  }
+
+  // Use regular signUp to trigger the confirmation email automatically
+  const supabase = await createClient();
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { full_name: fullName, role: "practitioner" },
+      data: { full_name: fullName, role: "practitioner", gender },
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://heali.vercel.app"}/auth/callback`,
     },
   });
 
   if (authError) {
-    if (authError.message.includes("already registered")) {
-      return { success: false, error: "כתובת מייל זו כבר רשומה במערכת" };
+    if (authError.message.includes("already registered") || authError.message.includes("rate limit")) {
+      return {
+        success: false,
+        canResume: true,
+        error: "כתובת מייל זו כבר רשומה במערכת או שהגעת למגבלת שליחות. נסה להתחבר.",
+      };
     }
     return { success: false, error: authError.message };
   }
 
+  // Supabase returns user with empty identities if email already taken
+  if (authData.user && authData.user.identities?.length === 0) {
+    return {
+      success: false,
+      canResume: true,
+      error: "כתובת מייל זו כבר רשומה במערכת. נסה להתחבר כדי להמשיך את תהליך ההרשמה.",
+    };
+  }
+
   if (authData.user) {
-    // Create user row
-    const { error: userError } = await supabase.from("users").insert({
+    // Use admin client for DB inserts (bypasses RLS)
+    const { error: userError } = await admin.from("users").insert({
       id: authData.user.id,
       email,
       full_name: fullName,
@@ -125,25 +173,28 @@ export async function signUpPractitioner(
     });
 
     if (userError) {
-      return { success: false, error: "שגיאה ביצירת החשבון" };
+      console.error("Practitioner user insert error:", userError);
+      return { success: false, error: `DB user error: ${userError.message}` };
     }
 
     // Create practitioner profile with draft status
-    const { error: profileError } = await supabase
+    const { error: profileError } = await admin
       .from("practitioner_profiles")
       .insert({
         user_id: authData.user.id,
         phone,
-        city,
+        city: cities[0] ?? "",
+        clinic_cities: cities,
         verification_status: "draft",
       });
 
     if (profileError) {
-      return { success: false, error: "שגיאה ביצירת פרופיל מטפל" };
+      console.error("Practitioner profile insert error:", profileError);
+      return { success: false, error: `DB profile error: ${profileError.message}` };
     }
   }
 
-  return { success: true };
+  return { success: true, needsVerification: true };
 }
 
 export async function resetPassword(email: string): Promise<ActionResult> {
@@ -175,7 +226,7 @@ export async function updatePassword(password: string): Promise<ActionResult> {
 export async function signInWithGoogle(): Promise<void> {
   const supabase = await createClient();
 
-  const { data, error } = await supabase.auth.signInWithOAuth({
+  const { data } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
       redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,

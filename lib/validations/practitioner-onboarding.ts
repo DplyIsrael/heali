@@ -13,7 +13,7 @@ export const specialtiesSchema = z.object({
 export type SpecialtiesValues = z.infer<typeof specialtiesSchema>;
 
 export const pricingSchema = z.object({
-  pricingModel: z.enum(["per_treatment", "per_hour", "per_package"], {
+  pricingModel: z.enum(["per_treatment", "per_package", "per_heali_package"], {
     error: "יש לבחור מודל תמחור",
   }),
   price: z.string().min(1, "שדה חובה").refine(

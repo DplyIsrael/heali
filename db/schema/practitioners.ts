@@ -5,7 +5,6 @@ import {
   boolean,
   numeric,
   integer,
-  jsonb,
   timestamp,
 } from "drizzle-orm/pg-core";
 import { users } from "./users";
@@ -18,11 +17,12 @@ export const practitionerProfiles = pgTable("practitioner_profiles", {
   domainIds: uuid("domain_ids").array().notNull().default([]),
   specialtyIds: uuid("specialty_ids").array().notNull().default([]),
   pricingModel: pricingModelEnum("pricing_model").notNull().default("per_treatment"),
-  price: numeric("price", { precision: 10, scale: 2 }).notNull(),
+  price: numeric("price", { precision: 10, scale: 2 }).notNull().default("0"),
   languages: text("languages").array().notNull().default([]),
   bio: text("bio"),
   phone: text("phone"),
   city: text("city"),
+  clinicCities: text("clinic_cities").array().notNull().default([]),
   area: text("area"),
   profilePhotoUrl: text("profile_photo_url"),
   qrCodeUrl: text("qr_code_url"),

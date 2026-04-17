@@ -4,26 +4,24 @@ import { NextResponse } from "next/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/";
 
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      // Check if user exists in our users table, if not create
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
       if (user) {
-        const { data: existingProfile } = await supabase
+        const { data: profile } = await supabase
           .from("users")
-          .select("id")
+          .select("id, role, onboarding_completed")
           .eq("id", user.id)
           .single();
 
-        if (!existingProfile) {
+        if (!profile) {
           // New OAuth user — create patient by default
           await supabase.from("users").insert({
             id: user.id,
@@ -33,15 +31,30 @@ export async function GET(request: Request) {
             role: "patient",
             onboarding_completed: false,
           });
-
           return NextResponse.redirect(`${origin}/onboarding`);
+        }
+
+        // Redirect based on role and onboarding status
+        if (profile.role === "admin") {
+          return NextResponse.redirect(`${origin}/admin`);
+        }
+        if (profile.role === "practitioner") {
+          if (!profile.onboarding_completed) {
+            return NextResponse.redirect(`${origin}/practitioner-onboarding`);
+          }
+          return NextResponse.redirect(`${origin}/dashboard`);
+        }
+        if (profile.role === "patient") {
+          if (!profile.onboarding_completed) {
+            return NextResponse.redirect(`${origin}/onboarding`);
+          }
+          return NextResponse.redirect(`${origin}/`);
         }
       }
 
-      return NextResponse.redirect(`${origin}${next}`);
+      return NextResponse.redirect(`${origin}/`);
     }
   }
 
-  // Auth error — redirect to login with error
   return NextResponse.redirect(`${origin}/login?error=auth`);
 }

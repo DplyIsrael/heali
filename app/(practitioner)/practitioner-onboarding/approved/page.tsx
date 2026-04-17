@@ -25,7 +25,9 @@ export default function AccountApprovedPage() {
 
         {/* QR download link */}
         <a
-          href="#"
+          href="/api/practitioner-qr"
+          target="_blank"
+          rel="noopener noreferrer"
           className="mt-6 text-[18px] font-bold text-[#2563EB] underline hover:text-[#2563EB]/80"
         >
           הורדת קוד QR בקובץ PDF

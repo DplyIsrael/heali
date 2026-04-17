@@ -32,7 +32,7 @@ export default function PendingApprovalPage() {
         <Button
           variant="accent"
           className="mt-10 w-[331px]"
-          onClick={() => router.push("/")}
+          onClick={() => router.push("/dashboard")}
         >
           לעמוד הבית
         </Button>

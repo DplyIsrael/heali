@@ -85,20 +85,25 @@ export function HelpBanner() {
 
         {/* ── Right side: text + CTA ── */}
         <div className="relative md:absolute right-0 md:right-[80px] top-0 md:top-1/2 md:-translate-y-1/2 flex flex-col gap-6 md:gap-[40px] items-center md:items-end p-8 pt-16 md:p-0 md:w-[574px]">
-          <div className="text-[28px] sm:text-[40px] md:text-[60px] font-semibold text-white text-center md:text-right leading-[1.1] md:leading-[60px] w-full">
-            <p>צריכים עזרה?</p>
-            <p>אנחנו כאן בשבילך תמיד.</p>
+          <div className="flex flex-col gap-3 text-center md:text-right w-full">
+            <p className="text-[28px] sm:text-[40px] md:text-[52px] font-semibold text-white leading-[1.1] md:leading-[56px]">
+              עדיין לא מצאת את הטיפול שהכי מתאים לך?
+            </p>
+            <p className="text-[16px] md:text-[20px] font-light text-white/70">
+              נשמח לעזור ולהכווין אותך
+            </p>
           </div>
 
           <Link
-            href="/contact"
+            href="https://wa.me/972000000000"
+            target="_blank"
             className="flex h-[42px] w-[226px] items-center justify-center rounded-[10px] text-[16px] font-medium text-black"
             style={{
               background:
                 "radial-gradient(ellipse 120% 300% at 50% -80%, #abffbf 0%, #7deaa1 7%, #4ed584 14%, #54fdae 35%, #51ff97 50%, #7de4a8 70%, #b8ffbb 86%, #deffeb 100%)",
             }}
           >
-            צור איתנו קשר
+            קחו אותי לווטסאפ
           </Link>
         </div>
       </div>

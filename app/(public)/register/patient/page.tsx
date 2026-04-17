@@ -39,7 +39,11 @@ export default function PatientRegisterPage() {
     );
 
     if (result.success) {
-      router.push("/verify-email");
+      if (result.needsVerification) {
+        router.push("/verify-email");
+      } else {
+        router.push("/onboarding");
+      }
     } else {
       setServerError(result.error ?? "שגיאה לא צפויה");
       setIsLoading(false);

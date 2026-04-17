@@ -105,7 +105,7 @@ async function seed() {
   console.log("  → Users");
 
   // Admin user
-  const [adminUser] = await db
+  const [_adminUser] = await db
     .insert(schema.users)
     .values({
       id: "00000000-0000-0000-0000-000000000001",

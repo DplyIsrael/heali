@@ -28,7 +28,8 @@ export const practitionerRegisterSchema = z
     password: z.string().min(8, "הסיסמה חייבת להכיל לפחות 8 תווים"),
     confirmPassword: z.string(),
     phone: z.string().min(9, "מספר טלפון לא תקין"),
-    city: z.string().min(1, "שדה חובה"),
+    gender: z.enum(["male", "female", "other"], { message: "יש לבחור מגדר" }),
+    cities: z.array(z.string().min(1)).min(1, "יש לבחור לפחות מיקום קליניקה אחד"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "הסיסמאות אינן תואמות",

@@ -13,7 +13,7 @@ import { StepBio } from "./_steps/step-bio";
 import { StepAgreement } from "./_steps/step-agreement";
 import { StepReview } from "./_steps/step-review";
 import { fetchDomains, fetchPractitionerProfile } from "./actions";
-import type { PricingValues, BioValues } from "@/lib/validations/practitioner-onboarding";
+import type { BioValues } from "@/lib/validations/practitioner-onboarding";
 
 const TOTAL_STEPS = 8;
 

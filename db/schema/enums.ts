@@ -52,4 +52,5 @@ export const pricingModelEnum = pgEnum("pricing_model", [
   "per_treatment",
   "per_hour",
   "per_package",
+  "per_heali_package",
 ]);

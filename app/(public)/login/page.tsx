@@ -31,14 +31,11 @@ export default function LoginPage() {
   const onSubmit = async (values: LoginValues) => {
     setIsLoading(true);
     setServerError("");
-    try {
-      const result = await signIn(values.email, values.password);
-      if (!result.success && result.error) {
-        setServerError(result.error);
-      }
-    } catch {
-      // signIn redirects on success, so we only get here on error
-    } finally {
+    const result = await signIn(values.email, values.password);
+    if (result.success && result.redirectTo) {
+      router.push(result.redirectTo);
+    } else if (!result.success && result.error) {
+      setServerError(result.error);
       setIsLoading(false);
     }
   };

@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/ui/form-field";
 import { Spinner } from "@/components/ui/spinner";
-import { pricingSchema, type PricingValues } from "@/lib/validations/practitioner-onboarding";
+import { pricingSchema } from "@/lib/validations/practitioner-onboarding";
+type PricingValues = { pricingModel: "per_treatment" | "per_package" | "per_heali_package"; price: string };
 import { savePricing } from "../actions";
 
 interface StepPricingProps {
@@ -18,8 +19,8 @@ interface StepPricingProps {
 
 const PRICING_MODELS = [
   { value: "per_treatment", label: "מחיר לטיפול" },
-  { value: "per_hour", label: "לפי שעה" },
   { value: "per_package", label: "לפי חבילה" },
+  { value: "per_heali_package", label: "מחיר חבילת טיפולים דרך Heali" },
 ];
 
 export function StepPricing({ initialValues, onNext, onBack }: StepPricingProps) {

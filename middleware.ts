@@ -54,23 +54,45 @@ export async function middleware(request: NextRequest) {
   }
 
   // Redirect authenticated users away from login/register
-  if (isAuthPage && user) {
-    // Fetch user role from the users table to determine redirect target
+  // Also redirect from home page if onboarding is incomplete
+  const shouldCheckRedirect = isAuthPage || pathname === "/";
+
+  if (shouldCheckRedirect && user) {
     const { data: profile } = await supabase
       .from("users")
-      .select("role")
+      .select("role, onboarding_completed")
       .eq("id", user.id)
       .single();
 
-    const url = request.nextUrl.clone();
-    if (profile?.role === "admin") {
-      url.pathname = "/admin";
-    } else if (profile?.role === "practitioner") {
-      url.pathname = "/dashboard";
-    } else {
-      url.pathname = "/";
+    if (profile) {
+      const url = request.nextUrl.clone();
+
+      if (profile.role === "admin") {
+        if (isAuthPage) {
+          url.pathname = "/admin";
+          return NextResponse.redirect(url);
+        }
+      } else if (profile.role === "practitioner") {
+        if (!profile.onboarding_completed) {
+          // Always redirect to onboarding if not complete
+          if (pathname !== "/practitioner-onboarding" && !pathname.startsWith("/practitioner-onboarding")) {
+            url.pathname = "/practitioner-onboarding";
+            return NextResponse.redirect(url);
+          }
+        } else if (isAuthPage) {
+          url.pathname = "/dashboard";
+          return NextResponse.redirect(url);
+        }
+      } else if (profile.role === "patient") {
+        if (!profile.onboarding_completed && isAuthPage) {
+          url.pathname = "/onboarding";
+          return NextResponse.redirect(url);
+        } else if (isAuthPage) {
+          url.pathname = "/";
+          return NextResponse.redirect(url);
+        }
+      }
     }
-    return NextResponse.redirect(url);
   }
 
   // Role-based route protection: prevent wrong role from accessing other role's routes

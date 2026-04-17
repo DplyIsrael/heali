@@ -1,12 +1,11 @@
-import Link from "next/link";
 import { ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
 
 const PACKAGES = [
   {
     id: "1",
-    name: "לורם איפסום דולור",
-    description: "זהו טקסט דמה שנועד להמחיש את מבנה התוכן העמוד לורם איפסום לורם...",
-    badgeText: "סה\"כ 16 חבילות",
+    name: "להריון ולידה",
+    description: "ריפוי מהבטן",
+    badgeText: "חבילת טיפולים",
     gradient: "linear-gradient(to bottom, #ffd28b, #ffc15e)",
     badgeBg: "#fff6e6",
     badgeBorder: "#fed085",
@@ -16,9 +15,9 @@ const PACKAGES = [
   },
   {
     id: "2",
-    name: "לורם איפסום דולור",
-    description: "זהו טקסט דמה שנועד להמחיש את מבנה התוכן העמוד לורם איפסום לורם...",
-    badgeText: "סה\"כ 16 חבילות",
+    name: "לספורטאים",
+    description: "בוסט לשרירים",
+    badgeText: "חבילת טיפולים",
     gradient: "linear-gradient(to bottom, #7de4a8, #4bb377)",
     badgeBg: "#deffec",
     badgeBorder: "#4cb578",
@@ -28,9 +27,9 @@ const PACKAGES = [
   },
   {
     id: "3",
-    name: "לורם איפסום דולור",
-    description: "זהו טקסט דמה שנועד להמחיש את מבנה התוכן העמוד לורם איפסום לורם...",
-    badgeText: "סה\"כ 16 חבילות",
+    name: "לחילופי עונות",
+    description: "ריסטרט אביבי",
+    badgeText: "חבילת טיפולים",
     gradient: "linear-gradient(to bottom, #ffd2c1, #ffa480)",
     badgeBg: "#ffdfd2",
     badgeBorder: "#ffa987",
@@ -40,9 +39,9 @@ const PACKAGES = [
   },
   {
     id: "4",
-    name: "לורם איפסום דולור",
-    description: "זהו טקסט דמה שנועד להמחיש את מבנה התוכן העמוד לורם איפסום לורם...",
-    badgeText: "סה\"כ 16 חבילות",
+    name: "חבילת הדגל",
+    description: "כל המטפלים, כל הטיפולים",
+    badgeText: "חבילת טיפולים",
     gradient: "linear-gradient(to bottom, #7ac1b9, #3d9b90)",
     badgeBg: "#b6f0ea",
     badgeBorder: "#449f94",
@@ -147,10 +146,10 @@ export function PackagesTeaser() {
       {/* Section header */}
       <div className="flex flex-col items-center gap-3 md:gap-[18px] mb-8 md:mb-[55px]">
         <h2 className="text-[24px] md:text-[30px] font-semibold text-black text-center">
-          חבילות טיפול
+          חבילות הטיפולים שלנו
         </h2>
         <p className="text-[16px] md:text-[20px] font-light text-[#9f9f9f] text-center leading-[26px] max-w-[641px]">
-          לורם איפסום דולור סיט אמט, קונסקטורר אדיפיסינג אלית. סד אאמאט נון קונסקטורר ניבאה, סוליסיטודין קוויס נולה אאקטור.
+          הדרך להוסיף איזון, בריאות ורוגע לחיים של מי שאוהבים
         </p>
       </div>
 

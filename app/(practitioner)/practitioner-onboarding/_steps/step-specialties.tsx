@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { saveSpecialties, fetchSpecialties } from "../actions";
+import { saveSpecialties, fetchSpecialties, addCustomSpecialty } from "../actions";
 
 interface StepSpecialtiesProps {
   domainIds: string[];
@@ -29,6 +31,9 @@ export function StepSpecialties({
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [error, setError] = useState("");
+  const [customName, setCustomName] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
+  const [showCustomInput, setShowCustomInput] = useState(false);
 
   useEffect(() => {
     fetchSpecialties(domainIds).then((data) => {
@@ -41,6 +46,24 @@ export function StepSpecialties({
     setSelected((prev) =>
       prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
     );
+  };
+
+  const handleAddCustom = async () => {
+    if (!customName.trim() || domainIds.length === 0) return;
+    setIsAdding(true);
+    // Add to the first selected domain
+    const result = await addCustomSpecialty(customName.trim(), domainIds[0]);
+    if (result.success && result.id) {
+      if (!specialties.find((s) => s.id === result.id)) {
+        setSpecialties((prev) => [...prev, { id: result.id!, name: customName.trim(), domain_id: domainIds[0] }]);
+      }
+      setSelected((prev) => prev.includes(result.id!) ? prev : [...prev, result.id!]);
+      setCustomName("");
+      setShowCustomInput(false);
+    } else {
+      setError(result.error ?? "שגיאה");
+    }
+    setIsAdding(false);
   };
 
   const handleNext = async () => {
@@ -76,7 +99,7 @@ export function StepSpecialties({
         בחר את ההתמחויות הספציפיות שלך
       </p>
 
-      {specialties.length === 0 ? (
+      {specialties.length === 0 && !showCustomInput ? (
         <p className="mt-8 text-[16px] text-[#666]">
           לא נמצאו התמחויות עבור התחומים שנבחרו
         </p>
@@ -97,6 +120,44 @@ export function StepSpecialties({
             </button>
           ))}
         </div>
+      )}
+
+      {/* Add custom specialty */}
+      {showCustomInput ? (
+        <div className="mt-4 flex gap-2">
+          <Input
+            value={customName}
+            onChange={(e) => setCustomName(e.target.value)}
+            placeholder="שם ההתמחות..."
+            className="flex-1"
+            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddCustom())}
+          />
+          <Button
+            type="button"
+            onClick={handleAddCustom}
+            disabled={isAdding || !customName.trim()}
+            className="bg-accent text-black shrink-0"
+          >
+            {isAdding ? <Spinner size="sm" /> : "הוסף"}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => { setShowCustomInput(false); setCustomName(""); }}
+            className="shrink-0"
+          >
+            ביטול
+          </Button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setShowCustomInput(true)}
+          className="mt-4 flex items-center gap-1.5 text-[15px] text-primary hover:underline self-start"
+        >
+          <Plus className="size-4" />
+          לא מצאת? הוסף התמחות חדשה
+        </button>
       )}
 
       {error && <p className="mt-4 text-[14px] text-destructive">{error}</p>}

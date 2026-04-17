@@ -2,17 +2,22 @@ import Link from "next/link";
 import { Logo } from "@/components/shared/logo";
 import { Youtube, Instagram, Facebook } from "lucide-react";
 
-const CATEGORIES = [
+const TREATMENT_TYPES = [
   "עיסוי טיפולי",
   "רפלקסולוגיה",
+  "דיקור סיני",
   "היפנוזה טיפולית",
   "טיפול בצמחי מרפא",
 ];
 
 const LINKS = [
   { label: "דף הבית", href: "/" },
-  { label: "בלוג", href: "/articles" },
-  { label: "שאלות תשובות", href: "/faq" },
+  { label: "חיפוש מטפלים", href: "/discovery" },
+  { label: "טיפולים במתנה", href: "/packages" },
+  { label: "מדברים בריאות", href: "/articles" },
+  { label: "מי אנחנו?", href: "/about" },
+  { label: "שאלות ותשובות", href: "/#faq" },
+  { label: "בואו נדבר", href: "/contact" },
 ];
 
 function TikTokIcon({ className }: { className?: string }) {
@@ -28,13 +33,13 @@ export function PublicFooter() {
     <footer className="bg-[#08190C] text-white">
       <div className="mx-auto max-w-[1440px] px-4 md:px-[50px] py-10 md:py-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-12">
-          {/* Categories — first = right in RTL */}
+          {/* Treatment types — first = right in RTL */}
           <div>
             <h3 className="mb-4 md:mb-5 text-[16px] font-semibold text-white/80">
-              קטגוריות
+              סוגי טיפולים
             </h3>
             <ul className="space-y-3">
-              {CATEGORIES.map((cat) => (
+              {TREATMENT_TYPES.map((cat) => (
                 <li key={cat}>
                   <Link
                     href="/discovery"
@@ -47,12 +52,9 @@ export function PublicFooter() {
             </ul>
           </div>
 
-          {/* Links — center */}
+          {/* Links — center, no header */}
           <div>
-            <h3 className="mb-4 md:mb-5 text-[16px] font-semibold text-white/80">
-              קישורים
-            </h3>
-            <ul className="space-y-3">
+            <ul className="space-y-3 mt-9">
               {LINKS.map((link) => (
                 <li key={link.href}>
                   <Link
@@ -69,9 +71,11 @@ export function PublicFooter() {
           {/* Logo + description — last = left in RTL */}
           <div className="flex flex-col gap-4">
             <Logo light />
-            <p className="text-[13px] font-light text-white/40 leading-relaxed max-w-[280px]">
-              פלטפורמת הבריאות הטבעית המחברת בין מטופלים למטפלים המתאימים
-              ביותר עבורם.
+            <p className="text-[13px] font-light text-white/40 leading-relaxed max-w-[320px]">
+              מעולם לא היה קל יותר למצוא ולקבוע טיפול. אנחנו ב-Heali שמנו לעצמנו
+              למטרה להנגיש את עולם הריפוי והטיפולים, ולהביא לכם את המטפלים המוסמכים
+              הטובים ביותר. כל מה שנשאר זה רק לבחור את הטיפול שהכי מתאים - ולתאם.
+              כאן מתחילה הדרך לחיים בריאים, מאוזנים וטובים יותר.
             </p>
           </div>
         </div>
