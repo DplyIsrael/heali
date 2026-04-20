@@ -21,6 +21,13 @@ export const patientRegisterSchema = z
 
 export type PatientRegisterValues = z.infer<typeof patientRegisterSchema>;
 
+export const clinicAddressSchema = z.object({
+  city: z.string().min(1, "יש לבחור עיר"),
+  street: z.string().min(1, "יש להזין כתובת"),
+});
+
+export type ClinicAddress = z.infer<typeof clinicAddressSchema>;
+
 export const practitionerRegisterSchema = z
   .object({
     fullName: z.string().min(2, "שדה חובה"),
@@ -29,11 +36,16 @@ export const practitionerRegisterSchema = z
     confirmPassword: z.string(),
     phone: z.string().min(9, "מספר טלפון לא תקין"),
     gender: z.enum(["male", "female", "other"], { message: "יש לבחור מגדר" }),
-    cities: z.array(z.string().min(1)).min(1, "יש לבחור לפחות מיקום קליניקה אחד"),
+    clinicAddresses: z.array(clinicAddressSchema),
+    homeVisits: z.boolean(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "הסיסמאות אינן תואמות",
     path: ["confirmPassword"],
+  })
+  .refine((data) => data.clinicAddresses.length > 0 || data.homeVisits, {
+    message: "יש להוסיף לפחות מיקום קליניקה אחד או לסמן הגעה לבית הלקוח",
+    path: ["clinicAddresses"],
   });
 
 export type PractitionerRegisterValues = z.infer<typeof practitionerRegisterSchema>;

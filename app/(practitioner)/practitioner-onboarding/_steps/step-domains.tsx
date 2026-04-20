@@ -71,10 +71,10 @@ export function StepDomains({ domains: initialDomains, initialSelected, onNext }
   return (
     <div className="flex flex-col">
       <h1 className="text-[36px] font-semibold leading-tight text-foreground">
-        ספר לנו קצת על תחומי הטיפול שלך
+        תחומי הטיפול שלך
       </h1>
       <p className="mt-2 text-[18px] font-light text-[#666]">
-        בחר את תחומי הטיפול בהם אתה מתמחה (ניתן לבחור יותר מאחד)
+        (כאן ניתן לבחור את תחומי הטיפול שלך)
       </p>
 
       <div className="mt-8 grid grid-cols-2 gap-3">

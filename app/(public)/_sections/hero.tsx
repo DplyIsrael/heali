@@ -79,17 +79,6 @@ export function Hero() {
           style={{ zIndex: -1 }}
         />
 
-        {/* Girl cutout — hidden on mobile */}
-        <div className="absolute top-[131px] left-[-41px] size-[811px] hidden md:block">
-          <Image
-            src="/images/hero-girl-hq.png"
-            alt=""
-            fill
-            priority
-            className="object-contain"
-          />
-        </div>
-
         {/* Frosted overlay — full width on mobile */}
         <div
           className="absolute right-0 top-0 h-full w-full md:w-[702px] pointer-events-none"

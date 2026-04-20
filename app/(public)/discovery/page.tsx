@@ -127,18 +127,7 @@ export default function DiscoveryPage() {
         )}
 
         <div className="flex gap-8">
-          {/* Desktop sidebar filters */}
-          <aside className="hidden lg:block w-[345px] shrink-0">
-            <div className="sticky top-[100px] rounded-[16px] border border-border bg-white p-5">
-              <DiscoveryFilters
-                domains={filterOptions?.domains ?? []}
-                cities={filterOptions?.cities ?? []}
-                onApply={handleFilterApply}
-              />
-            </div>
-          </aside>
-
-          {/* Main content */}
+          {/* Main content — placed first in DOM so it sits on the RIGHT in RTL */}
           <main className="flex-1 min-w-0">
             {/* Desktop sort bar */}
             <div className="hidden lg:flex items-center justify-between mb-6">
@@ -234,6 +223,17 @@ export default function DiscoveryPage() {
               />
             )}
           </main>
+
+          {/* Desktop sidebar filters — placed last in DOM so it sits on the LEFT in RTL */}
+          <aside className="hidden lg:block w-[345px] shrink-0">
+            <div className="sticky top-[100px] rounded-[16px] border border-border bg-white p-5">
+              <DiscoveryFilters
+                domains={filterOptions?.domains ?? []}
+                cities={filterOptions?.cities ?? []}
+                onApply={handleFilterApply}
+              />
+            </div>
+          </aside>
         </div>
       </div>
     </div>

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { X } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { AuthLayout } from "@/components/shared/auth-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,8 @@ import {
   type PractitionerRegisterValues,
 } from "@/lib/validations/auth";
 import { signUpPractitioner } from "../../auth/actions";
+
+type ClinicAddress = { city: string; street: string };
 
 // Israeli cities list for autocomplete
 const ISRAEL_CITIES = [
@@ -43,12 +45,11 @@ export default function PractitionerRegisterPage() {
   const [canResume, setCanResume] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // City autocomplete state
-  const [cities, setCities] = useState<string[]>([]);
-  const [cityInput, setCityInput] = useState("");
-  const [cityResults, setCityResults] = useState<string[]>([]);
-  const [showCityDropdown, setShowCityDropdown] = useState(false);
-  const cityRef = useRef<HTMLDivElement>(null);
+  // Clinic addresses state — multiple clinics, each with city + street
+  const [addresses, setAddresses] = useState<ClinicAddress[]>([{ city: "", street: "" }]);
+  const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
+  const [homeVisits, setHomeVisits] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const {
     register,
@@ -58,49 +59,50 @@ export default function PractitionerRegisterPage() {
     formState: { errors },
   } = useForm<PractitionerRegisterValues>({
     resolver: zodResolver(practitionerRegisterSchema),
-    defaultValues: { cities: [] },
+    defaultValues: { clinicAddresses: [{ city: "", street: "" }], homeVisits: false },
   });
 
-  // Sync cities state with form
+  // Sync addresses state with form
   useEffect(() => {
-    setValue("cities", cities, { shouldValidate: cities.length > 0 });
-  }, [cities, setValue]);
+    const valid = addresses.filter((a) => a.city.trim() && a.street.trim());
+    setValue("clinicAddresses", valid, { shouldValidate: valid.length > 0 || homeVisits });
+  }, [addresses, homeVisits, setValue]);
 
-  // Filter cities based on input
   useEffect(() => {
-    if (cityInput.length >= 1) {
-      const filtered = ISRAEL_CITIES.filter(
-        (c) => c.includes(cityInput) && !cities.includes(c)
-      ).slice(0, 8);
-      setCityResults(filtered);
-      setShowCityDropdown(filtered.length > 0);
-    } else {
-      setCityResults([]);
-      setShowCityDropdown(false);
-    }
-  }, [cityInput, cities]);
+    setValue("homeVisits", homeVisits);
+  }, [homeVisits, setValue]);
 
   // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (cityRef.current && !cityRef.current.contains(e.target as Node)) {
-        setShowCityDropdown(false);
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setActiveDropdown(null);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const addCity = (city: string) => {
-    if (!cities.includes(city)) {
-      setCities((prev) => [...prev, city]);
-    }
-    setCityInput("");
-    setShowCityDropdown(false);
+  const updateAddress = (index: number, patch: Partial<ClinicAddress>) => {
+    setAddresses((prev) => prev.map((a, i) => (i === index ? { ...a, ...patch } : a)));
   };
 
-  const removeCity = (city: string) => {
-    setCities((prev) => prev.filter((c) => c !== city));
+  const addClinic = () => {
+    setAddresses((prev) => [...prev, { city: "", street: "" }]);
+  };
+
+  const removeClinic = (index: number) => {
+    setAddresses((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const getCityResults = (input: string, currentIndex: number) => {
+    if (!input.trim()) return [];
+    const selectedCities = addresses
+      .filter((_, i) => i !== currentIndex)
+      .map((a) => a.city);
+    return ISRAEL_CITIES.filter(
+      (c) => c.includes(input) && !selectedCities.includes(c)
+    ).slice(0, 8);
   };
 
   const selectedGender = watch("gender");
@@ -115,7 +117,8 @@ export default function PractitionerRegisterPage() {
       values.email,
       values.password,
       values.phone,
-      values.cities,
+      values.clinicAddresses,
+      values.homeVisits,
       values.gender
     );
 
@@ -178,56 +181,96 @@ export default function PractitionerRegisterPage() {
           </div>
         </FormField>
 
-        {/* Clinic cities — multi-select autocomplete */}
-        <FormField label="מיקום קליניקה" htmlFor="city" error={errors.cities?.message} required>
-          <div ref={cityRef} className="relative">
-            {/* Selected cities chips */}
-            {cities.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-2">
-                {cities.map((city) => (
-                  <span
-                    key={city}
-                    className="flex items-center gap-1 bg-primary/10 text-primary rounded-full px-3 py-1 text-[13px]"
-                  >
-                    {city}
-                    <button type="button" onClick={() => removeCity(city)} className="hover:text-destructive">
-                      <X className="size-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
+        {/* Clinic addresses — multiple clinics, each with city + street */}
+        <FormField
+          label="מיקום קליניקה"
+          htmlFor="clinic-0-city"
+          error={errors.clinicAddresses?.message}
+        >
+          <div ref={dropdownRef} className="flex flex-col gap-3">
+            {addresses.map((addr, index) => {
+              const results = getCityResults(addr.city, index);
+              const showDropdown = activeDropdown === index && results.length > 0;
+              return (
+                <div
+                  key={index}
+                  className="flex flex-col gap-2 rounded-[12px] border border-border-input bg-white p-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[13px] font-medium text-muted-foreground">
+                      קליניקה {index + 1}
+                    </span>
+                    {addresses.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeClinic(index)}
+                        className="text-muted-foreground hover:text-destructive"
+                        aria-label="הסר קליניקה"
+                      >
+                        <Trash2 className="size-4" />
+                      </button>
+                    )}
+                  </div>
 
-            {/* Input */}
-            <Input
-              id="city"
-              value={cityInput}
-              onChange={(e) => setCityInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && cityInput.trim()) {
-                  e.preventDefault();
-                  addCity(cityInput.trim());
-                }
-              }}
-              placeholder="התחל/י להקליד שם עיר ובחר/י מהרשימה..."
-              autoComplete="off"
-            />
+                  <div className="relative">
+                    <Input
+                      id={`clinic-${index}-city`}
+                      value={addr.city}
+                      onChange={(e) => {
+                        updateAddress(index, { city: e.target.value });
+                        setActiveDropdown(index);
+                      }}
+                      onFocus={() => setActiveDropdown(index)}
+                      placeholder="עיר"
+                      autoComplete="off"
+                    />
+                    {showDropdown && (
+                      <div className="absolute z-20 top-full mt-1 w-full bg-white border border-border rounded-[10px] shadow-lg max-h-[200px] overflow-y-auto">
+                        {results.map((city) => (
+                          <button
+                            key={city}
+                            type="button"
+                            onClick={() => {
+                              updateAddress(index, { city });
+                              setActiveDropdown(null);
+                            }}
+                            className="w-full text-right px-4 py-2.5 text-[14px] hover:bg-muted/10 transition-colors"
+                          >
+                            {city}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
-            {/* Autocomplete dropdown */}
-            {showCityDropdown && (
-              <div className="absolute z-20 top-full mt-1 w-full bg-white border border-border rounded-[10px] shadow-lg max-h-[200px] overflow-y-auto">
-                {cityResults.map((city) => (
-                  <button
-                    key={city}
-                    type="button"
-                    onClick={() => addCity(city)}
-                    className="w-full text-right px-4 py-2.5 text-[14px] hover:bg-muted/10 transition-colors"
-                  >
-                    {city}
-                  </button>
-                ))}
-              </div>
-            )}
+                  <Input
+                    value={addr.street}
+                    onChange={(e) => updateAddress(index, { street: e.target.value })}
+                    placeholder="רחוב ומספר"
+                    autoComplete="off"
+                  />
+                </div>
+              );
+            })}
+
+            <button
+              type="button"
+              onClick={addClinic}
+              className="flex items-center justify-center gap-2 rounded-[10px] border border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-[14px] font-medium text-primary hover:bg-primary/10 transition-colors"
+            >
+              <Plus className="size-4" />
+              הוסף קליניקה נוספת
+            </button>
+
+            <label className="flex items-center gap-3 rounded-[10px] border border-border-input bg-white px-4 py-3 cursor-pointer hover:border-primary/40 transition-colors">
+              <input
+                type="checkbox"
+                checked={homeVisits}
+                onChange={(e) => setHomeVisits(e.target.checked)}
+                className="size-4 accent-primary"
+              />
+              <span className="text-[14px] text-foreground">הגעה לבית הלקוח</span>
+            </label>
           </div>
         </FormField>
 

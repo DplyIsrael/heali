@@ -34,6 +34,7 @@ export default function PractitionerOnboardingPage() {
 
   const [isInitializing, setIsInitializing] = useState(true);
   const [currentStep, setCurrentStep] = useState(1);
+  const [lastFilledStep, setLastFilledStep] = useState(0);
   const [allDomains, setAllDomains] = useState<Domain[]>([]);
 
   // Step data
@@ -72,9 +73,12 @@ export default function PractitionerOnboardingPage() {
         if (profile.languages?.length) setLanguages(profile.languages);
         if (profile.bio) setBio({ bio: profile.bio });
 
-        // Resume to saved step
+        // Resume from step 1 so user can review their pre-filled answers
+        // and naturally progress to the first unfilled step.
+        // `onboarding_step` from DB = next step to fill, so prior steps are filled.
         const savedStep = profile.onboarding_step ?? 1;
-        setCurrentStep(Math.min(savedStep, TOTAL_STEPS));
+        setLastFilledStep(Math.min(savedStep - 1, TOTAL_STEPS));
+        setCurrentStep(1);
       }
 
       setIsInitializing(false);
@@ -82,7 +86,7 @@ export default function PractitionerOnboardingPage() {
     init();
   }, []);
 
-  const progress = Math.round((currentStep / TOTAL_STEPS) * 100);
+  const progress = Math.round((Math.max(currentStep, lastFilledStep) / TOTAL_STEPS) * 100);
   const goBack = () => setCurrentStep((s) => Math.max(s - 1, 1));
 
   // Domain names for review screen
@@ -110,28 +114,37 @@ export default function PractitionerOnboardingPage() {
 
       {/* Step indicator */}
       <div className="mx-auto mt-6 flex w-full max-w-[700px] items-center justify-center gap-1.5 px-6">
-        {stepLabels.map((_, i) => (
-          <div key={i} className="flex items-center gap-1.5">
-            <div
-              className={`flex h-7 w-7 items-center justify-center rounded-full text-[12px] font-medium transition-colors ${
-                i + 1 === currentStep
-                  ? "bg-primary text-white"
-                  : i + 1 < currentStep
-                    ? "bg-accent text-foreground"
-                    : "bg-muted/20 text-muted"
-              }`}
-            >
-              {i + 1}
+        {stepLabels.map((_, i) => {
+          const stepNum = i + 1;
+          const isCompleted = stepNum < currentStep || stepNum <= lastFilledStep;
+          const isCurrent = stepNum === currentStep;
+          const canJumpTo = stepNum <= lastFilledStep + 1;
+          return (
+            <div key={i} className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => canJumpTo && setCurrentStep(stepNum)}
+                disabled={!canJumpTo}
+                className={`flex h-7 w-7 items-center justify-center rounded-full text-[12px] font-medium transition-colors ${
+                  isCurrent
+                    ? "bg-primary text-white"
+                    : isCompleted
+                      ? "bg-accent text-foreground"
+                      : "bg-muted/20 text-muted"
+                } ${canJumpTo && !isCurrent ? "cursor-pointer hover:opacity-80" : ""} ${!canJumpTo ? "cursor-not-allowed" : ""}`}
+              >
+                {stepNum}
+              </button>
+              {i < stepLabels.length - 1 && (
+                <div
+                  className={`h-px w-4 ${
+                    stepNum <= lastFilledStep || stepNum < currentStep ? "bg-accent" : "bg-muted/30"
+                  }`}
+                />
+              )}
             </div>
-            {i < stepLabels.length - 1 && (
-              <div
-                className={`h-px w-4 ${
-                  i + 1 < currentStep ? "bg-accent" : "bg-muted/30"
-                }`}
-              />
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Step content */}

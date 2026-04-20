@@ -23,6 +23,8 @@ export const practitionerProfiles = pgTable("practitioner_profiles", {
   phone: text("phone"),
   city: text("city"),
   clinicCities: text("clinic_cities").array().notNull().default([]),
+  clinicAddresses: text("clinic_addresses").array().notNull().default([]),
+  homeVisits: boolean("home_visits").notNull().default(false),
   area: text("area"),
   profilePhotoUrl: text("profile_photo_url"),
   qrCodeUrl: text("qr_code_url"),

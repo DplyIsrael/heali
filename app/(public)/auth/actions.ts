@@ -111,9 +111,14 @@ export async function signUpPractitioner(
   email: string,
   password: string,
   phone: string,
-  cities: string[],
+  clinicAddresses: { city: string; street: string }[],
+  homeVisits: boolean,
   gender: string
 ): Promise<ActionResult> {
+  const cities = Array.from(new Set(clinicAddresses.map((a) => a.city).filter(Boolean)));
+  const formattedAddresses = clinicAddresses
+    .filter((a) => a.city && a.street)
+    .map((a) => `${a.city} - ${a.street}`);
   const admin = createAdminClient();
 
   // Check if user already exists with incomplete onboarding
@@ -185,6 +190,8 @@ export async function signUpPractitioner(
         phone,
         city: cities[0] ?? "",
         clinic_cities: cities,
+        clinic_addresses: formattedAddresses,
+        home_visits: homeVisits,
         verification_status: "draft",
       });
 
