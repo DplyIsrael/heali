@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/ui/form-field";
 import { Spinner } from "@/components/ui/spinner";
 import { pricingSchema } from "@/lib/validations/practitioner-onboarding";
-type PricingValues = { pricingModel: "per_treatment" | "per_package" | "per_heali_package"; price: string };
+type PricingValues = { pricingModel: "per_treatment" | "per_heali_package"; price: string };
 import { savePricing } from "../actions";
 
 interface StepPricingProps {
@@ -18,9 +18,18 @@ interface StepPricingProps {
 }
 
 const PRICING_MODELS = [
-  { value: "per_treatment", label: "מחיר לטיפול" },
-  { value: "per_package", label: "לפי חבילה" },
-  { value: "per_heali_package", label: "מחיר חבילת טיפולים דרך Heali" },
+  {
+    value: "per_treatment",
+    label: "מחיר לטיפול",
+    description:
+      "עלות הטיפול בהילי לא יכול לעלות על התמחור בקליניקה הפרטית שלך",
+  },
+  {
+    value: "per_heali_package",
+    label: "אני רוצה להופיע בחבילות הטיפולים של הילי.",
+    description:
+      'מטפלים שנמצאים בחבילות הטיפול של הילי מקבלים הרבה יותר מטופלים. כל המטפלים בחבילות הטיפול של הילי הם במחיר אחיד של 140ש"ח פלוס מעמ.',
+  },
 ];
 
 export function StepPricing({ initialValues, onNext, onBack }: StepPricingProps) {
@@ -60,7 +69,7 @@ export function StepPricing({ initialValues, onNext, onBack }: StepPricingProps)
         תמחור הטיפולים שלך
       </h1>
       <p className="mt-2 text-[18px] font-light text-[#666]">
-        הגדר את מודל התמחור והמחיר שלך
+        הגדירו את מודל התמחור והמחיר שלך
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)} className="mt-8 flex flex-col gap-5">
@@ -70,24 +79,28 @@ export function StepPricing({ initialValues, onNext, onBack }: StepPricingProps)
           error={errors.pricingModel?.message}
           required
         >
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-4">
             {PRICING_MODELS.map((model) => (
-              <button
-                key={model.value}
-                type="button"
-                onClick={() =>
-                  setValue("pricingModel", model.value as PricingValues["pricingModel"], {
-                    shouldValidate: true,
-                  })
-                }
-                className={`flex-1 rounded-[10px] border px-4 py-3 text-[15px] transition-colors ${
-                  selectedModel === model.value
-                    ? "border-primary bg-primary/5 font-medium text-primary"
-                    : "border-border-input bg-white text-foreground hover:border-primary/40"
-                }`}
-              >
-                {model.label}
-              </button>
+              <div key={model.value} className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setValue("pricingModel", model.value as PricingValues["pricingModel"], {
+                      shouldValidate: true,
+                    })
+                  }
+                  className={`w-full rounded-[10px] border px-4 py-3 text-[15px] transition-colors ${
+                    selectedModel === model.value
+                      ? "border-primary bg-primary/5 font-medium text-primary"
+                      : "border-border-input bg-white text-foreground hover:border-primary/40"
+                  }`}
+                >
+                  {model.label}
+                </button>
+                <p className="text-[13px] font-light leading-snug text-[#666]">
+                  {model.description}
+                </p>
+              </div>
             ))}
           </div>
         </FormField>
