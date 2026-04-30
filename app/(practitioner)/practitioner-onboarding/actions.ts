@@ -172,16 +172,40 @@ export async function fetchDomains() {
   return data ?? [];
 }
 
-export async function fetchSpecialties(domainIds: string[]) {
+export async function fetchSpecialties(domainIds: string[], includeIds: string[] = []) {
   const supabase = await createClient();
-  if (domainIds.length === 0) return [];
-  const { data } = await supabase
-    .from("specialties")
-    .select("id, name, domain_id")
-    .in("domain_id", domainIds)
-    .eq("is_active", true)
-    .order("name");
-  return data ?? [];
+  if (domainIds.length === 0 && includeIds.length === 0) return [];
+
+  // Active specialties for the practitioner's chosen domains
+  let active: { id: string; name: string; domain_id: string }[] = [];
+  if (domainIds.length > 0) {
+    const { data } = await supabase
+      .from("specialties")
+      .select("id, name, domain_id")
+      .in("domain_id", domainIds)
+      .eq("is_active", true)
+      .order("name");
+    active = data ?? [];
+  }
+
+  // Always include any specialties the practitioner has already saved — even
+  // pending ones they submitted that haven't been approved yet
+  let mine: { id: string; name: string; domain_id: string }[] = [];
+  if (includeIds.length > 0) {
+    const { data } = await supabase
+      .from("specialties")
+      .select("id, name, domain_id")
+      .in("id", includeIds);
+    mine = data ?? [];
+  }
+
+  // Dedupe by name — same specialty seeded across multiple domains shows once
+  const seen = new Set<string>();
+  return [...active, ...mine].filter((s) => {
+    if (seen.has(s.name)) return false;
+    seen.add(s.name);
+    return true;
+  });
 }
 
 export async function addCustomDomain(name: string): Promise<{ success: boolean; id?: string; error?: string }> {
@@ -214,26 +238,91 @@ export async function addCustomSpecialty(
 ): Promise<{ success: boolean; id?: string; error?: string }> {
   const supabase = await createClient();
 
-  // Check if already exists
+  // Reuse any existing row by this name, regardless of domain or active state.
+  // Active match → instantly usable. Pending match → still tied to original
+  // submitter's approval queue.
   const { data: existing } = await supabase
     .from("specialties")
     .select("id")
     .ilike("name", name)
-    .eq("domain_id", domainId)
     .limit(1);
 
   if (existing && existing.length > 0) {
     return { success: true, id: existing[0].id };
   }
 
+  // New custom submission — insert as pending (is_active=false). Admin must
+  // approve before it appears for other practitioners.
   const { data, error } = await supabase
     .from("specialties")
-    .insert({ name, domain_id: domainId, is_active: true })
+    .insert({ name, domain_id: domainId, is_active: false })
     .select("id")
     .single();
 
   if (error) return { success: false, error: "שגיאה בהוספת התמחות" };
+
+  // Notify admins so they see something to review
+  const admin = createAdminClient();
+  const { data: admins } = await admin.from("users").select("id").eq("role", "admin");
+  if (admins && admins.length > 0) {
+    await admin.from("notifications").insert(
+      admins.map((a: { id: string }) => ({
+        user_id: a.id,
+        type: "new_specialty_pending",
+        payload: { specialtyId: data.id, name },
+      }))
+    );
+  }
+
   return { success: true, id: data.id };
+}
+
+export async function fetchCertificates(): Promise<{ name: string; size: string; url: string }[]> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data: profile } = await supabase
+    .from("practitioner_profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+  if (!profile) return [];
+
+  const { data: docs } = await supabase
+    .from("practitioner_documents")
+    .select("file_url, file_name")
+    .eq("practitioner_id", profile.id)
+    .order("uploaded_at", { ascending: true });
+
+  return (docs ?? []).map((d: { file_url: string; file_name: string }) => ({
+    name: d.file_name,
+    size: "",
+    url: d.file_url,
+  }));
+}
+
+export async function deleteCertificate(fileUrl: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "לא מחובר" };
+
+  const admin = createAdminClient();
+  const { data: profile } = await admin
+    .from("practitioner_profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+  if (!profile) return { success: false, error: "פרופיל לא נמצא" };
+
+  const { error } = await admin
+    .from("practitioner_documents")
+    .delete()
+    .eq("practitioner_id", profile.id)
+    .eq("file_url", fileUrl);
+
+  if (error) return { success: false, error: "שגיאה במחיקת הקובץ" };
+  return { success: true };
 }
 
 export async function uploadCertificate(

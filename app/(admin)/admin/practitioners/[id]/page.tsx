@@ -12,6 +12,7 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { FormField } from "@/components/ui/form-field";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { approvePractitioner, rejectPractitioner, type PractitionerEdits } from "../actions";
 
 interface PractitionerDetail {
   id: string;
@@ -21,6 +22,8 @@ interface PractitionerDetail {
   phone: string;
   city: string;
   clinicCities: string[];
+  clinicAddresses: string[];
+  homeVisits: boolean;
   domainNames: string[];
   specialtyNames: string[];
   price: string;
@@ -30,7 +33,13 @@ interface PractitionerDetail {
   status: string;
   rejectionReason: string;
   createdAt: string;
+  documents: { name: string; url: string }[];
 }
+
+const PRICING_MODELS = [
+  { value: "per_treatment", label: "לפי טיפול" },
+  { value: "per_heali_package", label: "חבילה דרך Heali" },
+];
 
 export default function AdminPractitionerDetailPage() {
   const params = useParams();
@@ -39,10 +48,19 @@ export default function AdminPractitionerDetailPage() {
 
   const [practitioner, setPractitioner] = useState<PractitionerDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [editPrice, setEditPrice] = useState("");
-  const [editBio, setEditBio] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+
+  // Editable field state — what admin can override
+  const [phone, setPhone] = useState("");
+  const [city, setCity] = useState("");
+  const [clinicCitiesText, setClinicCitiesText] = useState("");
+  const [clinicAddressesText, setClinicAddressesText] = useState("");
+  const [homeVisits, setHomeVisits] = useState(false);
+  const [pricingModel, setPricingModel] = useState("per_treatment");
+  const [price, setPrice] = useState("");
+  const [languagesText, setLanguagesText] = useState("");
+  const [bio, setBio] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -69,9 +87,14 @@ export default function AdminPractitionerDetailPage() {
         specialtyNames = (data ?? []).map((s: { name: string }) => s.name);
       }
 
+      const { data: docs } = await supabase
+        .from("practitioner_documents")
+        .select("file_name, file_url")
+        .eq("practitioner_id", id);
+
       const users = profile.users as unknown as { full_name: string; email: string };
 
-      setPractitioner({
+      const detail: PractitionerDetail = {
         id: profile.id,
         userId: profile.user_id,
         name: users.full_name,
@@ -79,6 +102,8 @@ export default function AdminPractitionerDetailPage() {
         phone: profile.phone ?? "",
         city: profile.city ?? "",
         clinicCities: (profile.clinic_cities as string[]) ?? [],
+        clinicAddresses: (profile.clinic_addresses as string[]) ?? [],
+        homeVisits: profile.home_visits ?? false,
         domainNames,
         specialtyNames,
         price: String(profile.price),
@@ -88,36 +113,70 @@ export default function AdminPractitionerDetailPage() {
         status: profile.verification_status,
         rejectionReason: profile.rejection_reason ?? "",
         createdAt: profile.created_at,
-      });
-      setEditPrice(String(profile.price));
-      setEditBio(profile.bio ?? "");
+        documents: (docs ?? []).map((d: { file_name: string; file_url: string }) => ({
+          name: d.file_name,
+          url: d.file_url,
+        })),
+      };
+      setPractitioner(detail);
+
+      // Seed editable state with current values
+      setPhone(detail.phone);
+      setCity(detail.city);
+      setClinicCitiesText(detail.clinicCities.join(", "));
+      setClinicAddressesText(detail.clinicAddresses.join("\n"));
+      setHomeVisits(detail.homeVisits);
+      setPricingModel(detail.pricingModel);
+      setPrice(detail.price);
+      setLanguagesText(detail.languages.join(", "));
+      setBio(detail.bio);
+
       setIsLoading(false);
     }
     load();
   }, [id]);
 
   const handleApprove = async () => {
-    const supabase = createClient();
-    await supabase.from("practitioner_profiles").update({ verification_status: "approved", is_publicly_visible: true, updated_at: new Date().toISOString() }).eq("id", id);
-    await supabase.from("users").update({ onboarding_completed: true }).eq("id", practitioner?.userId);
-    toast.success("המטפל אושר");
-    router.push("/admin/practitioners");
+    if (!practitioner) return;
+    setIsSubmitting(true);
+    const edits: PractitionerEdits = {
+      phone,
+      city,
+      clinic_cities: clinicCitiesText.split(",").map((s) => s.trim()).filter(Boolean),
+      clinic_addresses: clinicAddressesText.split("\n").map((s) => s.trim()).filter(Boolean),
+      home_visits: homeVisits,
+      pricing_model: pricingModel,
+      price,
+      languages: languagesText.split(",").map((s) => s.trim()).filter(Boolean),
+      bio,
+    };
+    const res = await approvePractitioner(practitioner.id, edits);
+    setIsSubmitting(false);
+    if (res.success) {
+      const changes = res.changedFieldLabels ?? [];
+      toast.success(
+        changes.length === 0
+          ? "המטפל אושר ונשלח אימייל"
+          : `המטפל אושר. עודכנו: ${changes.join(", ")}`
+      );
+      router.push("/admin/practitioners");
+    } else {
+      toast.error(res.error);
+    }
   };
 
   const handleReject = async () => {
+    if (!practitioner) return;
     if (!rejectReason.trim()) { toast.error("יש להזין סיבת דחייה"); return; }
-    const supabase = createClient();
-    await supabase.from("practitioner_profiles").update({ verification_status: "rejected", rejection_reason: rejectReason, is_publicly_visible: false, updated_at: new Date().toISOString() }).eq("id", id);
-    toast.success("המטפל נדחה");
-    router.push("/admin/practitioners");
-  };
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    const supabase = createClient();
-    await supabase.from("practitioner_profiles").update({ price: editPrice, bio: editBio, updated_at: new Date().toISOString() }).eq("id", id);
-    toast.success("הפרטים עודכנו");
-    setIsSaving(false);
+    setIsSubmitting(true);
+    const res = await rejectPractitioner(practitioner.id, rejectReason);
+    setIsSubmitting(false);
+    if (res.success) {
+      toast.success("המטפל נדחה ונשלח אימייל");
+      router.push("/admin/practitioners");
+    } else {
+      toast.error(res.error);
+    }
   };
 
   if (isLoading) return <div className="flex min-h-[60vh] items-center justify-center"><Spinner /></div>;
@@ -132,7 +191,6 @@ export default function AdminPractitionerDetailPage() {
       </button>
 
       <div className="flex flex-col lg:flex-row gap-8">
-        {/* Main info */}
         <div className="flex-1">
           <div className="rounded-[12px] border border-border bg-white p-6">
             <div className="flex items-center justify-between mb-6">
@@ -140,19 +198,10 @@ export default function AdminPractitionerDetailPage() {
               <StatusBadge status={practitioner.status as "draft" | "submitted" | "approved" | "rejected"} />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Read-only identity */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
               <FormField label="אימייל" htmlFor="email">
                 <div className="h-[48px] rounded-[10px] border border-border-input bg-[#f9f9f9] px-3 flex items-center text-[14px]">{practitioner.email}</div>
-              </FormField>
-              <FormField label="טלפון" htmlFor="phone">
-                <div className="h-[48px] rounded-[10px] border border-border-input bg-[#f9f9f9] px-3 flex items-center text-[14px]">{practitioner.phone || "—"}</div>
-              </FormField>
-              <FormField label="מיקום קליניקה" htmlFor="cities">
-                <div className="min-h-[48px] rounded-[10px] border border-border-input bg-[#f9f9f9] px-3 py-2 flex flex-wrap gap-1 items-center text-[14px]">
-                  {practitioner.clinicCities.length > 0
-                    ? practitioner.clinicCities.map((c) => <span key={c} className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-[12px]">{c}</span>)
-                    : practitioner.city || "—"}
-                </div>
               </FormField>
               <FormField label="תאריך הצטרפות" htmlFor="date">
                 <div className="h-[48px] rounded-[10px] border border-border-input bg-[#f9f9f9] px-3 flex items-center text-[14px]">{new Date(practitioner.createdAt).toLocaleDateString("he-IL")}</div>
@@ -167,44 +216,104 @@ export default function AdminPractitionerDetailPage() {
                   {practitioner.specialtyNames.length > 0 ? practitioner.specialtyNames.join(", ") : "—"}
                 </div>
               </FormField>
-              <FormField label="שפות" htmlFor="langs">
-                <div className="h-[48px] rounded-[10px] border border-border-input bg-[#f9f9f9] px-3 flex items-center text-[14px]">{practitioner.languages.join(", ") || "—"}</div>
+            </div>
+
+            {/* Editable fields — admin checklist */}
+            <h2 className="text-[16px] font-semibold text-black mb-3">פרטים לעריכה ואישור</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <FormField label="טלפון" htmlFor="phone">
+                <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
               </FormField>
-              <FormField label="מודל תמחור" htmlFor="model">
-                <div className="h-[48px] rounded-[10px] border border-border-input bg-[#f9f9f9] px-3 flex items-center text-[14px]">
-                  {practitioner.pricingModel === "per_treatment" ? "לפי טיפול" : practitioner.pricingModel === "per_package" ? "לפי חבילה" : practitioner.pricingModel === "per_heali_package" ? "חבילה דרך Heali" : practitioner.pricingModel}
-                </div>
+              <FormField label="עיר" htmlFor="city">
+                <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} />
+              </FormField>
+              <FormField label="ערי קליניקה (מופרדות בפסיק)" htmlFor="clinicCities">
+                <Input id="clinicCities" value={clinicCitiesText} onChange={(e) => setClinicCitiesText(e.target.value)} />
+              </FormField>
+              <FormField label="שפות (מופרדות בפסיק)" htmlFor="languages">
+                <Input id="languages" value={languagesText} onChange={(e) => setLanguagesText(e.target.value)} />
+              </FormField>
+              <FormField label="מודל תמחור" htmlFor="pricingModel">
+                <select
+                  id="pricingModel"
+                  value={pricingModel}
+                  onChange={(e) => setPricingModel(e.target.value)}
+                  className="h-[48px] w-full rounded-[10px] border border-border-input bg-white px-3 text-[14px]"
+                >
+                  {PRICING_MODELS.map((m) => (
+                    <option key={m.value} value={m.value}>{m.label}</option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField label="מחיר (₪)" htmlFor="price">
+                <Input id="price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} />
               </FormField>
             </div>
 
-            {/* Editable fields */}
-            <div className="mt-6 flex flex-col gap-5">
-              <FormField label="מחיר (₪)" htmlFor="editPrice">
-                <Input id="editPrice" type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)} />
+            <div className="mt-5 flex flex-col gap-5">
+              <FormField label="כתובות קליניקה (כתובת בכל שורה)" htmlFor="clinicAddresses">
+                <textarea
+                  id="clinicAddresses"
+                  value={clinicAddressesText}
+                  onChange={(e) => setClinicAddressesText(e.target.value)}
+                  className="min-h-[80px] w-full rounded-[10px] border border-border-input px-3 py-2 text-[14px] resize-none"
+                />
               </FormField>
-              <FormField label="ביוגרפיה" htmlFor="editBio">
-                <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} className="min-h-[100px] w-full rounded-[10px] border border-border-input px-3 py-2 text-[14px] resize-none" />
+              <label className="flex items-center gap-2 text-[14px]">
+                <input
+                  type="checkbox"
+                  checked={homeVisits}
+                  onChange={(e) => setHomeVisits(e.target.checked)}
+                  className="size-4"
+                />
+                מבצע ביקורי בית
+              </label>
+              <FormField label="ביוגרפיה" htmlFor="bio">
+                <textarea
+                  id="bio"
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  className="min-h-[120px] w-full rounded-[10px] border border-border-input px-3 py-2 text-[14px] resize-none"
+                />
               </FormField>
-              <Button onClick={handleSave} disabled={isSaving} className="w-[160px] bg-accent text-black">
-                {isSaving ? <Spinner size="sm" /> : "שמירת שינויים"}
-              </Button>
             </div>
+
+            {practitioner.documents.length > 0 && (
+              <div className="mt-6">
+                <h2 className="text-[16px] font-semibold text-black mb-3">תעודות</h2>
+                <ul className="flex flex-col gap-2">
+                  {practitioner.documents.map((d, i) => (
+                    <li key={i}>
+                      <a href={d.url} target="_blank" rel="noreferrer" className="text-primary underline text-[14px]">
+                        {d.name}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Actions sidebar */}
         <div className="w-full lg:w-[350px] shrink-0">
           {isPending && (
             <div className="rounded-[12px] border border-border bg-white p-6 mb-4">
-              <h2 className="text-[18px] font-semibold text-black mb-4">אישור / דחייה</h2>
-              <Button onClick={handleApprove} className="w-full mb-3 bg-accent text-black">אישור מטפל</Button>
+              <h2 className="text-[18px] font-semibold text-black mb-2">סיום הבדיקה</h2>
+              <p className="text-[13px] text-muted mb-4">
+                בלחיצה על אישור — שדות שעודכנו ייכללו במייל ההודעה למטפל יחד עם קוד QR ייעודי.
+              </p>
+              <Button onClick={handleApprove} disabled={isSubmitting} className="w-full mb-3 bg-accent text-black">
+                {isSubmitting ? <Spinner size="sm" /> : "אישור מטפל"}
+              </Button>
               <textarea
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
                 placeholder="סיבת דחייה..."
                 className="w-full min-h-[80px] rounded-[10px] border border-border-input px-3 py-2 text-[14px] resize-none mb-3"
               />
-              <Button onClick={handleReject} variant="destructive" className="w-full">דחיית מטפל</Button>
+              <Button onClick={handleReject} disabled={isSubmitting} variant="destructive" className="w-full">
+                דחיית מטפל
+              </Button>
             </div>
           )}
 

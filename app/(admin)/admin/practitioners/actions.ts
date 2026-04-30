@@ -1,6 +1,40 @@
 "use server";
 
+import QRCode from "qrcode";
+import { randomUUID } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendEmail } from "@/lib/email/client";
+import { practitionerApprovedEmail, practitionerRejectedEmail } from "@/lib/email/templates";
+
+// Hebrew labels for fields that can be edited during admin review.
+// Used in the approval email when changes are made.
+const FIELD_LABELS: Record<string, string> = {
+  phone: "טלפון",
+  city: "עיר",
+  clinic_cities: "ערי קליניקה",
+  clinic_addresses: "כתובות קליניקה",
+  home_visits: "טיפולי בית",
+  domain_ids: "תחומי טיפול",
+  specialty_ids: "התמחויות",
+  pricing_model: "מודל תמחור",
+  price: "מחיר",
+  languages: "שפות",
+  bio: "ביוגרפיה",
+};
+
+export interface PractitionerEdits {
+  phone?: string;
+  city?: string;
+  clinic_cities?: string[];
+  clinic_addresses?: string[];
+  home_visits?: boolean;
+  domain_ids?: string[];
+  specialty_ids?: string[];
+  pricing_model?: string;
+  price?: string;
+  languages?: string[];
+  bio?: string;
+}
 
 export interface AdminPractitioner {
   id: string;
@@ -58,35 +92,87 @@ export async function fetchAllPractitioners(statusFilter?: string): Promise<Admi
   });
 }
 
-export async function approvePractitioner(practitionerId: string) {
+/**
+ * Approve a practitioner. Persists any admin field edits, computes the diff
+ * vs the practitioner's last submitted values, generates a unique QR token,
+ * and sends an email with the QR + (if applicable) the list of changed fields.
+ */
+export async function approvePractitioner(
+  practitionerId: string,
+  edits: PractitionerEdits = {}
+) {
   const supabase = createAdminClient();
-  const { error } = await supabase
-    .from("practitioner_profiles")
-    .update({
-      verification_status: "approved",
-      is_publicly_visible: true,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", practitionerId);
 
-  if (error) return { success: false, error: "שגיאה באישור המטפל" };
-
-  // Mark onboarding as complete
-  const { data: profile } = await supabase
+  const { data: before } = await supabase
     .from("practitioner_profiles")
-    .select("user_id")
+    .select("*, users!inner(full_name, email)")
     .eq("id", practitionerId)
     .single();
+  if (!before) return { success: false, error: "מטפל לא נמצא" };
 
-  if (profile) {
-    await supabase.from("users").update({ onboarding_completed: true }).eq("id", profile.user_id);
+  // Compute which submitted fields admin actually changed
+  const changedKeys: string[] = [];
+  const updates: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(edits)) {
+    if (value === undefined) continue;
+    const current = (before as Record<string, unknown>)[key];
+    const isEqual = Array.isArray(current) && Array.isArray(value)
+      ? current.length === value.length && current.every((c, i) => c === value[i])
+      : String(current ?? "") === String(value ?? "");
+    if (!isEqual) {
+      updates[key] = value;
+      changedKeys.push(key);
+    }
   }
 
-  return { success: true };
+  // Generate a stable per-practitioner QR token if not yet set
+  const qrToken = (before.qr_code_url as string | null) ?? randomUUID();
+  updates.qr_code_url = qrToken;
+  updates.verification_status = "approved";
+  updates.is_publicly_visible = true;
+  updates.updated_at = new Date().toISOString();
+
+  const { error } = await supabase
+    .from("practitioner_profiles")
+    .update(updates)
+    .eq("id", practitionerId);
+  if (error) return { success: false, error: "שגיאה באישור המטפל" };
+
+  await supabase.from("users").update({ onboarding_completed: true }).eq("id", before.user_id);
+
+  // Generate QR PNG (data URL) for the email
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://heali.app";
+  const scanUrl = `${siteUrl}/scan/${qrToken}`;
+  const qrPngDataUrl = await QRCode.toDataURL(scanUrl, {
+    width: 480,
+    margin: 2,
+    color: { dark: "#21544E", light: "#FFFFFF" },
+  });
+
+  const user = before.users as unknown as { full_name: string; email: string };
+  const changedFieldLabels = changedKeys.map((k) => FIELD_LABELS[k] ?? k);
+
+  const { subject, html } = practitionerApprovedEmail({
+    practitionerName: user.full_name,
+    qrPngDataUrl,
+    scanUrl,
+    changedFieldLabels,
+  });
+  await sendEmail({ to: user.email, subject, html });
+
+  return { success: true, changedFieldLabels };
 }
 
 export async function rejectPractitioner(practitionerId: string, reason: string) {
   const supabase = createAdminClient();
+
+  const { data: before } = await supabase
+    .from("practitioner_profiles")
+    .select("user_id, users!inner(full_name, email)")
+    .eq("id", practitionerId)
+    .single();
+  if (!before) return { success: false, error: "מטפל לא נמצא" };
+
   const { error } = await supabase
     .from("practitioner_profiles")
     .update({
@@ -96,7 +182,14 @@ export async function rejectPractitioner(practitionerId: string, reason: string)
       updated_at: new Date().toISOString(),
     })
     .eq("id", practitionerId);
-
   if (error) return { success: false, error: "שגיאה בדחיית המטפל" };
+
+  const user = before.users as unknown as { full_name: string; email: string };
+  const { subject, html } = practitionerRejectedEmail({
+    practitionerName: user.full_name,
+    reason,
+  });
+  await sendEmail({ to: user.email, subject, html });
+
   return { success: true };
 }

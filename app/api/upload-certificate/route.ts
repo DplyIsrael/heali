@@ -34,7 +34,24 @@ export async function POST(request: Request) {
 
     const { data: { publicUrl } } = admin.storage.from("certificates").getPublicUrl(path);
 
-    return NextResponse.json({ url: publicUrl });
+    // Persist metadata so the document survives session abandonment and reloads
+    // on onboarding resume. Best-effort — UI still functions if insert fails.
+    const { data: profile } = await admin
+      .from("practitioner_profiles")
+      .select("id")
+      .eq("user_id", user.id)
+      .single();
+
+    if (profile) {
+      await admin.from("practitioner_documents").insert({
+        practitioner_id: profile.id,
+        file_url: publicUrl,
+        file_name: file.name,
+        file_type: ext,
+      });
+    }
+
+    return NextResponse.json({ url: publicUrl, name: file.name });
   } catch (err) {
     console.error("Upload route error:", err);
     return NextResponse.json({ error: "שגיאה בהעלאת הקובץ" }, { status: 500 });

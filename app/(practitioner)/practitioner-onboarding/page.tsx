@@ -12,7 +12,7 @@ import { StepLanguages } from "./_steps/step-languages";
 import { StepBio } from "./_steps/step-bio";
 import { StepAgreement } from "./_steps/step-agreement";
 import { StepReview } from "./_steps/step-review";
-import { fetchDomains, fetchPractitionerProfile } from "./actions";
+import { fetchDomains, fetchPractitionerProfile, fetchCertificates, deleteCertificate } from "./actions";
 import type { BioValues } from "@/lib/validations/practitioner-onboarding";
 
 const TOTAL_STEPS = 8;
@@ -59,11 +59,13 @@ export default function PractitionerOnboardingPage() {
   // Load domains + resume from saved step
   useEffect(() => {
     async function init() {
-      const [domains, profile] = await Promise.all([
+      const [domains, profile, savedCerts] = await Promise.all([
         fetchDomains(),
         fetchPractitionerProfile(),
+        fetchCertificates(),
       ]);
       setAllDomains(domains);
+      if (savedCerts.length) setCertificates(savedCerts);
 
       if (profile) {
         // Resume from saved step
@@ -183,6 +185,7 @@ export default function PractitionerOnboardingPage() {
         {currentStep === 4 && (
           <StepCertificates
             initialFiles={certificates}
+            onRemove={(url) => deleteCertificate(url)}
             onNext={(files) => {
               setCertificates(files);
               setCurrentStep(5);

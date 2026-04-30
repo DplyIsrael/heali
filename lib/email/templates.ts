@@ -110,15 +110,34 @@ export function practitionerNewBookingEmail(params: {
   };
 }
 
-export function practitionerApprovedEmail(params: { practitionerName: string }) {
+export function practitionerApprovedEmail(params: {
+  practitionerName: string;
+  qrPngDataUrl: string;
+  scanUrl: string;
+  changedFieldLabels?: string[];
+}) {
+  const changes = params.changedFieldLabels ?? [];
+  const statusBlock = changes.length === 0
+    ? `<p style="font-size:16px;color:#21544E;font-weight:600;">אושרת!</p>`
+    : `
+      <p style="font-size:16px;color:#21544E;font-weight:600;margin-bottom:6px;">אושרת עם עדכונים</p>
+      <p style="margin:0 0 6px;">השדות הבאים עודכנו על ידי הצוות:</p>
+      <ul style="margin:0 0 12px;padding-inline-start:18px;">
+        ${changes.map((f) => `<li>${f}</li>`).join("")}
+      </ul>`;
+
   return {
-    subject: "הפרופיל שלך אושר!",
+    subject: changes.length === 0 ? "הפרופיל שלך אושר!" : "הפרופיל שלך אושר — בוצעו עדכונים",
     html: `
       <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #21544E;">ברוך/ה הבא/ה ל-Heali!</h1>
         <p>שלום ${params.practitionerName},</p>
-        <p>הפרופיל שלך אושר ומעכשיו הוא גלוי למטופלים באתר.</p>
-        <p>ניתן להיכנס לדשבורד ולהגדיר את שעות הקבלה.</p>
+        ${statusBlock}
+        <p>הפרופיל שלך גלוי למטופלים. הדפס את ה-QR שלהלן והצג בקליניקה — מטופלים סורקים אותו בסיום הטיפול.</p>
+        <div style="text-align:center;margin:24px 0;padding:24px;border:2px solid #21544E;border-radius:12px;">
+          <img src="${params.qrPngDataUrl}" alt="QR Code" style="width:240px;height:240px;" />
+          <div style="font-size:12px;color:#666;margin-top:12px;word-break:break-all;">${params.scanUrl}</div>
+        </div>
         <p style="color:#9f9f9f;margin-top:24px;">צוות Heali</p>
       </div>
     `,

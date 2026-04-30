@@ -15,9 +15,10 @@ interface StepCertificatesProps {
   initialFiles: UploadedFile[];
   onNext: (files: UploadedFile[]) => void;
   onBack: () => void;
+  onRemove?: (url: string) => Promise<unknown> | void;
 }
 
-export function StepCertificates({ initialFiles, onNext, onBack }: StepCertificatesProps) {
+export function StepCertificates({ initialFiles, onNext, onBack, onRemove }: StepCertificatesProps) {
   const [files, setFiles] = useState<UploadedFile[]>(initialFiles);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState("");
@@ -92,7 +93,9 @@ export function StepCertificates({ initialFiles, onNext, onBack }: StepCertifica
   };
 
   const removeFile = (index: number) => {
+    const target = files[index];
     setFiles((prev) => prev.filter((_, i) => i !== index));
+    if (target && onRemove) void onRemove(target.url);
   };
 
   const handleNext = () => {
