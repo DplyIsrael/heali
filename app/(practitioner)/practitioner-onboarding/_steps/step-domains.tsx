@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,7 @@ export function StepDomains({ domains: initialDomains, initialSelected, onNext }
   const [customName, setCustomName] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [showCustomInput, setShowCustomInput] = useState(false);
+  const customInputRef = useRef<HTMLInputElement>(null);
 
   const toggle = (id: string) => {
     setSelected((prev) =>
@@ -34,20 +35,36 @@ export function StepDomains({ domains: initialDomains, initialSelected, onNext }
   };
 
   const handleAddCustom = async () => {
-    if (!customName.trim()) return;
+    const name = customName.trim();
+    if (!name) return;
+
+    // Local duplicate check — case-insensitive
+    const dup = domains.find((d) => d.name.trim().toLowerCase() === name.toLowerCase());
+    if (dup) {
+      setError(`${dup.name} כבר קיים`);
+      customInputRef.current?.focus();
+      return;
+    }
+
     setIsAdding(true);
-    const result = await addCustomDomain(customName.trim());
+    setError("");
+    const result = await addCustomDomain(name);
     if (result.success && result.id) {
-      // Add to list if not already there
-      if (!domains.find((d) => d.id === result.id)) {
-        setDomains((prev) => [...prev, { id: result.id!, name: customName.trim() }]);
+      // If server returned an existing match (race / casing), surface as duplicate
+      const existing = domains.find((d) => d.id === result.id);
+      if (existing) {
+        setError(`${existing.name} כבר קיים`);
+        customInputRef.current?.focus();
+        setIsAdding(false);
+        return;
       }
-      // Auto-select it
+      setDomains((prev) => [...prev, { id: result.id!, name }]);
       setSelected((prev) => prev.includes(result.id!) ? prev : [...prev, result.id!]);
       setCustomName("");
       setShowCustomInput(false);
     } else {
       setError(result.error ?? "שגיאה");
+      customInputRef.current?.focus();
     }
     setIsAdding(false);
   };
@@ -74,7 +91,7 @@ export function StepDomains({ domains: initialDomains, initialSelected, onNext }
         תחומי הטיפול שלך
       </h1>
       <p className="mt-2 text-[18px] font-light text-[#666]">
-        (כאן ניתן לבחור את תחומי הטיפול שלך)
+        כאן ניתן לבחור את תחומי הטיפול שלך
       </p>
 
       <div className="mt-8 grid grid-cols-2 gap-3">
@@ -98,11 +115,13 @@ export function StepDomains({ domains: initialDomains, initialSelected, onNext }
       {showCustomInput ? (
         <div className="mt-4 flex gap-2">
           <Input
+            ref={customInputRef}
             value={customName}
-            onChange={(e) => setCustomName(e.target.value)}
+            onChange={(e) => { setCustomName(e.target.value); if (error) setError(""); }}
             placeholder="שם תחום הטיפול..."
             className="flex-1"
             onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddCustom())}
+            autoFocus
           />
           <Button
             type="button"
@@ -115,7 +134,7 @@ export function StepDomains({ domains: initialDomains, initialSelected, onNext }
           <Button
             type="button"
             variant="ghost"
-            onClick={() => { setShowCustomInput(false); setCustomName(""); }}
+            onClick={() => { setShowCustomInput(false); setCustomName(""); setError(""); }}
             className="shrink-0"
           >
             ביטול
@@ -128,7 +147,7 @@ export function StepDomains({ domains: initialDomains, initialSelected, onNext }
           className="mt-4 flex items-center gap-1.5 text-[15px] text-primary hover:underline self-start"
         >
           <Plus className="size-4" />
-          לא מצאת? הוסף תחום טיפול חדש
+          לא מצאת? כאן ניתן להוסיף את תחום הטיפול שלך.
         </button>
       )}
 
@@ -138,7 +157,7 @@ export function StepDomains({ domains: initialDomains, initialSelected, onNext }
         {isLoading ? (
           <Spinner size="sm" className="border-white/30 border-t-white" />
         ) : (
-          "המשך"
+          "כבר מסיימים"
         )}
       </Button>
     </div>

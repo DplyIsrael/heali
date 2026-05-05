@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,12 +34,16 @@ export function StepSpecialties({
   const [customName, setCustomName] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [showCustomInput, setShowCustomInput] = useState(false);
+  const customInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetchSpecialties(domainIds).then((data) => {
+    // Pass initialSelected so practitioner can still see pending specialties they
+    // submitted previously but haven't been admin-approved yet.
+    fetchSpecialties(domainIds, initialSelected).then((data) => {
       setSpecialties(data);
       setIsFetching(false);
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [domainIds]);
 
   const toggle = (id: string) => {
@@ -49,19 +53,35 @@ export function StepSpecialties({
   };
 
   const handleAddCustom = async () => {
-    if (!customName.trim() || domainIds.length === 0) return;
+    const name = customName.trim();
+    if (!name || domainIds.length === 0) return;
+
+    // Local duplicate check — case-insensitive
+    const dup = specialties.find((s) => s.name.trim().toLowerCase() === name.toLowerCase());
+    if (dup) {
+      setError(`${dup.name} כבר קיים`);
+      customInputRef.current?.focus();
+      return;
+    }
+
     setIsAdding(true);
-    // Add to the first selected domain
-    const result = await addCustomSpecialty(customName.trim(), domainIds[0]);
+    setError("");
+    const result = await addCustomSpecialty(name, domainIds[0]);
     if (result.success && result.id) {
-      if (!specialties.find((s) => s.id === result.id)) {
-        setSpecialties((prev) => [...prev, { id: result.id!, name: customName.trim(), domain_id: domainIds[0] }]);
+      const existing = specialties.find((s) => s.id === result.id);
+      if (existing) {
+        setError(`${existing.name} כבר קיים`);
+        customInputRef.current?.focus();
+        setIsAdding(false);
+        return;
       }
+      setSpecialties((prev) => [...prev, { id: result.id!, name, domain_id: domainIds[0] }]);
       setSelected((prev) => prev.includes(result.id!) ? prev : [...prev, result.id!]);
       setCustomName("");
       setShowCustomInput(false);
     } else {
       setError(result.error ?? "שגיאה");
+      customInputRef.current?.focus();
     }
     setIsAdding(false);
   };
@@ -93,10 +113,10 @@ export function StepSpecialties({
   return (
     <div className="flex flex-col">
       <h1 className="text-[36px] font-semibold leading-tight text-foreground">
-        באיזה תחומים אתה מתמחה?
+        מה ההתמחויות שלך
       </h1>
       <p className="mt-2 text-[18px] font-light text-[#666]">
-        בחר את ההתמחויות הספציפיות שלך
+        כאן ניתן לבחור את ההתמחות הספציפית שלך
       </p>
 
       {specialties.length === 0 && !showCustomInput ? (
@@ -126,11 +146,13 @@ export function StepSpecialties({
       {showCustomInput ? (
         <div className="mt-4 flex gap-2">
           <Input
+            ref={customInputRef}
             value={customName}
-            onChange={(e) => setCustomName(e.target.value)}
+            onChange={(e) => { setCustomName(e.target.value); if (error) setError(""); }}
             placeholder="שם ההתמחות..."
             className="flex-1"
             onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddCustom())}
+            autoFocus
           />
           <Button
             type="button"
@@ -143,7 +165,7 @@ export function StepSpecialties({
           <Button
             type="button"
             variant="ghost"
-            onClick={() => { setShowCustomInput(false); setCustomName(""); }}
+            onClick={() => { setShowCustomInput(false); setCustomName(""); setError(""); }}
             className="shrink-0"
           >
             ביטול
@@ -156,7 +178,7 @@ export function StepSpecialties({
           className="mt-4 flex items-center gap-1.5 text-[15px] text-primary hover:underline self-start"
         >
           <Plus className="size-4" />
-          לא מצאת? הוסף התמחות חדשה
+          לא מצאת? כאן ניתן להוסיף את תחום ההתמחות שלך.
         </button>
       )}
 
