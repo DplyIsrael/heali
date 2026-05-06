@@ -73,7 +73,7 @@ export default function PractitionerOnboardingPage() {
         if (profile.specialty_ids?.length) setSelectedSpecialtyIds(profile.specialty_ids);
         if (profile.price) setPricing({ pricingModel: profile.pricing_model, price: profile.price });
         if (profile.languages?.length) setLanguages(profile.languages);
-        if (profile.bio) setBio({ bio: profile.bio });
+        if (profile.bio) setBio({ bio: profile.bio, certificationDescription: "" });
 
         // Resume from step 1 so user can review their pre-filled answers
         // and naturally progress to the first unfilled step.
@@ -169,7 +169,13 @@ export default function PractitionerOnboardingPage() {
               setSelectedSpecialtyIds(ids);
               setCurrentStep(3);
             }}
-            onBack={goBack}
+            // Capture the in-progress selection on back so re-entering this
+            // step shows the same chips. Each step does a best-effort DB save
+            // before calling this so the data also survives a page refresh.
+            onBack={(ids) => {
+              setSelectedSpecialtyIds(ids);
+              goBack();
+            }}
           />
         )}
         {currentStep === 3 && (
@@ -179,7 +185,15 @@ export default function PractitionerOnboardingPage() {
               setPricing({ pricingModel: values.pricingModel, price: values.price });
               setCurrentStep(4);
             }}
-            onBack={goBack}
+            onBack={(values) => {
+              if (values.pricingModel || values.price) {
+                setPricing({
+                  pricingModel: values.pricingModel ?? pricing?.pricingModel ?? "per_treatment",
+                  price: values.price ?? pricing?.price ?? "",
+                });
+              }
+              goBack();
+            }}
           />
         )}
         {currentStep === 4 && (
@@ -190,7 +204,10 @@ export default function PractitionerOnboardingPage() {
               setCertificates(files);
               setCurrentStep(5);
             }}
-            onBack={goBack}
+            onBack={(files) => {
+              setCertificates(files);
+              goBack();
+            }}
           />
         )}
         {currentStep === 5 && (
@@ -200,7 +217,10 @@ export default function PractitionerOnboardingPage() {
               setLanguages(langs);
               setCurrentStep(6);
             }}
-            onBack={goBack}
+            onBack={(langs) => {
+              setLanguages(langs);
+              goBack();
+            }}
           />
         )}
         {currentStep === 6 && (
@@ -210,7 +230,16 @@ export default function PractitionerOnboardingPage() {
               setBio(values);
               setCurrentStep(7);
             }}
-            onBack={goBack}
+            onBack={(values) => {
+              if (values.bio !== undefined || values.certificationDescription !== undefined) {
+                setBio({
+                  bio: values.bio ?? bio?.bio ?? "",
+                  certificationDescription:
+                    values.certificationDescription ?? bio?.certificationDescription ?? "",
+                });
+              }
+              goBack();
+            }}
           />
         )}
         {currentStep === 7 && (

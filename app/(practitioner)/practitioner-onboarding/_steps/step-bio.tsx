@@ -13,7 +13,7 @@ import { saveBio } from "../actions";
 interface StepBioProps {
   initialValues: { bio: string; certificationDescription?: string } | null;
   onNext: (values: BioValues) => void;
-  onBack: () => void;
+  onBack: (values: Partial<BioValues>) => void;
 }
 
 export function StepBio({ initialValues, onNext, onBack }: StepBioProps) {
@@ -25,6 +25,7 @@ export function StepBio({ initialValues, onNext, onBack }: StepBioProps) {
     register,
     handleSubmit,
     watch,
+    getValues,
     formState: { errors },
   } = useForm<BioValues>({
     resolver: zodResolver(bioSchema),
@@ -43,6 +44,17 @@ export function StepBio({ initialValues, onNext, onBack }: StepBioProps) {
       setServerError(result.error ?? "שגיאה");
     }
     setIsLoading(false);
+  };
+
+  // Preserve in-progress values when navigating back: persist to DB
+  // best-effort and hand them to the parent so re-entering this step
+  // shows what the user had typed.
+  const handleBack = async () => {
+    const values = getValues();
+    if (values.bio || values.certificationDescription) {
+      await saveBio(values.bio ?? "", values.certificationDescription ?? "").catch(() => {});
+    }
+    onBack(values);
   };
 
   return (
@@ -65,7 +77,7 @@ export function StepBio({ initialValues, onNext, onBack }: StepBioProps) {
             id="bio"
             placeholder={t("bioPlaceholder")}
             {...register("bio")}
-            className="min-h-[157px] w-full rounded-[10px] border border-border-input bg-white px-4 py-3 text-[15px] placeholder:font-poppins placeholder:text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            className="min-h-[157px] w-full rounded-[10px] border border-border-input bg-white px-4 py-3 text-[15px] text-foreground placeholder:text-[#666] focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             aria-invalid={!!errors.bio}
           />
           <span className={`text-[13px] ${bioLength < 50 ? "text-[#666]" : "text-accent"}`}>
@@ -77,12 +89,14 @@ export function StepBio({ initialValues, onNext, onBack }: StepBioProps) {
           label="תיאור הסמכה"
           htmlFor="certificationDescription"
           error={errors.certificationDescription?.message}
+          required
         >
           <textarea
             id="certificationDescription"
-            placeholder="הקלד/י כאן..."
+            placeholder="כאן ניתן לפרט היכן למדת ומה הנסיון שלך"
             {...register("certificationDescription")}
-            className="min-h-[157px] w-full rounded-[10px] border border-border-input bg-white px-4 py-3 text-[15px] placeholder:font-poppins placeholder:text-muted focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            className="min-h-[157px] w-full rounded-[10px] border border-border-input bg-white px-4 py-3 text-[15px] text-foreground placeholder:text-[#666] focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            aria-invalid={!!errors.certificationDescription}
           />
         </FormField>
 
@@ -98,7 +112,7 @@ export function StepBio({ initialValues, onNext, onBack }: StepBioProps) {
               "המשך"
             )}
           </Button>
-          <Button type="button" variant="secondary" className="bg-[#F4F7F7]" onClick={onBack}>
+          <Button type="button" variant="secondary" className="bg-[#F4F7F7]" onClick={handleBack}>
             חזור
           </Button>
         </div>

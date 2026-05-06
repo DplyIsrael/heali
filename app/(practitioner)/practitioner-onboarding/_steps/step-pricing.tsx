@@ -14,7 +14,7 @@ import { savePricing } from "../actions";
 interface StepPricingProps {
   initialValues: { pricingModel: string; price: string } | null;
   onNext: (values: PricingValues) => void;
-  onBack: () => void;
+  onBack: (values: Partial<PricingValues>) => void;
 }
 
 const PRICING_MODELS = [
@@ -41,6 +41,7 @@ export function StepPricing({ initialValues, onNext, onBack }: StepPricingProps)
     handleSubmit,
     setValue,
     watch,
+    getValues,
     formState: { errors },
   } = useForm<PricingValues>({
     resolver: zodResolver(pricingSchema),
@@ -50,6 +51,16 @@ export function StepPricing({ initialValues, onNext, onBack }: StepPricingProps)
   });
 
   const selectedModel = watch("pricingModel");
+
+  // Preserve in-progress pricing form on back: only attempt the DB save
+  // when both fields have something, so we don't push partial garbage.
+  const handleBack = async () => {
+    const values = getValues();
+    if (values.pricingModel && values.price) {
+      await savePricing(values.pricingModel, values.price).catch(() => {});
+    }
+    onBack(values);
+  };
 
   const onSubmit = async (values: PricingValues) => {
     setIsLoading(true);
@@ -137,7 +148,7 @@ export function StepPricing({ initialValues, onNext, onBack }: StepPricingProps)
               "המשך"
             )}
           </Button>
-          <Button type="button" variant="secondary" className="bg-[#F4F7F7]" onClick={onBack}>
+          <Button type="button" variant="secondary" className="bg-[#F4F7F7]" onClick={handleBack}>
             חזור
           </Button>
         </div>

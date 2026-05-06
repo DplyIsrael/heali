@@ -14,7 +14,7 @@ interface UploadedFile {
 interface StepCertificatesProps {
   initialFiles: UploadedFile[];
   onNext: (files: UploadedFile[]) => void;
-  onBack: () => void;
+  onBack: (files: UploadedFile[]) => void;
   onRemove?: (url: string) => Promise<unknown> | void;
 }
 
@@ -159,7 +159,7 @@ export function StepCertificates({ initialFiles, onNext, onBack, onRemove }: Ste
         <Button className="flex-1" onClick={handleNext}>
           המשך
         </Button>
-        <Button variant="secondary" className="bg-[#F4F7F7]" onClick={onBack}>
+        <Button variant="secondary" className="bg-[#F4F7F7]" onClick={() => onBack(files)}>
           חזור
         </Button>
       </div>

@@ -11,7 +11,7 @@ interface StepSpecialtiesProps {
   domainIds: string[];
   initialSelected: string[];
   onNext: (specialtyIds: string[]) => void;
-  onBack: () => void;
+  onBack: (specialtyIds: string[]) => void;
 }
 
 interface Specialty {
@@ -84,6 +84,16 @@ export function StepSpecialties({
       customInputRef.current?.focus();
     }
     setIsAdding(false);
+  };
+
+  // Preserve in-progress selection on back: best-effort save so the
+  // selection survives a session abandonment, plus hand it up so the
+  // parent re-renders this step with the same state on re-entry.
+  const handleBack = async () => {
+    if (selected.length > 0) {
+      await saveSpecialties(selected).catch(() => {});
+    }
+    onBack(selected);
   };
 
   const handleNext = async () => {
@@ -192,7 +202,7 @@ export function StepSpecialties({
             "המשך"
           )}
         </Button>
-        <Button variant="secondary" className="bg-[#F4F7F7]" onClick={onBack}>
+        <Button variant="secondary" className="bg-[#F4F7F7]" onClick={handleBack}>
           חזור
         </Button>
       </div>

@@ -21,7 +21,7 @@ const AVAILABLE_LANGUAGES = [
 interface StepLanguagesProps {
   initialSelected: string[];
   onNext: (languages: string[]) => void;
-  onBack: () => void;
+  onBack: (languages: string[]) => void;
 }
 
 export function StepLanguages({ initialSelected, onNext, onBack }: StepLanguagesProps) {
@@ -35,6 +35,13 @@ export function StepLanguages({ initialSelected, onNext, onBack }: StepLanguages
     setSelected((prev) =>
       prev.includes(lang) ? prev.filter((l) => l !== lang) : [...prev, lang]
     );
+  };
+
+  const handleBack = async () => {
+    if (selected.length > 0) {
+      await saveLanguages(selected).catch(() => {});
+    }
+    onBack(selected);
   };
 
   const handleNext = async () => {
@@ -100,7 +107,7 @@ export function StepLanguages({ initialSelected, onNext, onBack }: StepLanguages
             "המשך"
           )}
         </Button>
-        <Button variant="secondary" className="bg-[#F4F7F7]" onClick={onBack}>
+        <Button variant="secondary" className="bg-[#F4F7F7]" onClick={handleBack}>
           חזור
         </Button>
       </div>

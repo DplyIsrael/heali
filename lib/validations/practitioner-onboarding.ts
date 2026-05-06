@@ -32,7 +32,7 @@ export type LanguagesValues = z.infer<typeof languagesSchema>;
 
 export const bioSchema = z.object({
   bio: z.string().min(50, "הביוגרפיה חייבת להכיל לפחות 50 תווים"),
-  certificationDescription: z.string().optional(),
+  certificationDescription: z.string().min(1, "שדה חובה"),
 });
 
 export type BioValues = z.infer<typeof bioSchema>;
