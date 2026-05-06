@@ -3,13 +3,21 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useEffect, useState } from "react";
-import { Link2, Trash2, Upload } from "lucide-react";
+import { Link2, Trash2, Upload, Package } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { FormField } from "@/components/ui/form-field";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { toast } from "sonner";
-import { fetchProfileData, updatePrice, updatePassword, uploadAvatar, type PractitionerProfileData } from "./actions";
+import {
+  fetchProfileData,
+  updatePrice,
+  updatePassword,
+  uploadAvatar,
+  joinHealiPackages,
+  type PractitionerProfileData,
+} from "./actions";
 
 export default function PractitionerProfilePage() {
   const [profile, setProfile] = useState<PractitionerProfileData | null>(null);
@@ -17,6 +25,8 @@ export default function PractitionerProfilePage() {
   const [activeTab, setActiveTab] = useState<"business" | "personal">("business");
   const [price, setPrice] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [showJoinPackagesDialog, setShowJoinPackagesDialog] = useState(false);
+  const [isJoiningPackages, setIsJoiningPackages] = useState(false);
 
   // Avatar
   const [avatarUrl, setAvatarUrl] = useState("");
@@ -73,6 +83,23 @@ export default function PractitionerProfilePage() {
     if (result.success) toast.success("המחיר עודכן");
     else toast.error(result.error);
     setIsSaving(false);
+  };
+
+  const handleJoinPackages = async () => {
+    setIsJoiningPackages(true);
+    const result = await joinHealiPackages();
+    if (result.success) {
+      toast.success("הצטרפת לחבילות הילי");
+      // Reload profile so the CTA disappears and the new pricing model
+      // shows in the form.
+      const data = await fetchProfileData();
+      setProfile(data);
+      if (data) setPrice(String(data.price));
+    } else {
+      toast.error(result.error);
+    }
+    setIsJoiningPackages(false);
+    setShowJoinPackagesDialog(false);
   };
 
   const handleChangePassword = async () => {
@@ -167,6 +194,33 @@ export default function PractitionerProfilePage() {
                     </div>
                   </div>
                 </FormField>
+
+                {/* Heali-package opt-in — only shown to practitioners who didn't
+                    pick the package model during onboarding. Tapping it flips the
+                    pricing_model to per_heali_package and the price to the flat
+                    140₪ rate. */}
+                {profile.pricingModel !== "per_heali_package" && (
+                  <div className="rounded-[10px] border border-accent/40 bg-accent/5 p-4">
+                    <div className="flex items-start gap-3 mb-3">
+                      <Package className="size-5 text-primary shrink-0 mt-0.5" />
+                      <div>
+                        <h3 className="text-[15px] font-semibold text-black mb-1">
+                          הצטרפות לחבילות הטיפולים של הילי
+                        </h3>
+                        <p className="text-[13px] font-light leading-snug text-[#666]">
+                          מטפלים בחבילות הטיפול של הילי מקבלים הרבה יותר מטופלים. כל המטפלים בחבילות הם במחיר אחיד של 140 ש&quot;ח פלוס מע&quot;מ.
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={() => setShowJoinPackagesDialog(true)}
+                      className="bg-accent text-black w-full"
+                    >
+                      הצטרפות לחבילות
+                    </Button>
+                  </div>
+                )}
 
                 {/* Add treatment area link */}
                 <button className="text-[16px] text-black underline self-start hover:text-primary transition-colors">
@@ -383,6 +437,15 @@ export default function PractitionerProfilePage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={showJoinPackagesDialog}
+        onOpenChange={setShowJoinPackagesDialog}
+        title="להצטרף לחבילות הילי?"
+        description={`לאחר ההצטרפות מודל התמחור יעודכן ל"חבילה דרך Heali" והמחיר יוגדר ל-140 ש"ח. ניתן יהיה לחזור ולערוך בהמשך.`}
+        confirmLabel={isJoiningPackages ? "מעדכן..." : "הצטרפות"}
+        onConfirm={handleJoinPackages}
+      />
     </div>
   );
 }

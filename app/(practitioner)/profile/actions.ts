@@ -104,6 +104,29 @@ export async function updatePrice(price: string) {
   return { success: true };
 }
 
+// Heali-package practitioners are all priced at a flat rate (140₪) per the
+// onboarding pricing step. Joining flips both the model and the price.
+const HEALI_PACKAGE_PRICE = "140";
+
+export async function joinHealiPackages() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "לא מחובר" };
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("practitioner_profiles")
+    .update({
+      pricing_model: "per_heali_package",
+      price: HEALI_PACKAGE_PRICE,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", user.id);
+
+  if (error) return { success: false, error: "שגיאה בהצטרפות לחבילות" };
+  return { success: true };
+}
+
 export async function uploadAvatar(base64Data: string, fileExt: string, mimeType: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

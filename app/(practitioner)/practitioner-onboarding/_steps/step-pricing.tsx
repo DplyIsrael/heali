@@ -80,7 +80,7 @@ export function StepPricing({ initialValues, onNext, onBack }: StepPricingProps)
           required
         >
           <div className="flex flex-col gap-4">
-            {PRICING_MODELS.map((model) => (
+            {PRICING_MODELS.map((model, idx) => (
               <div key={model.value} className="flex flex-col gap-2">
                 <button
                   type="button"
@@ -100,26 +100,29 @@ export function StepPricing({ initialValues, onNext, onBack }: StepPricingProps)
                 <p className="text-[13px] font-light leading-snug text-[#666]">
                   {model.description}
                 </p>
+                {/* Price field rendered between the first and second options
+                    so it sits in the middle of the form rather than at the bottom. */}
+                {idx === 0 && (
+                  <FormField
+                    label="מחיר (₪)"
+                    htmlFor="price"
+                    error={errors.price?.message}
+                    required
+                  >
+                    <Input
+                      id="price"
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder="הקלד/י כאן..."
+                      {...register("price")}
+                      aria-invalid={!!errors.price}
+                    />
+                  </FormField>
+                )}
               </div>
             ))}
           </div>
-        </FormField>
-
-        <FormField
-          label="מחיר (₪)"
-          htmlFor="price"
-          error={errors.price?.message}
-          required
-        >
-          <Input
-            id="price"
-            type="number"
-            min="0"
-            step="1"
-            placeholder="הקלד/י כאן..."
-            {...register("price")}
-            aria-invalid={!!errors.price}
-          />
         </FormField>
 
         {serverError && (
