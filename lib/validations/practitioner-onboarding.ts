@@ -30,6 +30,26 @@ export const languagesSchema = z.object({
 
 export type LanguagesValues = z.infer<typeof languagesSchema>;
 
+// Israeli mobile/landline without the leading 0. The +972 prefix is appended
+// at submit time in the step component, so this only validates the local part.
+const israeliLocalPhone = z
+  .string()
+  .min(1, "שדה חובה")
+  .regex(/^[2-9]\d{8}$/, "מספר טלפון לא תקין");
+
+export const clientInvoiceSlotSchema = z.object({
+  fileUrl: z.string().url("יש להעלות קובץ"),
+  fileName: z.string().min(1),
+  clientName: z.string().min(1, "שדה חובה"),
+  clientPhone: israeliLocalPhone,
+});
+
+export const clientInvoicesSchema = z.object({
+  invoices: z.array(clientInvoiceSlotSchema).length(5, "יש להעלות 5 חשבוניות"),
+});
+
+export type ClientInvoiceSlot = z.infer<typeof clientInvoiceSlotSchema>;
+
 export const bioSchema = z.object({
   bio: z.string().min(50, "הביוגרפיה חייבת להכיל לפחות 50 תווים"),
   certificationDescription: z.string().min(1, "שדה חובה"),

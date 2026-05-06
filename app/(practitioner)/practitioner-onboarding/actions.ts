@@ -62,6 +62,84 @@ export async function savePricing(
   return { success: true };
 }
 
+export interface ClientInvoiceRow {
+  fileUrl: string;
+  fileName: string;
+  clientName: string;
+  clientPhone: string; // local part, without +972
+}
+
+export async function saveClientInvoices(
+  invoices: ClientInvoiceRow[]
+): Promise<ActionResult> {
+  const userId = await getAuthUserId();
+  if (!userId) return { success: false, error: "לא מחובר" };
+
+  const admin = createAdminClient();
+
+  const { data: profile } = await admin
+    .from("practitioner_profiles")
+    .select("id")
+    .eq("user_id", userId)
+    .single();
+  if (!profile) return { success: false, error: "פרופיל לא נמצא" };
+
+  // Replace-all: simpler than per-slot reconcile and the count is fixed at 5.
+  await admin.from("practitioner_client_invoices").delete().eq("practitioner_id", profile.id);
+
+  const rows = invoices.map((inv, i) => ({
+    practitioner_id: profile.id,
+    slot_index: i,
+    file_url: inv.fileUrl,
+    file_name: inv.fileName,
+    client_name: inv.clientName,
+    client_phone: inv.clientPhone,
+  }));
+
+  if (rows.length > 0) {
+    const { error: insertError } = await admin
+      .from("practitioner_client_invoices")
+      .insert(rows);
+    if (insertError) return { success: false, error: "שגיאה בשמירת חשבוניות" };
+  }
+
+  // Bump onboarding_step to 6 — next step is languages (now at index 6 after
+  // inserting client invoices as step 5).
+  const { error } = await admin
+    .from("practitioner_profiles")
+    .update({ onboarding_step: 6 })
+    .eq("user_id", userId);
+
+  if (error) return { success: false, error: "שגיאה בשמירת חשבוניות" };
+  return { success: true };
+}
+
+export async function fetchClientInvoices(): Promise<ClientInvoiceRow[]> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data: profile } = await supabase
+    .from("practitioner_profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+  if (!profile) return [];
+
+  const { data: rows } = await supabase
+    .from("practitioner_client_invoices")
+    .select("file_url, file_name, client_name, client_phone, slot_index")
+    .eq("practitioner_id", profile.id)
+    .order("slot_index", { ascending: true });
+
+  return (rows ?? []).map((r: { file_url: string; file_name: string; client_name: string; client_phone: string }) => ({
+    fileUrl: r.file_url,
+    fileName: r.file_name,
+    clientName: r.client_name,
+    clientPhone: r.client_phone,
+  }));
+}
+
 export async function saveLanguages(languages: string[]): Promise<ActionResult> {
   const userId = await getAuthUserId();
   if (!userId) return { success: false, error: "לא מחובר" };
@@ -69,7 +147,7 @@ export async function saveLanguages(languages: string[]): Promise<ActionResult> 
   const admin = createAdminClient();
   const { error } = await admin
     .from("practitioner_profiles")
-    .update({ languages, onboarding_step: 6 })
+    .update({ languages, onboarding_step: 7 })
     .eq("user_id", userId);
 
   if (error) return { success: false, error: "שגיאה בשמירת שפות" };
@@ -86,7 +164,7 @@ export async function saveBio(
   const admin = createAdminClient();
   const { error } = await admin
     .from("practitioner_profiles")
-    .update({ bio, onboarding_step: 7 })
+    .update({ bio, onboarding_step: 8 })
     .eq("user_id", userId);
 
   if (error) return { success: false, error: "שגיאה בשמירת ביוגרפיה" };
@@ -101,7 +179,7 @@ export async function saveAgreement(): Promise<ActionResult> {
   const signedAt = new Date();
   const { error } = await admin
     .from("practitioner_profiles")
-    .update({ agreement_signed_at: signedAt.toISOString(), onboarding_step: 8 })
+    .update({ agreement_signed_at: signedAt.toISOString(), onboarding_step: 9 })
     .eq("user_id", userId);
 
   if (error) return { success: false, error: "שגיאה בשמירת הסכם" };
