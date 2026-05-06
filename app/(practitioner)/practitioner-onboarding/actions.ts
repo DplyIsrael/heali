@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendEmail } from "@/lib/email/client";
+import { practitionerAgreementCopyEmail } from "@/lib/email/templates";
 
 interface ActionResult {
   success: boolean;
@@ -96,12 +98,35 @@ export async function saveAgreement(): Promise<ActionResult> {
   if (!userId) return { success: false, error: "לא מחובר" };
 
   const admin = createAdminClient();
+  const signedAt = new Date();
   const { error } = await admin
     .from("practitioner_profiles")
-    .update({ agreement_signed_at: new Date().toISOString(), onboarding_step: 8 })
+    .update({ agreement_signed_at: signedAt.toISOString(), onboarding_step: 8 })
     .eq("user_id", userId);
 
   if (error) return { success: false, error: "שגיאה בשמירת הסכם" };
+
+  // Best-effort: email the practitioner a copy of what they just signed.
+  // Failure here doesn't block the save — we don't want to bounce them out
+  // of onboarding just because Resend hiccuped or the API key isn't set.
+  try {
+    const { data: userRow } = await admin
+      .from("users")
+      .select("full_name, email")
+      .eq("id", userId)
+      .single();
+
+    if (userRow?.email) {
+      const { subject, html } = practitionerAgreementCopyEmail({
+        practitionerName: userRow.full_name ?? "",
+        signedAt: signedAt.toLocaleDateString("he-IL"),
+      });
+      await sendEmail({ to: userRow.email, subject, html });
+    }
+  } catch (err) {
+    console.error("[saveAgreement] agreement copy email failed:", err);
+  }
+
   return { success: true };
 }
 

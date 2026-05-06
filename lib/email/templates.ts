@@ -144,6 +144,37 @@ export function practitionerApprovedEmail(params: {
   };
 }
 
+// Sent when the practitioner ticks the agreement checkbox at the end of
+// onboarding — gives them a copy of what they agreed to. The body here is the
+// same placeholder text rendered on the agreement step; swap in the legal
+// version when client copy is ready.
+export function practitionerAgreementCopyEmail(params: {
+  practitionerName: string;
+  signedAt: string;
+}) {
+  return {
+    subject: "עותק של הסכם המטפל בהילי",
+    html: `
+      <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; line-height: 1.6;">
+        <h1 style="color: #21544E;">הסכם מטפל — עותק</h1>
+        <p>שלום ${params.practitionerName},</p>
+        <p>זהו עותק של ההסכם שאישרת בתאריך <strong>${params.signedAt}</strong>.</p>
+
+        <h3 style="color: #21544E; margin-top: 24px;">הסכם שימוש למטפלים בפלטפורמת Heali</h3>
+        <p>הסכם זה מסדיר את תנאי השימוש שלך כמטפל/ת בפלטפורמת Heali. באישורך, אתה מסכים לתנאים הבאים:</p>
+        <p><strong>1. זמינות:</strong> אתה מתחייב לעדכן את לוח הזמנים שלך באופן שוטף ולהגיב לבקשות תורים תוך 24 שעות.</p>
+        <p><strong>2. מקצועיות:</strong> אתה מתחייב לספק שירות מקצועי ואיכותי לכל מטופל/ת.</p>
+        <p><strong>3. ביטולים:</strong> ביטול טיפול חייב להתבצע לפחות 24 שעות מראש.</p>
+        <p><strong>4. תשלומים:</strong> התשלומים יועברו אליך בהתאם למדיניות התשלומים של הפלטפורמה.</p>
+        <p><strong>5. תוכן:</strong> אתה אחראי לדיוק המידע בפרופיל שלך, כולל תעודות, ניסיון, ותיאור השירותים.</p>
+        <p style="font-style: italic; color: #666; font-size: 13px;">* הסכם מלא יפורסם בקרוב. זהו טקסט מקום (placeholder).</p>
+
+        <p style="color: #9f9f9f; margin-top: 24px;">צוות Heali</p>
+      </div>
+    `,
+  };
+}
+
 export function practitionerRejectedEmail(params: {
   practitionerName: string;
   reason: string;
