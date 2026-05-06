@@ -56,11 +56,8 @@ export function StepLanguages({ initialSelected, onNext, onBack }: StepLanguages
   return (
     <div className="flex flex-col">
       <h1 className="text-[36px] font-semibold leading-tight text-foreground">
-        באילו שפות אתה מטפל?
+        מה השפות שלך?
       </h1>
-      <p className="mt-2 text-[18px] font-light text-[#666]">
-        בחר את השפות בהן אתה יכול לתת טיפול
-      </p>
 
       {/* Selected chips */}
       {selected.length > 0 && (
