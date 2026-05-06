@@ -1,7 +1,6 @@
 "use server";
 
 import QRCode from "qrcode";
-import { randomUUID } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email/client";
 import { practitionerApprovedEmail, practitionerRejectedEmail } from "@/lib/email/templates";
@@ -125,8 +124,10 @@ export async function approvePractitioner(
     }
   }
 
-  // Generate a stable per-practitioner QR token if not yet set
-  const qrToken = (before.qr_code_url as string | null) ?? randomUUID();
+  // Generate a stable per-practitioner QR token if not yet set.
+  // Uses the global Web Crypto API (available in Node 19+ and edge runtimes)
+  // to avoid the unprefixed "crypto" import that Turbopack is strict about.
+  const qrToken = (before.qr_code_url as string | null) ?? crypto.randomUUID();
   updates.qr_code_url = qrToken;
   updates.verification_status = "approved";
   updates.is_publicly_visible = true;
