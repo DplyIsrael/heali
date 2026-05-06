@@ -103,8 +103,7 @@ export async function saveClientInvoices(
     if (insertError) return { success: false, error: "שגיאה בשמירת חשבוניות" };
   }
 
-  // Bump onboarding_step to 6 — next step is languages (now at index 6 after
-  // inserting client invoices as step 5).
+  // Bump onboarding_step to 6 — next step is client references.
   const { error } = await admin
     .from("practitioner_profiles")
     .update({ onboarding_step: 6 })
@@ -112,6 +111,82 @@ export async function saveClientInvoices(
 
   if (error) return { success: false, error: "שגיאה בשמירת חשבוניות" };
   return { success: true };
+}
+
+export interface ClientReferenceRow {
+  fileUrl: string;
+  fileName: string;
+  clientName: string;
+  clientPhone: string; // local part, without +972
+}
+
+export async function saveClientReferences(
+  references: ClientReferenceRow[]
+): Promise<ActionResult> {
+  const userId = await getAuthUserId();
+  if (!userId) return { success: false, error: "לא מחובר" };
+
+  const admin = createAdminClient();
+
+  const { data: profile } = await admin
+    .from("practitioner_profiles")
+    .select("id")
+    .eq("user_id", userId)
+    .single();
+  if (!profile) return { success: false, error: "פרופיל לא נמצא" };
+
+  await admin.from("practitioner_client_references").delete().eq("practitioner_id", profile.id);
+
+  const rows = references.map((ref, i) => ({
+    practitioner_id: profile.id,
+    slot_index: i,
+    file_url: ref.fileUrl,
+    file_name: ref.fileName,
+    client_name: ref.clientName,
+    client_phone: ref.clientPhone,
+  }));
+
+  if (rows.length > 0) {
+    const { error: insertError } = await admin
+      .from("practitioner_client_references")
+      .insert(rows);
+    if (insertError) return { success: false, error: "שגיאה בשמירת המלצות" };
+  }
+
+  // Bump onboarding_step to 7 — next step is languages.
+  const { error } = await admin
+    .from("practitioner_profiles")
+    .update({ onboarding_step: 7 })
+    .eq("user_id", userId);
+
+  if (error) return { success: false, error: "שגיאה בשמירת המלצות" };
+  return { success: true };
+}
+
+export async function fetchClientReferences(): Promise<ClientReferenceRow[]> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data: profile } = await supabase
+    .from("practitioner_profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+  if (!profile) return [];
+
+  const { data: rows } = await supabase
+    .from("practitioner_client_references")
+    .select("file_url, file_name, client_name, client_phone, slot_index")
+    .eq("practitioner_id", profile.id)
+    .order("slot_index", { ascending: true });
+
+  return (rows ?? []).map((r: { file_url: string; file_name: string; client_name: string; client_phone: string }) => ({
+    fileUrl: r.file_url,
+    fileName: r.file_name,
+    clientName: r.client_name,
+    clientPhone: r.client_phone,
+  }));
 }
 
 export async function fetchClientInvoices(): Promise<ClientInvoiceRow[]> {
@@ -147,7 +222,7 @@ export async function saveLanguages(languages: string[]): Promise<ActionResult> 
   const admin = createAdminClient();
   const { error } = await admin
     .from("practitioner_profiles")
-    .update({ languages, onboarding_step: 7 })
+    .update({ languages, onboarding_step: 8 })
     .eq("user_id", userId);
 
   if (error) return { success: false, error: "שגיאה בשמירת שפות" };
@@ -162,7 +237,7 @@ export async function saveBio(
   if (!userId) return { success: false, error: "לא מחובר" };
 
   const admin = createAdminClient();
-  const payload: Record<string, unknown> = { bio, onboarding_step: 8 };
+  const payload: Record<string, unknown> = { bio, onboarding_step: 9 };
   if (certificationDescription !== undefined) {
     payload.certification_description = certificationDescription;
   }
@@ -183,7 +258,7 @@ export async function saveAgreement(): Promise<ActionResult> {
   const signedAt = new Date();
   const { error } = await admin
     .from("practitioner_profiles")
-    .update({ agreement_signed_at: signedAt.toISOString(), onboarding_step: 9 })
+    .update({ agreement_signed_at: signedAt.toISOString(), onboarding_step: 10 })
     .eq("user_id", userId);
 
   if (error) return { success: false, error: "שגיאה בשמירת הסכם" };

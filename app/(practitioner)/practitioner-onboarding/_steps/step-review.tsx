@@ -16,6 +16,7 @@ interface StepReviewProps {
   bio: BioValues | null;
   certificateCount: number;
   invoiceCount: number;
+  referenceCount: number;
   onSubmit: () => void;
   onBack: () => void;
   onEditStep: (step: number) => void;
@@ -35,6 +36,7 @@ export function StepReview({
   bio,
   certificateCount,
   invoiceCount,
+  referenceCount,
   onSubmit,
   onBack,
   onEditStep,
@@ -84,15 +86,20 @@ export function StepReview({
       content: `${invoiceCount} חשבוניות הועלו`,
     },
     {
+      title: "המלצות של לקוחות",
+      step: 6,
+      content: `${referenceCount} המלצות הועלו`,
+    },
+    {
       // i18n key step5Title still describes "Languages" — kept since the
       // content didn't change, only the step number shifted.
       title: t("step5Title"),
-      step: 6,
+      step: 7,
       content: languages.join(", ") || "לא נבחרו",
     },
     {
       title: t("step6Title"),
-      step: 7,
+      step: 8,
       content: bio?.bio
         ? bio.bio.length > 100
           ? bio.bio.substring(0, 100) + "..."

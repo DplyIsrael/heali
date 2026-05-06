@@ -53,6 +53,19 @@ export const practitionerClientInvoices = pgTable("practitioner_client_invoices"
   uploadedAt: timestamp("uploaded_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// One row per uploaded client reference/testimonial during onboarding step 6.
+// Five rows (slot_index 0-4) are required to advance.
+export const practitionerClientReferences = pgTable("practitioner_client_references", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  practitionerId: uuid("practitioner_id").notNull().references(() => practitionerProfiles.id, { onDelete: "cascade" }),
+  slotIndex: integer("slot_index").notNull(),
+  fileUrl: text("file_url").notNull(),
+  fileName: text("file_name").notNull(),
+  clientName: text("client_name").notNull(),
+  clientPhone: text("client_phone").notNull(),
+  uploadedAt: timestamp("uploaded_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const practitionerDocuments = pgTable("practitioner_documents", {
   id: uuid("id").primaryKey().defaultRandom(),
   practitionerId: uuid("practitioner_id").notNull().references(() => practitionerProfiles.id, { onDelete: "cascade" }),

@@ -8,6 +8,7 @@ import { StepSpecialties } from "./_steps/step-specialties";
 import { StepPricing } from "./_steps/step-pricing";
 import { StepCertificates } from "./_steps/step-certificates";
 import { StepClientInvoices } from "./_steps/step-client-invoices";
+import { StepClientReferences } from "./_steps/step-client-references";
 import { StepLanguages } from "./_steps/step-languages";
 import { StepBio } from "./_steps/step-bio";
 import { StepAgreement } from "./_steps/step-agreement";
@@ -18,11 +19,13 @@ import {
   fetchCertificates,
   deleteCertificate,
   fetchClientInvoices,
+  fetchClientReferences,
   type ClientInvoiceRow,
+  type ClientReferenceRow,
 } from "./actions";
 import type { BioValues } from "@/lib/validations/practitioner-onboarding";
 
-const TOTAL_STEPS = 9;
+const TOTAL_STEPS = 10;
 
 interface Domain {
   id: string;
@@ -49,6 +52,7 @@ export default function PractitionerOnboardingPage() {
   const [pricing, setPricing] = useState<{ pricingModel: string; price: string } | null>(null);
   const [certificates, setCertificates] = useState<UploadedFile[]>([]);
   const [clientInvoices, setClientInvoices] = useState<ClientInvoiceRow[]>([]);
+  const [clientReferences, setClientReferences] = useState<ClientReferenceRow[]>([]);
   const [languages, setLanguages] = useState<string[]>([]);
   const [bio, setBio] = useState<BioValues | null>(null);
 
@@ -60,15 +64,17 @@ export default function PractitionerOnboardingPage() {
   // Load domains + resume from saved step
   useEffect(() => {
     async function init() {
-      const [domains, profile, savedCerts, savedInvoices] = await Promise.all([
+      const [domains, profile, savedCerts, savedInvoices, savedReferences] = await Promise.all([
         fetchDomains(),
         fetchPractitionerProfile(),
         fetchCertificates(),
         fetchClientInvoices(),
+        fetchClientReferences(),
       ]);
       setAllDomains(domains);
       if (savedCerts.length) setCertificates(savedCerts);
       if (savedInvoices.length) setClientInvoices(savedInvoices);
+      if (savedReferences.length) setClientReferences(savedReferences);
 
       if (profile) {
         // Resume from saved step
@@ -232,11 +238,24 @@ export default function PractitionerOnboardingPage() {
           />
         )}
         {currentStep === 6 && (
+          <StepClientReferences
+            initialSlots={clientReferences}
+            onNext={(slots) => {
+              setClientReferences(slots);
+              setCurrentStep(7);
+            }}
+            onBack={(slots) => {
+              setClientReferences(slots);
+              goBack();
+            }}
+          />
+        )}
+        {currentStep === 7 && (
           <StepLanguages
             initialSelected={languages}
             onNext={(langs) => {
               setLanguages(langs);
-              setCurrentStep(7);
+              setCurrentStep(8);
             }}
             onBack={(langs) => {
               setLanguages(langs);
@@ -244,12 +263,12 @@ export default function PractitionerOnboardingPage() {
             }}
           />
         )}
-        {currentStep === 7 && (
+        {currentStep === 8 && (
           <StepBio
             initialValues={bio}
             onNext={(values) => {
               setBio(values);
-              setCurrentStep(8);
+              setCurrentStep(9);
             }}
             onBack={(values) => {
               if (values.bio !== undefined || values.certificationDescription !== undefined) {
@@ -263,13 +282,13 @@ export default function PractitionerOnboardingPage() {
             }}
           />
         )}
-        {currentStep === 8 && (
+        {currentStep === 9 && (
           <StepAgreement
-            onNext={() => setCurrentStep(9)}
+            onNext={() => setCurrentStep(10)}
             onBack={goBack}
           />
         )}
-        {currentStep === 9 && (
+        {currentStep === 10 && (
           <StepReview
             domainNames={domainNames}
             specialtyNames={[]} // Would need specialty names fetch — uses IDs for now
@@ -278,6 +297,7 @@ export default function PractitionerOnboardingPage() {
             bio={bio}
             certificateCount={certificates.length}
             invoiceCount={clientInvoices.length}
+            referenceCount={clientReferences.length}
             onSubmit={() => router.push("/practitioner-onboarding/pending")}
             onBack={goBack}
             onEditStep={(step) => setCurrentStep(step)}
