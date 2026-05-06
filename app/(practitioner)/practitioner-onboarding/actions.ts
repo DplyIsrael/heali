@@ -156,15 +156,19 @@ export async function saveLanguages(languages: string[]): Promise<ActionResult> 
 
 export async function saveBio(
   bio: string,
-  _certificationDescription?: string
+  certificationDescription?: string
 ): Promise<ActionResult> {
   const userId = await getAuthUserId();
   if (!userId) return { success: false, error: "לא מחובר" };
 
   const admin = createAdminClient();
+  const payload: Record<string, unknown> = { bio, onboarding_step: 8 };
+  if (certificationDescription !== undefined) {
+    payload.certification_description = certificationDescription;
+  }
   const { error } = await admin
     .from("practitioner_profiles")
-    .update({ bio, onboarding_step: 8 })
+    .update(payload)
     .eq("user_id", userId);
 
   if (error) return { success: false, error: "שגיאה בשמירת ביוגרפיה" };

@@ -20,6 +20,7 @@ export const practitionerProfiles = pgTable("practitioner_profiles", {
   price: numeric("price", { precision: 10, scale: 2 }).notNull().default("0"),
   languages: text("languages").array().notNull().default([]),
   bio: text("bio"),
+  certificationDescription: text("certification_description"),
   phone: text("phone"),
   city: text("city"),
   clinicCities: text("clinic_cities").array().notNull().default([]),

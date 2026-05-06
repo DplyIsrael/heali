@@ -76,7 +76,12 @@ export default function PractitionerOnboardingPage() {
         if (profile.specialty_ids?.length) setSelectedSpecialtyIds(profile.specialty_ids);
         if (profile.price) setPricing({ pricingModel: profile.pricing_model, price: profile.price });
         if (profile.languages?.length) setLanguages(profile.languages);
-        if (profile.bio) setBio({ bio: profile.bio, certificationDescription: "" });
+        if (profile.bio) {
+          setBio({
+            bio: profile.bio,
+            certificationDescription: profile.certification_description ?? "",
+          });
+        }
 
         // Resume from step 1 so user can review their pre-filled answers
         // and naturally progress to the first unfilled step.
