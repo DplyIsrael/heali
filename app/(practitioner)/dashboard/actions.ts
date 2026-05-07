@@ -102,22 +102,52 @@ export async function fetchDashboardData(): Promise<{
   };
 }
 
-export async function approveBooking(bookingId: string) {
+// Resolve the practitioner_profile.id for the current user, or null if the
+// caller isn't authenticated as a practitioner. Used by ownership-scoped
+// mutations below so a logged-in non-owner can't approve/decline arbitrary
+// bookings.
+async function currentPractitionerId(): Promise<string | null> {
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data: profile } = await supabase
+    .from("practitioner_profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+  return profile?.id ?? null;
+}
+
+export async function approveBooking(bookingId: string) {
+  const practitionerId = await currentPractitionerId();
+  if (!practitionerId) return { success: false, error: "לא מורשה" };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
     .from("bookings")
     .update({ status: "confirmed", payment_status: "charged", updated_at: new Date().toISOString() })
-    .eq("id", bookingId);
+    .eq("id", bookingId)
+    .eq("practitioner_id", practitionerId)
+    .select("id")
+    .maybeSingle();
   if (error) return { success: false, error: "שגיאה באישור הטיפול" };
+  if (!data) return { success: false, error: "לא מורשה" };
   return { success: true };
 }
 
 export async function declineBooking(bookingId: string) {
+  const practitionerId = await currentPractitionerId();
+  if (!practitionerId) return { success: false, error: "לא מורשה" };
+
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("bookings")
     .update({ status: "declined", updated_at: new Date().toISOString() })
-    .eq("id", bookingId);
+    .eq("id", bookingId)
+    .eq("practitioner_id", practitionerId)
+    .select("id")
+    .maybeSingle();
   if (error) return { success: false, error: "שגיאה בדחיית הטיפול" };
+  if (!data) return { success: false, error: "לא מורשה" };
   return { success: true };
 }

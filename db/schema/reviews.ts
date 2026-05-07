@@ -4,7 +4,7 @@ import { reviewStatusEnum } from "./enums";
 
 export const reviews = pgTable("reviews", {
   id: uuid("id").primaryKey().defaultRandom(),
-  bookingId: uuid("booking_id").notNull().unique().references(() => bookings.id),
+  bookingId: uuid("booking_id").notNull().unique().references(() => bookings.id, { onDelete: "cascade" }),
   rating: integer("rating").notNull(), // 1-5
   comment: text("comment"),
   isAnonymous: boolean("is_anonymous").notNull().default(false),

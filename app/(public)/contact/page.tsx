@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
 import { toast } from "sonner";
+import { sendContactMessage } from "./actions";
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
@@ -25,10 +26,13 @@ export default function ContactPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSending(true);
-    // TODO: Wire to Resend or form backend
-    await new Promise((r) => setTimeout(r, 1000));
-    toast.success("ההודעה נשלחה בהצלחה!");
-    setName(""); setPhone(""); setEmail(""); setMessage("");
+    const result = await sendContactMessage({ name, phone, email, message });
+    if (result.success) {
+      toast.success("ההודעה נשלחה בהצלחה!");
+      setName(""); setPhone(""); setEmail(""); setMessage("");
+    } else {
+      toast.error(result.error ?? "שגיאה בשליחת ההודעה");
+    }
     setIsSending(false);
   };
 

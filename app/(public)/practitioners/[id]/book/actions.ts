@@ -1,6 +1,8 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { sendEmail } from "@/lib/email/client";
+import { practitionerNewBookingEmail } from "@/lib/email/templates";
 
 interface ActionResult {
   success: boolean;
@@ -175,7 +177,35 @@ export async function createBooking(
   }
 
   // TODO: Trigger payment via Grow when credentials available
-  // TODO: Send email to practitioner via Resend
+
+  // Best-effort: notify the practitioner that a new booking is waiting for
+  // their approval. Failure here doesn't block the booking.
+  try {
+    const { data: pracProfile } = await supabase
+      .from("practitioner_profiles")
+      .select("user_id")
+      .eq("id", practitionerId)
+      .single();
+    if (pracProfile) {
+      const [{ data: pracUser }, { data: patientUser }, { data: domain }] = await Promise.all([
+        supabase.from("users").select("full_name, email").eq("id", pracProfile.user_id).single(),
+        supabase.from("users").select("full_name").eq("id", user.id).single(),
+        supabase.from("treatment_domains").select("name").eq("id", domainId).single(),
+      ]);
+      if (pracUser?.email) {
+        const { subject, html } = practitionerNewBookingEmail({
+          practitionerName: pracUser.full_name ?? "",
+          patientName: patientUser?.full_name ?? "",
+          domain: domain?.name ?? "",
+          date: scheduledDate,
+          time: scheduledTime,
+        });
+        await sendEmail({ to: pracUser.email, subject, html });
+      }
+    }
+  } catch (err) {
+    console.error("[createBooking] practitioner email failed:", err);
+  }
 
   return { success: true, bookingId: data.id };
 }

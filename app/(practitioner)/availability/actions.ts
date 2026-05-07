@@ -96,12 +96,28 @@ export async function saveAvailabilitySlot(
 
 export async function deleteAvailabilitySlot(slotId: string): Promise<ActionResult> {
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "לא מורשה" };
+
+  const { data: profile } = await supabase
+    .from("practitioner_profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+  if (!profile) return { success: false, error: "לא מורשה" };
+
+  // Scope the delete to the caller's practitioner_id so a logged-in user
+  // can't drop someone else's slots by guessing IDs.
+  const { data, error } = await supabase
     .from("practitioner_availability")
     .delete()
-    .eq("id", slotId);
+    .eq("id", slotId)
+    .eq("practitioner_id", profile.id)
+    .select("id")
+    .maybeSingle();
 
   if (error) return { success: false, error: "שגיאה במחיקת זמינות" };
+  if (!data) return { success: false, error: "לא מורשה" };
   return { success: true };
 }
 
@@ -131,11 +147,25 @@ export async function addBlockedDate(date: string): Promise<ActionResult> {
 
 export async function removeBlockedDate(blockId: string): Promise<ActionResult> {
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "לא מורשה" };
+
+  const { data: profile } = await supabase
+    .from("practitioner_profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+  if (!profile) return { success: false, error: "לא מורשה" };
+
+  const { data, error } = await supabase
     .from("availability_blocks")
     .delete()
-    .eq("id", blockId);
+    .eq("id", blockId)
+    .eq("practitioner_id", profile.id)
+    .select("id")
+    .maybeSingle();
 
   if (error) return { success: false, error: "שגיאה בהסרת חסימה" };
+  if (!data) return { success: false, error: "לא מורשה" };
   return { success: true };
 }

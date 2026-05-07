@@ -246,7 +246,14 @@ export async function signInWithGoogle(): Promise<void> {
 }
 
 export async function signOut(): Promise<void> {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
+  // Don't let a transient Supabase error keep the user signed in. We log
+  // and still redirect to /login — the worst case is a stale cookie that
+  // middleware will clear on the next request.
+  try {
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+  } catch (err) {
+    console.error("[signOut] supabase.auth.signOut failed:", err);
+  }
   redirect("/login");
 }

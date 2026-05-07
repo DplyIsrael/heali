@@ -19,7 +19,7 @@ export const credits = pgTable("credits", {
   id: uuid("id").primaryKey().defaultRandom(),
   patientId: uuid("patient_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
-  sourceBookingId: uuid("source_booking_id").references(() => bookings.id),
+  sourceBookingId: uuid("source_booking_id").references(() => bookings.id, { onDelete: "set null" }),
   status: creditStatusEnum("status").notNull().default("active"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

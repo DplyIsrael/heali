@@ -34,6 +34,18 @@ export async function POST(request: Request) {
 
     const { data: { publicUrl } } = admin.storage.from("avatars").getPublicUrl(path);
 
+    // Persist the URL to whichever profile table the user has. The
+    // route is shared between patients and practitioners, so we write
+    // to both — only the row that exists for this user is updated.
+    await admin
+      .from("patient_profiles")
+      .update({ profile_photo_url: publicUrl, updated_at: new Date().toISOString() })
+      .eq("user_id", user.id);
+    await admin
+      .from("practitioner_profiles")
+      .update({ profile_photo_url: publicUrl, updated_at: new Date().toISOString() })
+      .eq("user_id", user.id);
+
     return NextResponse.json({ url: publicUrl });
   } catch (err) {
     console.error("Avatar upload route error:", err);

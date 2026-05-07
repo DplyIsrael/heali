@@ -6,8 +6,8 @@ import { bookingStatusEnum, paymentStatusEnum } from "./enums";
 
 export const bookings = pgTable("bookings", {
   id: uuid("id").primaryKey().defaultRandom(),
-  patientId: uuid("patient_id").notNull().references(() => users.id),
-  practitionerId: uuid("practitioner_id").notNull().references(() => practitionerProfiles.id),
+  patientId: uuid("patient_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  practitionerId: uuid("practitioner_id").notNull().references(() => practitionerProfiles.id, { onDelete: "cascade" }),
   domainId: uuid("domain_id").notNull().references(() => treatmentDomains.id),
   scheduledDate: date("scheduled_date").notNull(),
   scheduledTime: text("scheduled_time").notNull(), // "HH:MM"

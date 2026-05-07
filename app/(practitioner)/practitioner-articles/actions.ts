@@ -104,8 +104,21 @@ export async function createArticle(
 
 export async function deleteArticle(articleId: string): Promise<ActionResult> {
   const supabase = await createClient();
-  const { error } = await supabase.from("articles").delete().eq("id", articleId);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "לא מורשה" };
+
+  // Authors can only delete their own articles. Admins go through a
+  // separate admin route, so this is a strict author-only check.
+  const { data, error } = await supabase
+    .from("articles")
+    .delete()
+    .eq("id", articleId)
+    .eq("author_id", user.id)
+    .select("id")
+    .maybeSingle();
+
   if (error) return { success: false, error: "שגיאה במחיקת המאמר" };
+  if (!data) return { success: false, error: "לא מורשה" };
   return { success: true };
 }
 

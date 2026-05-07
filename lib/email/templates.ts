@@ -144,6 +144,32 @@ export function practitionerApprovedEmail(params: {
   };
 }
 
+// Sent to the Heali support inbox when someone submits the public contact form.
+// Reply-to is set to the submitter's email so the team can respond directly.
+export function contactFormEmail(params: {
+  name: string;
+  phone: string;
+  email: string;
+  message: string;
+}) {
+  const escape = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return {
+    subject: `יצירת קשר — ${params.name}`,
+    replyTo: params.email,
+    html: `
+      <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto;">
+        <h1 style="color: #21544E;">פנייה חדשה דרך טופס יצירת קשר</h1>
+        <p><strong>שם:</strong> ${escape(params.name)}</p>
+        <p><strong>טלפון:</strong> ${escape(params.phone)}</p>
+        <p><strong>אימייל:</strong> ${escape(params.email)}</p>
+        <p><strong>הודעה:</strong></p>
+        <div style="white-space: pre-wrap; padding: 12px; background: #f9f9f9; border-radius: 8px;">${escape(params.message)}</div>
+      </div>
+    `,
+  };
+}
+
 // Sent when the practitioner ticks the agreement checkbox at the end of
 // onboarding — gives them a copy of what they agreed to. The body here is the
 // same placeholder text rendered on the agreement step; swap in the legal

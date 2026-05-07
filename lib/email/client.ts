@@ -6,6 +6,7 @@ export async function sendEmail(params: {
   to: string;
   subject: string;
   html: string;
+  replyTo?: string;
 }): Promise<{ success: boolean; error?: string }> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
@@ -20,6 +21,7 @@ export async function sendEmail(params: {
       to: params.to,
       subject: params.subject,
       html: params.html,
+      ...(params.replyTo ? { replyTo: params.replyTo } : {}),
     });
     if (error) {
       console.error("[email] send failed", error);

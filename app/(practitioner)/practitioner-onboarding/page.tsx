@@ -20,6 +20,7 @@ import {
   deleteCertificate,
   fetchClientInvoices,
   fetchClientReferences,
+  fetchSpecialties,
   type ClientInvoiceRow,
   type ClientReferenceRow,
 } from "./actions";
@@ -55,6 +56,9 @@ export default function PractitionerOnboardingPage() {
   const [clientReferences, setClientReferences] = useState<ClientReferenceRow[]>([]);
   const [languages, setLanguages] = useState<string[]>([]);
   const [bio, setBio] = useState<BioValues | null>(null);
+  // Resolved name list for the selected specialty IDs — used by the
+  // review screen to display human-readable names instead of UUIDs.
+  const [specialtyNames, setSpecialtyNames] = useState<string[]>([]);
 
   // Step labels are not displayed (only the dot count is rendered), so we
   // just keep this aligned with TOTAL_STEPS to avoid hitting missing i18n keys
@@ -79,7 +83,13 @@ export default function PractitionerOnboardingPage() {
       if (profile) {
         // Resume from saved step
         if (profile.domain_ids?.length) setSelectedDomainIds(profile.domain_ids);
-        if (profile.specialty_ids?.length) setSelectedSpecialtyIds(profile.specialty_ids);
+        if (profile.specialty_ids?.length) {
+          setSelectedSpecialtyIds(profile.specialty_ids);
+          // Resolve names so the review screen can render them. Use the
+          // existing fetchSpecialties helper with the selected IDs.
+          const specs = await fetchSpecialties([], profile.specialty_ids);
+          setSpecialtyNames(specs.map((s: { name: string }) => s.name));
+        }
         if (profile.price) setPricing({ pricingModel: profile.pricing_model, price: profile.price });
         if (profile.languages?.length) setLanguages(profile.languages);
         if (profile.bio) {
@@ -291,7 +301,7 @@ export default function PractitionerOnboardingPage() {
         {currentStep === 10 && (
           <StepReview
             domainNames={domainNames}
-            specialtyNames={[]} // Would need specialty names fetch — uses IDs for now
+            specialtyNames={specialtyNames}
             pricing={pricing}
             languages={languages}
             bio={bio}
