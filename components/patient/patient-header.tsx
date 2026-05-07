@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/shared/logo";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { signOut } from "@/app/(public)/auth/actions";
+import { NotificationsBell } from "@/components/shared/notifications-bell";
 
 const NAV_ITEMS = [
   { label: "דף בית", href: "/" },
@@ -26,12 +27,14 @@ const NAV_ITEMS = [
 interface PatientHeaderProps {
   userName?: string;
   userAvatarUrl?: string;
+  userId?: string;
   points?: number;
 }
 
 export function PatientHeader({
   userName = "",
   userAvatarUrl,
+  userId = "",
   points = 0,
 }: PatientHeaderProps) {
   const pathname = usePathname();
@@ -64,9 +67,7 @@ export function PatientHeader({
         {/* LEFT side in RTL: user controls */}
         <div className="flex items-center gap-4">
           {/* Notifications */}
-          <button aria-label="התראות" className="relative text-foreground hover:text-primary transition-colors">
-            <Bell className="size-5" />
-          </button>
+          <NotificationsBell userId={userId} variant="dark" />
 
           {/* Points badge */}
           {points > 0 && (

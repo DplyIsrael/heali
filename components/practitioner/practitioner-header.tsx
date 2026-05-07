@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/shared/logo";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { signOut } from "@/app/(public)/auth/actions";
-import { NotificationsPanel } from "@/components/shared/notifications-panel";
+import { NotificationsBell } from "@/components/shared/notifications-bell";
 
 const NAV_ITEMS = [
   { label: "הקליניקה שלי", href: "/dashboard" },
@@ -28,40 +27,24 @@ interface PractitionerHeaderProps {
   userName?: string;
   userAvatarUrl?: string;
   userId?: string;
-  unreadNotifications?: number;
 }
 
 export function PractitionerHeader({
   userName = "",
   userAvatarUrl,
   userId = "",
-  unreadNotifications = 0,
 }: PractitionerHeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [showNotifications, setShowNotifications] = useState(false);
 
   return (
-    <>
-    <NotificationsPanel open={showNotifications} onClose={() => setShowNotifications(false)} userId={userId} />
     <header className="sticky top-0 z-50 w-full">
       {/* Top bar — dark teal */}
       <div className="h-[60px] w-full bg-primary">
         <div className="mx-auto flex h-full max-w-[1440px] items-center justify-between px-4 md:px-[50px]">
           {/* Left: notifications + avatar dropdown */}
           <div className="flex items-center gap-4">
-            <button
-              aria-label="התראות"
-              onClick={() => setShowNotifications(true)}
-              className="relative text-white hover:text-accent transition-colors"
-            >
-              <Bell className="size-5" />
-              {unreadNotifications > 0 && (
-                <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] text-white">
-                  {unreadNotifications}
-                </span>
-              )}
-            </button>
+            <NotificationsBell userId={userId} variant="light" />
 
             {/* Profile dropdown */}
             <DropdownMenu>
@@ -123,6 +106,5 @@ export function PractitionerHeader({
         </div>
       </div>
     </header>
-    </>
   );
 }

@@ -1,13 +1,35 @@
 import { AdminHeader } from "@/components/admin/admin-header";
+import { createClient } from "@/lib/supabase/server";
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  let userName = "";
+  let userId = "";
+
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (user) {
+      userId = user.id;
+      const { data: userData } = await supabase
+        .from("users")
+        .select("full_name")
+        .eq("id", user.id)
+        .single();
+
+      userName = userData?.full_name ?? "";
+    }
+  } catch {
+    // Silently fail — header shows fallback
+  }
+
   return (
     <>
-      <AdminHeader />
+      <AdminHeader userName={userName} userId={userId} />
       <main className="mx-auto max-w-[1440px] px-[50px] py-8">
         {children}
       </main>
