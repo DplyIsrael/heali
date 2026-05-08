@@ -25,7 +25,9 @@ interface Pkg { id: string; name: string; description: string; numTreatments: nu
 export default function AdminPackagesPage() {
   const [packages, setPackages] = useState<Pkg[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showCreate, setShowCreate] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  // Holds the package being edited; null means the modal is in "create" mode.
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const [name, setName] = useState("");
@@ -34,6 +36,23 @@ export default function AdminPackagesPage() {
   const [price, setPrice] = useState("100");
   const [theme, setTheme] = useState("teal");
   const [isSaving, setIsSaving] = useState(false);
+
+  const resetForm = () => {
+    setName(""); setDesc(""); setNum("5"); setPrice("100"); setTheme("teal");
+    setEditingId(null);
+  };
+
+  const openCreate = () => { resetForm(); setShowModal(true); };
+
+  const openEdit = (pkg: Pkg) => {
+    setEditingId(pkg.id);
+    setName(pkg.name);
+    setDesc(pkg.description);
+    setNum(String(pkg.numTreatments));
+    setPrice(String(pkg.pricePerTreatment));
+    setTheme(pkg.gradientTheme);
+    setShowModal(true);
+  };
 
   const loadData = async () => {
     const supabase = createClient();
@@ -47,16 +66,29 @@ export default function AdminPackagesPage() {
 
   useEffect(() => { void loadData(); }, []);
 
-  const handleCreate = async () => {
+  const handleSave = async () => {
     if (!name.trim()) { toast.error("יש להזין שם חבילה"); return; }
     setIsSaving(true);
     const supabase = createClient();
-    const { error } = await supabase.from("treatment_packages").insert({
-      name, description: desc || null, num_treatments: Number(num) || 5,
-      price_per_treatment: price, gradient_theme: theme,
-    });
-    if (error) toast.error("שגיאה ביצירת חבילה");
-    else { toast.success("חבילה נוצרה"); setShowCreate(false); setName(""); setDesc(""); loadData(); }
+    const payload = {
+      name,
+      description: desc || null,
+      num_treatments: Number(num) || 5,
+      price_per_treatment: price,
+      gradient_theme: theme,
+    };
+    const { error } = editingId
+      ? await supabase.from("treatment_packages").update(payload).eq("id", editingId)
+      : await supabase.from("treatment_packages").insert(payload);
+
+    if (error) {
+      toast.error(editingId ? "שגיאה בעדכון החבילה" : "שגיאה ביצירת חבילה");
+    } else {
+      toast.success(editingId ? "החבילה עודכנה" : "חבילה נוצרה");
+      setShowModal(false);
+      resetForm();
+      loadData();
+    }
     setIsSaving(false);
   };
 
@@ -77,7 +109,7 @@ export default function AdminPackagesPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-[28px] md:text-[36px] font-bold text-black">חבילות טיפול</h1>
-        <Button onClick={() => setShowCreate(true)} className="bg-accent text-black"><Plus className="size-4 me-1" /> הוספת חבילה חדשה</Button>
+        <Button onClick={openCreate} className="bg-accent text-black"><Plus className="size-4 me-1" /> הוספת חבילה חדשה</Button>
       </div>
 
       {/* Stat cards */}
@@ -107,7 +139,10 @@ export default function AdminPackagesPage() {
           {packages.map((pkg) => (
             <div key={pkg.id} className={`rounded-[20px] bg-gradient-to-br ${GRADIENTS[pkg.gradientTheme] ?? GRADIENTS.teal} p-6 text-white shadow-lg relative`}>
               <div className="absolute top-3 left-3">
-                <ThreeDotsMenu className="text-white" items={[{ label: "מחיקת חבילה", onClick: () => setDeleteTarget(pkg.id), destructive: true }]} />
+                <ThreeDotsMenu className="text-white" items={[
+                  { label: "עריכת חבילה", onClick: () => openEdit(pkg) },
+                  { label: "מחיקת חבילה", onClick: () => setDeleteTarget(pkg.id), destructive: true },
+                ]} />
               </div>
               <div className="size-[40px] rounded-[10px] bg-white/20 flex items-center justify-center mb-3"><span className="text-[18px]">✦</span></div>
               <h3 className="text-[18px] font-bold mb-1">{pkg.name}</h3>
@@ -119,12 +154,14 @@ export default function AdminPackagesPage() {
         </div>
       )}
 
-      {showCreate && (
+      {showModal && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
           <div className="w-full max-w-[500px] rounded-[16px] bg-white p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[22px] font-bold text-black">חבילה חדשה</h2>
-              <button onClick={() => setShowCreate(false)}><X className="size-5 text-muted" /></button>
+              <h2 className="text-[22px] font-bold text-black">
+                {editingId ? "עריכת חבילה" : "חבילה חדשה"}
+              </h2>
+              <button onClick={() => { setShowModal(false); resetForm(); }}><X className="size-5 text-muted" /></button>
             </div>
             <div className="flex flex-col gap-4">
               <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="שם החבילה" />
@@ -140,7 +177,9 @@ export default function AdminPackagesPage() {
                   ))}
                 </div>
               </div>
-              <Button onClick={handleCreate} disabled={isSaving} className="bg-accent text-black">{isSaving ? <Spinner size="sm" /> : "יצירה"}</Button>
+              <Button onClick={handleSave} disabled={isSaving} className="bg-accent text-black">
+                {isSaving ? <Spinner size="sm" /> : editingId ? "שמירת שינויים" : "יצירה"}
+              </Button>
             </div>
           </div>
         </div>

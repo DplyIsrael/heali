@@ -141,6 +141,16 @@ export async function createBooking(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "לא מחובר" };
 
+  // Reject blocked patients up front so they can't book a treatment.
+  const { data: caller } = await supabase
+    .from("users")
+    .select("is_blocked")
+    .eq("id", user.id)
+    .single();
+  if (caller?.is_blocked) {
+    return { success: false, error: "החשבון שלך חסום, אנא צור קשר עם התמיכה" };
+  }
+
   // Validate the slot is still available
   const { data: existing } = await supabase
     .from("bookings")
