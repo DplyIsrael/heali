@@ -4,17 +4,24 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Plus, Ban, ShieldCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { FormField } from "@/components/ui/form-field";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { addCreditToPatient, setPatientBlocked } from "./actions";
 
 interface PatientDetail {
   id: string;
   name: string;
   email: string;
   createdAt: string;
+  isBlocked: boolean;
 }
 
 interface PatientBooking {
@@ -36,14 +43,27 @@ export default function AdminPatientDetailPage() {
   const [creditBalance, setCreditBalance] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Modals + busy state for admin actions
+  const [showCreditModal, setShowCreditModal] = useState(false);
+  const [creditAmount, setCreditAmount] = useState("");
+  const [isAddingCredit, setIsAddingCredit] = useState(false);
+  const [showBlockConfirm, setShowBlockConfirm] = useState(false);
+  const [isTogglingBlock, setIsTogglingBlock] = useState(false);
+
   useEffect(() => {
     async function load() {
       const supabase = createClient();
 
-      const { data: user } = await supabase.from("users").select("id, full_name, email, created_at").eq("id", id).single();
+      const { data: user } = await supabase.from("users").select("id, full_name, email, created_at, is_blocked").eq("id", id).single();
       if (!user) { setIsLoading(false); return; }
 
-      setPatient({ id: user.id, name: user.full_name, email: user.email, createdAt: user.created_at });
+      setPatient({
+        id: user.id,
+        name: user.full_name,
+        email: user.email,
+        createdAt: user.created_at,
+        isBlocked: user.is_blocked ?? false,
+      });
 
       // Fetch bookings
       const { data: bks } = await supabase
@@ -81,6 +101,40 @@ export default function AdminPatientDetailPage() {
     load();
   }, [id]);
 
+  const handleAddCredit = async () => {
+    if (!patient) return;
+    const amount = Number(creditAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast.error("סכום לא תקין");
+      return;
+    }
+    setIsAddingCredit(true);
+    const result = await addCreditToPatient(patient.id, amount);
+    setIsAddingCredit(false);
+    if (result.success) {
+      toast.success(`נוסף זיכוי של ₪${amount}`);
+      setCreditBalance((c) => c + amount);
+      setCreditAmount("");
+      setShowCreditModal(false);
+    } else {
+      toast.error(result.error ?? "שגיאה");
+    }
+  };
+
+  const handleToggleBlock = async () => {
+    if (!patient) return;
+    setIsTogglingBlock(true);
+    const result = await setPatientBlocked(patient.id, !patient.isBlocked);
+    setIsTogglingBlock(false);
+    if (result.success) {
+      toast.success(patient.isBlocked ? "המטופל שוחרר" : "המטופל נחסם");
+      setPatient({ ...patient, isBlocked: !patient.isBlocked });
+      setShowBlockConfirm(false);
+    } else {
+      toast.error(result.error ?? "שגיאה");
+    }
+  };
+
   if (isLoading) return <div className="flex min-h-[60vh] items-center justify-center"><Spinner /></div>;
   if (!patient) return <div className="flex min-h-[60vh] items-center justify-center text-muted">מטופל לא נמצא</div>;
 
@@ -94,7 +148,14 @@ export default function AdminPatientDetailPage() {
         {/* Patient info */}
         <div className="flex-1">
           <div className="rounded-[12px] border border-border bg-white p-6 mb-6">
-            <h1 className="text-[24px] font-bold text-black mb-6">{patient.name}</h1>
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-[24px] font-bold text-black">{patient.name}</h1>
+              {patient.isBlocked && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 text-destructive text-[12px] font-medium px-3 py-1">
+                  <Ban className="size-3" /> חסום
+                </span>
+              )}
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <FormField label="אימייל" htmlFor="email">
                 <div className="h-[48px] rounded-[10px] border border-border-input bg-[#f9f9f9] px-3 flex items-center text-[14px]">{patient.email}</div>
@@ -143,6 +204,14 @@ export default function AdminPatientDetailPage() {
             <h2 className="text-[18px] font-semibold text-black mb-4">יתרת זכות</h2>
             <p className="text-[36px] font-bold text-primary">₪{creditBalance}</p>
             <p className="text-[14px] text-muted mt-1">יתרה פעילה בארנק</p>
+            <Button
+              type="button"
+              onClick={() => setShowCreditModal(true)}
+              className="w-full mt-4 bg-accent text-black gap-2"
+            >
+              <Plus className="size-4" />
+              הוספת זיכוי
+            </Button>
           </div>
 
           <div className="rounded-[12px] border border-border bg-white p-6 mt-4">
@@ -153,8 +222,79 @@ export default function AdminPatientDetailPage() {
               <div className="flex justify-between"><span className="text-muted">בוטלו</span><span className="text-black font-medium">{bookings.filter((b) => b.status === "canceled").length}</span></div>
             </div>
           </div>
+
+          {/* Block / unblock action */}
+          <div className="rounded-[12px] border border-border bg-white p-6 mt-4">
+            <h2 className="text-[18px] font-semibold text-black mb-2">סטטוס חשבון</h2>
+            <p className="text-[13px] text-muted mb-3">
+              {patient.isBlocked
+                ? "המטופל חסום וחסום מהזמנת טיפולים."
+                : "המטופל פעיל ויכול להזמין טיפולים."}
+            </p>
+            <Button
+              type="button"
+              onClick={() => setShowBlockConfirm(true)}
+              variant={patient.isBlocked ? "secondary" : "destructive"}
+              className="w-full gap-2"
+            >
+              {patient.isBlocked ? <ShieldCheck className="size-4" /> : <Ban className="size-4" />}
+              {patient.isBlocked ? "ביטול חסימה" : "חסימת מטופל"}
+            </Button>
+          </div>
         </div>
       </div>
+
+      {/* Add credit modal */}
+      <Dialog open={showCreditModal} onOpenChange={setShowCreditModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>הוספת זיכוי</DialogTitle>
+          </DialogHeader>
+          <FormField label="סכום (₪)" htmlFor="creditAmount">
+            <Input
+              id="creditAmount"
+              type="number"
+              min="1"
+              step="1"
+              value={creditAmount}
+              onChange={(e) => setCreditAmount(e.target.value)}
+              placeholder="הקלד/י סכום..."
+              autoFocus
+            />
+          </FormField>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => { setShowCreditModal(false); setCreditAmount(""); }}
+            >
+              ביטול
+            </Button>
+            <Button
+              type="button"
+              onClick={handleAddCredit}
+              disabled={isAddingCredit || !creditAmount}
+              className="bg-accent text-black"
+            >
+              {isAddingCredit ? <Spinner size="sm" /> : "הוספה"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={showBlockConfirm}
+        onOpenChange={setShowBlockConfirm}
+        title={patient.isBlocked ? "ביטול חסימה" : "חסימת מטופל"}
+        description={
+          patient.isBlocked
+            ? `לבטל את חסימת ${patient.name}? המטופל יוכל להזמין טיפולים שוב.`
+            : `לחסום את ${patient.name}? המטופל לא יוכל להזמין טיפולים חדשים.`
+        }
+        confirmLabel={isTogglingBlock ? "מעדכן..." : patient.isBlocked ? "ביטול חסימה" : "חסימה"}
+        onConfirm={handleToggleBlock}
+        destructive={!patient.isBlocked}
+      />
     </div>
   );
 }
