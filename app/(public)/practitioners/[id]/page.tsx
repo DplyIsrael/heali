@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Star, Globe, MessageSquare, Wallet, ArrowRight, Heart, Edit, Trophy } from "lucide-react";
 import { PractitionerCard, type PractitionerCardData } from "@/components/shared/practitioner-card";
+import { StartConversationButton } from "@/components/messaging/start-conversation-button";
 import { fetchPractitionerById, fetchPractitionerReviews, fetchSimilarPractitioners, fetchPractitionerCertificates, fetchPractitionerArticles } from "./actions";
 
 interface PageProps {
@@ -279,11 +280,8 @@ export default async function PractitionerProfilePage({ params }: PageProps) {
                   קביעת תורים
                 </Link>
 
-                {/* Send message */}
-                <button className="flex items-center justify-center gap-2 w-full h-[44px] rounded-[8px] bg-[#f4f7f7] text-[16px] text-black">
-                  <MessageSquare className="size-4" />
-                  שליחת הודעה
-                </button>
+                {/* Send message — opens or creates a conversation thread */}
+                <StartConversationButton practitionerUserId={practitioner.userId} />
 
                 {/* Save to favorites */}
                 <button className="flex items-center justify-center gap-2 w-full h-[44px] rounded-[8px] bg-[#f4f7f7] text-[16px] text-black">

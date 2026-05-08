@@ -10,3 +10,4 @@ export * from "./articles";
 export * from "./packages";
 export * from "./social";
 export * from "./notifications";
+export * from "./messaging";
