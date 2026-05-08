@@ -16,6 +16,7 @@ import {
   updatePassword,
   uploadAvatar,
   joinHealiPackages,
+  updateBankDetails,
   type PractitionerProfileData,
 } from "./actions";
 
@@ -32,6 +33,13 @@ export default function PractitionerProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState("");
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
+  // Bank details
+  const [bankName, setBankName] = useState("");
+  const [bankAccountNumber, setBankAccountNumber] = useState("");
+  const [bankBranchNumber, setBankBranchNumber] = useState("");
+  const [bankNumber, setBankNumber] = useState("");
+  const [isSavingBank, setIsSavingBank] = useState(false);
+
   // Password change
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -45,11 +53,36 @@ export default function PractitionerProfilePage() {
       if (data) {
         setPrice(String(data.price));
         setAvatarUrl(data.profilePhotoUrl);
+        setBankName(data.bankName);
+        setBankAccountNumber(data.bankAccountNumber);
+        setBankBranchNumber(data.bankBranchNumber);
+        setBankNumber(data.bankNumber);
       }
       setIsLoading(false);
     }
     load();
   }, []);
+
+  const handleSaveBank = async () => {
+    setIsSavingBank(true);
+    const result = await updateBankDetails({
+      bankName,
+      bankAccountNumber,
+      bankBranchNumber,
+      bankNumber,
+    });
+    if (result.success) toast.success("פרטי הבנק עודכנו");
+    else toast.error(result.error);
+    setIsSavingBank(false);
+  };
+
+  const handleResetBank = () => {
+    if (!profile) return;
+    setBankName(profile.bankName);
+    setBankAccountNumber(profile.bankAccountNumber);
+    setBankBranchNumber(profile.bankBranchNumber);
+    setBankNumber(profile.bankNumber);
+  };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -277,31 +310,59 @@ export default function PractitionerProfilePage() {
 
               <div className="flex flex-col gap-5">
                 <FormField label="שם הבנק" htmlFor="bankName">
-                  <Input id="bankName" placeholder="הקלד/י כאן..." disabled className="bg-[#f9f9f9]" />
+                  <Input
+                    id="bankName"
+                    value={bankName}
+                    onChange={(e) => setBankName(e.target.value)}
+                    placeholder="הקלד/י כאן..."
+                  />
+                </FormField>
+
+                <FormField label="מספר חשבון בנק" htmlFor="accountNumber">
+                  <Input
+                    id="accountNumber"
+                    inputMode="numeric"
+                    value={bankAccountNumber}
+                    onChange={(e) => setBankAccountNumber(e.target.value.replace(/\D/g, ""))}
+                    placeholder="הקלד/י כאן..."
+                  />
                 </FormField>
 
                 <div className="flex gap-3">
                   <div className="flex-1">
-                    <FormField label="מספר חשבון בנק" htmlFor="accountNumber">
-                      <Input id="accountNumber" placeholder="הקלד/י כאן..." disabled className="bg-[#f9f9f9]" />
-                    </FormField>
-                  </div>
-                </div>
-
-                <div className="flex gap-3">
-                  <div className="flex-1">
                     <FormField label="מספר סניף" htmlFor="branchNumber">
-                      <Input id="branchNumber" placeholder="הקלד/י כאן..." disabled className="bg-[#f9f9f9]" />
+                      <Input
+                        id="branchNumber"
+                        inputMode="numeric"
+                        value={bankBranchNumber}
+                        onChange={(e) => setBankBranchNumber(e.target.value.replace(/\D/g, ""))}
+                        placeholder="הקלד/י כאן..."
+                      />
                     </FormField>
                   </div>
                   <div className="flex-1">
                     <FormField label="מספר בנק" htmlFor="bankNumber">
-                      <Input id="bankNumber" placeholder="הקלד/י כאן..." disabled className="bg-[#f9f9f9]" />
+                      <Input
+                        id="bankNumber"
+                        inputMode="numeric"
+                        value={bankNumber}
+                        onChange={(e) => setBankNumber(e.target.value.replace(/\D/g, ""))}
+                        placeholder="הקלד/י כאן..."
+                      />
                     </FormField>
                   </div>
                 </div>
 
                 <p className="text-[12px] text-muted">פרטי בנק ישמשו לצורך העברת תשלומים. ניתן לעדכן בכל עת.</p>
+
+                <div className="flex gap-3 mt-2">
+                  <Button onClick={handleSaveBank} disabled={isSavingBank} className="bg-accent text-black w-[136px]">
+                    {isSavingBank ? <Spinner size="sm" /> : "שמירת שינויים"}
+                  </Button>
+                  <Button variant="secondary" className="bg-[#f4f7f7] w-[136px]" onClick={handleResetBank}>
+                    ביטול שינויים
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

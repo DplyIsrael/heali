@@ -30,6 +30,11 @@ export const practitionerProfiles = pgTable("practitioner_profiles", {
   area: text("area"),
   profilePhotoUrl: text("profile_photo_url"),
   qrCodeUrl: text("qr_code_url"),
+  // Bank details for payouts. Plain-text — Supabase encrypts at rest.
+  bankName: text("bank_name"),
+  bankAccountNumber: text("bank_account_number"),
+  bankBranchNumber: text("bank_branch_number"),
+  bankNumber: text("bank_number"),
   verificationStatus: practitionerStatusEnum("verification_status").notNull().default("draft"),
   rejectionReason: text("rejection_reason"),
   isPubliclyVisible: boolean("is_publicly_visible").notNull().default(false),

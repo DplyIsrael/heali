@@ -18,6 +18,10 @@ export interface PractitionerProfileData {
   qrCodeUrl: string;
   profilePhotoUrl: string;
   certificates: { name: string; url: string; size: string }[];
+  bankName: string;
+  bankAccountNumber: string;
+  bankBranchNumber: string;
+  bankNumber: string;
 }
 
 export async function fetchProfileData(): Promise<PractitionerProfileData | null> {
@@ -86,7 +90,37 @@ export async function fetchProfileData(): Promise<PractitionerProfileData | null
     qrCodeUrl: profile.qr_code_url ?? "",
     profilePhotoUrl: profile.profile_photo_url ?? "",
     certificates,
+    bankName: profile.bank_name ?? "",
+    bankAccountNumber: profile.bank_account_number ?? "",
+    bankBranchNumber: profile.bank_branch_number ?? "",
+    bankNumber: profile.bank_number ?? "",
   };
+}
+
+export async function updateBankDetails(params: {
+  bankName: string;
+  bankAccountNumber: string;
+  bankBranchNumber: string;
+  bankNumber: string;
+}) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "לא מחובר" };
+
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("practitioner_profiles")
+    .update({
+      bank_name: params.bankName.trim() || null,
+      bank_account_number: params.bankAccountNumber.trim() || null,
+      bank_branch_number: params.bankBranchNumber.trim() || null,
+      bank_number: params.bankNumber.trim() || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", user.id);
+
+  if (error) return { success: false, error: "שגיאה בעדכון פרטי הבנק" };
+  return { success: true };
 }
 
 export async function updatePrice(price: string) {
