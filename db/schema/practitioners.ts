@@ -6,6 +6,7 @@ import {
   numeric,
   integer,
   timestamp,
+  unique,
 } from "drizzle-orm/pg-core";
 import { users } from "./users";
 import { practitionerStatusEnum, pricingModelEnum } from "./enums";
@@ -76,16 +77,27 @@ export const practitionerDocuments = pgTable("practitioner_documents", {
   uploadedAt: timestamp("uploaded_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-export const practitionerAvailability = pgTable("practitioner_availability", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  practitionerId: uuid("practitioner_id").notNull().references(() => practitionerProfiles.id, { onDelete: "cascade" }),
-  weekday: integer("weekday").notNull(), // 0=Sunday, 1=Monday ... 6=Saturday
-  startTime: text("start_time").notNull(), // "HH:MM"
-  endTime: text("end_time").notNull(), // "HH:MM"
-});
+export const practitionerAvailability = pgTable(
+  "practitioner_availability",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    practitionerId: uuid("practitioner_id").notNull().references(() => practitionerProfiles.id, { onDelete: "cascade" }),
+    weekday: integer("weekday").notNull(), // 0=Sunday, 1=Monday ... 6=Saturday
+    startTime: text("start_time").notNull(), // "HH:MM"
+    endTime: text("end_time").notNull(), // "HH:MM"
+  },
+  // No two slots on the same weekday can start at the same time for one
+  // practitioner — prevents accidental duplicate inserts when the UI
+  // double-fires saveAvailabilitySlot.
+  (t) => [unique().on(t.practitionerId, t.weekday, t.startTime)]
+);
 
-export const availabilityBlocks = pgTable("availability_blocks", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  practitionerId: uuid("practitioner_id").notNull().references(() => practitionerProfiles.id, { onDelete: "cascade" }),
-  blockedDate: text("blocked_date").notNull(), // "YYYY-MM-DD"
-});
+export const availabilityBlocks = pgTable(
+  "availability_blocks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    practitionerId: uuid("practitioner_id").notNull().references(() => practitionerProfiles.id, { onDelete: "cascade" }),
+    blockedDate: text("blocked_date").notNull(), // "YYYY-MM-DD"
+  },
+  (t) => [unique().on(t.practitionerId, t.blockedDate)]
+);

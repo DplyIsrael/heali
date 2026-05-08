@@ -34,9 +34,13 @@ export async function POST(request: Request) {
 
     const { data: { publicUrl } } = admin.storage.from("avatars").getPublicUrl(path);
 
-    // Persist the URL to whichever profile table the user has. The
-    // route is shared between patients and practitioners, so we write
-    // to both — only the row that exists for this user is updated.
+    // Persist the URL to whichever profile rows the user has. Always
+    // write to users (every role has a row there), then best-effort to
+    // patient/practitioner profiles for users who have one.
+    await admin
+      .from("users")
+      .update({ profile_photo_url: publicUrl, updated_at: new Date().toISOString() })
+      .eq("id", user.id);
     await admin
       .from("patient_profiles")
       .update({ profile_photo_url: publicUrl, updated_at: new Date().toISOString() })
