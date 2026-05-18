@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 interface ActionResult {
   success: boolean;
@@ -15,6 +16,12 @@ export async function signIn(
   email: string,
   password: string
 ): Promise<ActionResult & { redirectTo?: string }> {
+  // 5 attempts / minute per IP for login — blunts credential stuffing.
+  const rl = await checkRateLimit({ bucket: "auth-signin", max: 5, windowSeconds: 60 });
+  if (!rl.success) {
+    return { success: false, error: `יותר מדי ניסיונות, נסה שוב בעוד ${rl.retryAfterSeconds} שניות` };
+  }
+
   const supabase = await createClient();
 
   const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -61,6 +68,13 @@ export async function signUpPatient(
   email: string,
   password: string
 ): Promise<ActionResult> {
+  // 3 signups / 5 min per IP — light enough not to bother real users,
+  // stops scripted abuse.
+  const rl = await checkRateLimit({ bucket: "auth-signup", max: 3, windowSeconds: 300 });
+  if (!rl.success) {
+    return { success: false, error: `יותר מדי ניסיונות, נסה שוב בעוד ${rl.retryAfterSeconds} שניות` };
+  }
+
   const admin = createAdminClient();
 
   // Check if user already exists
@@ -115,6 +129,12 @@ export async function signUpPractitioner(
   homeVisits: boolean,
   gender: string
 ): Promise<ActionResult> {
+  // Shares the auth-signup bucket with patient signups.
+  const rl = await checkRateLimit({ bucket: "auth-signup", max: 3, windowSeconds: 300 });
+  if (!rl.success) {
+    return { success: false, error: `יותר מדי ניסיונות, נסה שוב בעוד ${rl.retryAfterSeconds} שניות` };
+  }
+
   const cities = Array.from(new Set(clinicAddresses.map((a) => a.city).filter(Boolean)));
   const formattedAddresses = clinicAddresses
     .filter((a) => a.city && a.street)
@@ -205,6 +225,13 @@ export async function signUpPractitioner(
 }
 
 export async function resetPassword(email: string): Promise<ActionResult> {
+  // Cap forgot-password to 3 per IP per 5 min so we don't spam users with
+  // reset mails or open an enumeration surface.
+  const rl = await checkRateLimit({ bucket: "auth-reset", max: 3, windowSeconds: 300 });
+  if (!rl.success) {
+    return { success: false, error: `יותר מדי ניסיונות, נסה שוב בעוד ${rl.retryAfterSeconds} שניות` };
+  }
+
   const supabase = await createClient();
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {

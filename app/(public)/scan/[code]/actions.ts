@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { inngest } from "@/lib/inngest/client";
 
 interface AttendanceResult {
   success: boolean;
@@ -58,7 +59,16 @@ export async function confirmAttendance(qrCode: string): Promise<AttendanceResul
     return { success: false, error: "שגיאה באישור הנוכחות" };
   }
 
-  // TODO: Trigger Inngest job to send satisfaction survey after 2 hours
+  // Emit the event Inngest listens for — schedules the survey email 2h
+  // from now. No-op locally without INNGEST_EVENT_KEY.
+  try {
+    await inngest.send({
+      name: "booking/qr.scanned",
+      data: { bookingId: booking.id },
+    });
+  } catch (err) {
+    console.error("[scan] inngest send failed:", err);
+  }
 
   const users = practitioner.users as unknown as { full_name: string };
   return { success: true, practitionerName: users.full_name };

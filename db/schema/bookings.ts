@@ -22,6 +22,10 @@ export const bookings = pgTable("bookings", {
   paymentToken: text("payment_token"),
   paymentTransactionId: text("payment_transaction_id"),
   paymentFailureReason: text("payment_failure_reason"),
+  // Admin payouts: set when an admin batch-marks this booking's share as
+  // wire-transferred to the practitioner. Unpaid bookings show up in the
+  // /admin/payouts queue.
+  paidOutAt: timestamp("paid_out_at", { withTimezone: true }),
   qrScannedAt: timestamp("qr_scanned_at", { withTimezone: true }),
   cancellationReason: text("cancellation_reason"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

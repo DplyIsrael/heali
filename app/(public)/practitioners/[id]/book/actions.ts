@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/client";
 import { practitionerNewBookingEmail } from "@/lib/email/templates";
 import { isCardcomEnabled, createLowProfile } from "@/lib/payments/cardcom";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 interface ActionResult {
   success: boolean;
@@ -143,6 +144,18 @@ export async function createBooking(
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "לא מחובר" };
+
+  // 10 booking attempts per user per minute — generous enough for legit
+  // retries on slot conflicts, prevents scripted reservation abuse.
+  const rl = await checkRateLimit({
+    bucket: "booking-create",
+    max: 10,
+    windowSeconds: 60,
+    identifier: user.id,
+  });
+  if (!rl.success) {
+    return { success: false, error: `יותר מדי ניסיונות, נסה שוב בעוד ${rl.retryAfterSeconds} שניות` };
+  }
 
   // Reject blocked patients up front so they can't book a treatment.
   const { data: caller } = await supabase

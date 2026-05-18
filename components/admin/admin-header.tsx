@@ -24,6 +24,7 @@ const NAV_ITEMS = [
   { label: "קטגוריות", href: "/admin/categories" },
   { label: "התמחויות", href: "/admin/specialties" },
   { label: "חבילות טיפול", href: "/admin/packages" },
+  { label: "תשלומים", href: "/admin/payouts" },
   { label: "מאמרים", href: "/admin/articles" },
 ] as const;
 
