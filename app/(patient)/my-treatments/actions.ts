@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { isCardcomEnabled, refundTransaction } from "@/lib/payments/cardcom";
 
 interface ActionResult {
   success: boolean;
@@ -110,10 +111,10 @@ export async function cancelBooking(bookingId: string, reason?: string): Promise
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "לא מחובר" };
 
-  // Fetch booking to validate
+  // Fetch booking to validate + use payment info for refund routing
   const { data: booking } = await supabase
     .from("bookings")
-    .select("id, patient_id, scheduled_date, scheduled_time, price_at_booking, status")
+    .select("id, patient_id, scheduled_date, scheduled_time, price_at_booking, status, payment_status, payment_transaction_id")
     .eq("id", bookingId)
     .single();
 
@@ -123,34 +124,57 @@ export async function cancelBooking(bookingId: string, reason?: string): Promise
     return { success: false, error: "לא ניתן לבטל הזמנה זו" };
   }
 
-  // Check 24h rule
+  // Policy:
+  //   >24h before the treatment + already charged → refund to original card
+  //   >24h before the treatment + not yet charged → no money to refund, just cancel
+  //   <24h before the treatment → refund to wallet credit instead of card
   const scheduledDateTime = new Date(`${booking.scheduled_date}T${booking.scheduled_time}`);
   const now = new Date();
   const hoursUntil = (scheduledDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+  const isLate = hoursUntil < 24;
+  const wasCharged = booking.payment_status === "charged" && !!booking.payment_transaction_id;
 
-  if (hoursUntil < 24) {
-    return { success: false, error: "לא ניתן לבטל טיפול פחות מ-24 שעות לפני מועד הטיפול" };
+  let newPaymentStatus = booking.payment_status;
+  if (wasCharged && !isLate && isCardcomEnabled()) {
+    // Card refund path
+    const refund = await refundTransaction({
+      transactionId: booking.payment_transaction_id!,
+      amount: Number(booking.price_at_booking),
+    });
+    if (!refund.success) {
+      return { success: false, error: `שגיאה בהחזר לכרטיס: ${refund.error}` };
+    }
+    newPaymentStatus = "refunded";
+  } else if (wasCharged && isLate) {
+    // Late cancellation — credit only
+    await supabase.from("credits").insert({
+      patient_id: user.id,
+      amount: booking.price_at_booking,
+      source_booking_id: bookingId,
+      status: "active",
+    });
+    newPaymentStatus = "credited";
+  } else if (wasCharged && !isCardcomEnabled()) {
+    // CardCom is off (mock environment). Fall back to credit.
+    await supabase.from("credits").insert({
+      patient_id: user.id,
+      amount: booking.price_at_booking,
+      source_booking_id: bookingId,
+      status: "active",
+    });
+    newPaymentStatus = "credited";
   }
 
-  // Cancel booking
   const { error: cancelError } = await supabase
     .from("bookings")
     .update({
       status: "canceled",
+      payment_status: newPaymentStatus,
       cancellation_reason: reason ?? "",
       updated_at: new Date().toISOString(),
     })
     .eq("id", bookingId);
-
   if (cancelError) return { success: false, error: "שגיאה בביטול ההזמנה" };
-
-  // Add credit to patient wallet
-  await supabase.from("credits").insert({
-    patient_id: user.id,
-    amount: booking.price_at_booking,
-    source_booking_id: bookingId,
-    status: "active",
-  });
 
   return { success: true };
 }

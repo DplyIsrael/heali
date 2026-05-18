@@ -3,11 +3,14 @@
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/client";
 import { practitionerNewBookingEmail } from "@/lib/email/templates";
+import { isCardcomEnabled, createLowProfile } from "@/lib/payments/cardcom";
 
 interface ActionResult {
   success: boolean;
   error?: string;
   bookingId?: string;
+  /** When CardCom is enabled, the client should redirect here to enter card details. */
+  redirectUrl?: string;
 }
 
 export interface AvailableSlot {
@@ -186,7 +189,43 @@ export async function createBooking(
     return { success: false, error: "שגיאה ביצירת ההזמנה" };
   }
 
-  // TODO: Trigger payment via Grow when credentials available
+  // If CardCom is on, open a hosted Low Profile session so the patient
+  // can enter their card. We tokenize only — the actual charge runs
+  // when the practitioner approves. Until CARDCOM_ENABLED=true the
+  // mock-payment behavior is preserved (booking is created as before).
+  let redirectUrl: string | undefined;
+  if (isCardcomEnabled()) {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://heali.co.il";
+    const { data: patientUserRow } = await supabase
+      .from("users")
+      .select("full_name, email")
+      .eq("id", user.id)
+      .single();
+
+    const lp = await createLowProfile({
+      amount: priceAtBooking,
+      returnValue: data.id,
+      productName: "טיפול בהילי",
+      successRedirectUrl: `${siteUrl}/api/cardcom/success`,
+      failedRedirectUrl: `${siteUrl}/api/cardcom/failure?ReturnValue=${data.id}`,
+      webHookUrl: `${siteUrl}/api/cardcom/webhook`,
+      operation: "CreateTokenOnly",
+      customer: {
+        fullName: patientUserRow?.full_name ?? undefined,
+        email: patientUserRow?.email ?? undefined,
+      },
+    });
+    if (!lp.success) {
+      // Roll the booking back so the slot reopens and the patient can retry.
+      await supabase.from("bookings").delete().eq("id", data.id);
+      return { success: false, error: lp.error };
+    }
+    redirectUrl = lp.data.url;
+    await supabase
+      .from("bookings")
+      .update({ payment_low_profile_id: lp.data.lowProfileId })
+      .eq("id", data.id);
+  }
 
   // Best-effort: notify the practitioner that a new booking is waiting for
   // their approval. Failure here doesn't block the booking.
@@ -217,5 +256,5 @@ export async function createBooking(
     console.error("[createBooking] practitioner email failed:", err);
   }
 
-  return { success: true, bookingId: data.id };
+  return { success: true, bookingId: data.id, redirectUrl };
 }

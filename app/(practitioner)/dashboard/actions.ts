@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { isCardcomEnabled, chargeToken } from "@/lib/payments/cardcom";
 
 export interface DashboardStats {
   totalClosed: number;
@@ -123,9 +124,68 @@ export async function approveBooking(bookingId: string) {
   if (!practitionerId) return { success: false, error: "לא מורשה" };
 
   const supabase = await createClient();
+
+  // Load the booking so we have token + price for the CardCom charge.
+  const { data: booking } = await supabase
+    .from("bookings")
+    .select("id, practitioner_id, price_at_booking, payment_token, payment_status, patient_id")
+    .eq("id", bookingId)
+    .eq("practitioner_id", practitionerId)
+    .maybeSingle();
+  if (!booking) return { success: false, error: "לא מורשה" };
+
+  // When CardCom is on, charge the tokenized card now. If we don't have a
+  // token (e.g. the patient never completed the payment page) we surface a
+  // friendly error and keep the booking pending so they can retry.
+  let transactionId: string | null = null;
+  if (isCardcomEnabled()) {
+    if (!booking.payment_token) {
+      return { success: false, error: "התשלום עדיין לא הושלם על ידי המטופל" };
+    }
+    if (booking.payment_status !== "tokenized") {
+      // Already charged or in a terminal state — don't double-charge.
+      if (booking.payment_status === "charged") {
+        // Just confirm the booking; don't re-run a charge.
+      } else {
+        return { success: false, error: "סטטוס התשלום לא תקין לחיוב" };
+      }
+    } else {
+      // Fetch patient identity for the receipt.
+      const { data: patientUser } = await supabase
+        .from("users")
+        .select("full_name, email")
+        .eq("id", booking.patient_id)
+        .single();
+      const charge = await chargeToken({
+        token: booking.payment_token,
+        amount: Number(booking.price_at_booking),
+        returnValue: booking.id,
+        productName: "טיפול בהילי",
+        createInvoice: true,
+        customer: {
+          fullName: patientUser?.full_name ?? undefined,
+          email: patientUser?.email ?? undefined,
+        },
+      });
+      if (!charge.success) {
+        await supabase
+          .from("bookings")
+          .update({ payment_status: "failed", payment_failure_reason: charge.error })
+          .eq("id", booking.id);
+        return { success: false, error: `שגיאה בחיוב: ${charge.error}` };
+      }
+      transactionId = charge.data.transactionId;
+    }
+  }
+
   const { data, error } = await supabase
     .from("bookings")
-    .update({ status: "confirmed", payment_status: "charged", updated_at: new Date().toISOString() })
+    .update({
+      status: "confirmed",
+      payment_status: "charged",
+      payment_transaction_id: transactionId ?? undefined,
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", bookingId)
     .eq("practitioner_id", practitionerId)
     .select("id")

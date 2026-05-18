@@ -100,6 +100,13 @@ export default function BookingPage() {
     );
 
     if (result.success) {
+      // If CardCom is on, the server hands us a hosted payment URL.
+      // Send the patient there so they can enter their card; CardCom
+      // bounces them back to /api/cardcom/success once tokenized.
+      if (result.redirectUrl) {
+        window.location.href = result.redirectUrl;
+        return;
+      }
       setBookingId(result.bookingId ?? "");
       setStep("confirmed");
     } else {

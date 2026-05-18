@@ -23,7 +23,9 @@ export const bookingStatusEnum = pgEnum("booking_status", [
 
 export const paymentStatusEnum = pgEnum("payment_status", [
   "pending",
+  "tokenized", // card saved via CardCom Low Profile; not yet charged
   "charged",
+  "failed",
   "refunded",
   "credited",
 ]);

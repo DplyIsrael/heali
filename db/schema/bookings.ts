@@ -15,6 +15,13 @@ export const bookings = pgTable("bookings", {
   priceAtBooking: numeric("price_at_booking", { precision: 10, scale: 2 }).notNull(),
   paymentStatus: paymentStatusEnum("payment_status").notNull().default("pending"),
   paymentReference: text("payment_reference"),
+  // CardCom integration: low_profile_id is the session created at booking
+  // time; payment_token is the saved-card token used to charge at approval;
+  // payment_transaction_id is the charged tranzaction ref (for refunds).
+  paymentLowProfileId: text("payment_low_profile_id"),
+  paymentToken: text("payment_token"),
+  paymentTransactionId: text("payment_transaction_id"),
+  paymentFailureReason: text("payment_failure_reason"),
   qrScannedAt: timestamp("qr_scanned_at", { withTimezone: true }),
   cancellationReason: text("cancellation_reason"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
