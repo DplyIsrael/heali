@@ -123,7 +123,7 @@ export default function PractitionerRegisterPage() {
     );
 
     if (result.success) {
-      router.push("/verify-email");
+      router.push(`/verify-email?email=${encodeURIComponent(values.email)}`);
     } else {
       setServerError(result.error ?? "שגיאה לא צפויה");
       setCanResume(result.canResume ?? false);

@@ -224,6 +224,54 @@ export async function signUpPractitioner(
   return { success: true, needsVerification: true };
 }
 
+/**
+ * Verify the 6-digit OTP from the signup confirmation email. Requires
+ * the Supabase email template "Confirm signup" to use {{ .Token }}
+ * (the OTP code) instead of {{ .ConfirmationURL }}.
+ */
+export async function verifyEmailOtp(email: string, token: string): Promise<ActionResult> {
+  if (!email || !token) return { success: false, error: "חסר אימייל או קוד" };
+  // 10 verification attempts per email per 5 min — generous but blocks brute force.
+  const rl = await checkRateLimit({
+    bucket: "auth-verify",
+    max: 10,
+    windowSeconds: 300,
+    identifier: email.toLowerCase(),
+  });
+  if (!rl.success) {
+    return { success: false, error: `יותר מדי ניסיונות, נסה שוב בעוד ${rl.retryAfterSeconds} שניות` };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+  if (error) {
+    if (error.message.toLowerCase().includes("expired")) {
+      return { success: false, error: "הקוד פג תוקף, נא לבקש קוד חדש" };
+    }
+    return { success: false, error: "הקוד שגוי או פג תוקף" };
+  }
+  return { success: true };
+}
+
+export async function resendEmailOtp(email: string): Promise<ActionResult> {
+  if (!email) return { success: false, error: "חסר אימייל" };
+  // 1 resend per email per 60s — enough breathing room for legit users
+  // without enabling abuse of the mail server.
+  const rl = await checkRateLimit({
+    bucket: "auth-resend",
+    max: 1,
+    windowSeconds: 60,
+    identifier: email.toLowerCase(),
+  });
+  if (!rl.success) {
+    return { success: false, error: `נסה שוב בעוד ${rl.retryAfterSeconds} שניות` };
+  }
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resend({ type: "signup", email });
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}
+
 export async function resetPassword(email: string): Promise<ActionResult> {
   // Cap forgot-password to 3 per IP per 5 min so we don't spam users with
   // reset mails or open an enumeration surface.

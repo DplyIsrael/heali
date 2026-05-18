@@ -40,7 +40,7 @@ export default function PatientRegisterPage() {
 
     if (result.success) {
       if (result.needsVerification) {
-        router.push("/verify-email");
+        router.push(`/verify-email?email=${encodeURIComponent(values.email)}`);
       } else {
         router.push("/onboarding");
       }
