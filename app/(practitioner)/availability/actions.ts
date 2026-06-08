@@ -169,3 +169,104 @@ export async function removeBlockedDate(blockId: string): Promise<ActionResult> 
   if (!data) return { success: false, error: "לא מורשה" };
   return { success: true };
 }
+
+// ── Daily view (Screen 29) — bookings overlay for the /availability "Daily View" tab.
+// Reads scope to the caller's practitioner_profile so a logged-in non-owner
+// can't pull someone else's schedule.
+
+export interface BookingForCalendar {
+  id: string;
+  scheduledDate: string;
+  scheduledTime: string;
+  status: "confirmed" | "pending_practitioner_approval";
+  patientName: string;
+  domainName: string;
+  priceAtBooking: number;
+}
+
+async function getPractitionerProfileId(): Promise<string | null> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data: profile } = await supabase
+    .from("practitioner_profiles")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+  return profile?.id ?? null;
+}
+
+export async function fetchBookingsForRange(
+  startDate: string,
+  endDate: string
+): Promise<BookingForCalendar[]> {
+  const practitionerId = await getPractitionerProfileId();
+  if (!practitionerId) return [];
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("bookings")
+    .select(`
+      id, scheduled_date, scheduled_time, status, price_at_booking,
+      users!bookings_patient_id_fkey ( full_name ),
+      treatment_domains!bookings_domain_id_fkey ( name )
+    `)
+    .eq("practitioner_id", practitionerId)
+    .gte("scheduled_date", startDate)
+    .lte("scheduled_date", endDate)
+    .in("status", ["confirmed", "pending_practitioner_approval"])
+    .order("scheduled_date")
+    .order("scheduled_time");
+
+  return (data ?? []).map((b: Record<string, unknown>) => {
+    const patient = b.users as { full_name: string } | null;
+    const domain = b.treatment_domains as { name: string } | null;
+    return {
+      id: b.id as string,
+      scheduledDate: b.scheduled_date as string,
+      scheduledTime: b.scheduled_time as string,
+      status: b.status as "confirmed" | "pending_practitioner_approval",
+      patientName: patient?.full_name ?? "מטופל",
+      domainName: domain?.name ?? "טיפול",
+      priceAtBooking: Number(b.price_at_booking ?? 0),
+    };
+  });
+}
+
+export async function fetchUpcomingBookingsForPractitioner(
+  limit: number = 3
+): Promise<BookingForCalendar[]> {
+  const practitionerId = await getPractitionerProfileId();
+  if (!practitionerId) return [];
+
+  const today = new Date().toISOString().split("T")[0];
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("bookings")
+    .select(`
+      id, scheduled_date, scheduled_time, status, price_at_booking,
+      users!bookings_patient_id_fkey ( full_name ),
+      treatment_domains!bookings_domain_id_fkey ( name )
+    `)
+    .eq("practitioner_id", practitionerId)
+    .gte("scheduled_date", today)
+    .in("status", ["confirmed", "pending_practitioner_approval"])
+    .order("scheduled_date")
+    .order("scheduled_time")
+    .limit(limit);
+
+  return (data ?? []).map((b: Record<string, unknown>) => {
+    const patient = b.users as { full_name: string } | null;
+    const domain = b.treatment_domains as { name: string } | null;
+    return {
+      id: b.id as string,
+      scheduledDate: b.scheduled_date as string,
+      scheduledTime: b.scheduled_time as string,
+      status: b.status as "confirmed" | "pending_practitioner_approval",
+      patientName: patient?.full_name ?? "מטופל",
+      domainName: domain?.name ?? "טיפול",
+      priceAtBooking: Number(b.price_at_booking ?? 0),
+    };
+  });
+}

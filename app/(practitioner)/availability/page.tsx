@@ -3,22 +3,27 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useState, useEffect, useMemo } from "react";
-import { ChevronLeft, ChevronRight, Plus, Trash2, CalendarOff } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trash2, CalendarOff, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 import {
   fetchAvailability,
+  fetchBookingsForRange,
+  fetchUpcomingBookingsForPractitioner,
   saveAvailabilitySlot,
   deleteAvailabilitySlot,
   addBlockedDate,
   removeBlockedDate,
   type AvailabilitySlot,
   type BlockedDate,
+  type BookingForCalendar,
 } from "./actions";
 
 const DAY_NAMES = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
+const MINI_DAY_LETTERS = ["א", "ב", "ג", "ד", "ה", "ו", "ש"];
 const HOURS = Array.from({ length: 13 }, (_, i) => i + 8); // 8:00 - 20:00
+const HOUR_HEIGHT = 80; // px per hour row in daily view
 const TIME_OPTIONS: string[] = [];
 for (let h = 8; h <= 21; h++) {
   TIME_OPTIONS.push(`${h.toString().padStart(2, "0")}:00`);
@@ -41,12 +46,69 @@ function formatDate(d: Date) {
   return d.toISOString().split("T")[0];
 }
 
+// Mini month grid: array of 7n cells, nulls for leading/trailing pad.
+function buildMonthGrid(cursor: Date): (Date | null)[] {
+  const year = cursor.getFullYear();
+  const month = cursor.getMonth();
+  const startOffset = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells: (Date | null)[] = [];
+  for (let i = 0; i < startOffset; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
+  while (cells.length % 7 !== 0) cells.push(null);
+  return cells;
+}
+
+function formatHebrewLongDate(d: Date): string {
+  return d.toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" });
+}
+
+function formatHebrewShortDate(iso: string): string {
+  const d = new Date(iso);
+  const weekday = d.toLocaleDateString("he-IL", { weekday: "long" });
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yy = String(d.getFullYear()).slice(-2);
+  return `${weekday}, ${dd}/${mm}/${yy}`;
+}
+
+function UpcomingCard({ booking }: { booking: BookingForCalendar }) {
+  const initial = booking.patientName.slice(0, 1);
+  return (
+    <div className="w-full rounded-[12px] border border-border-input bg-white p-4">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex flex-col gap-1 min-w-0">
+          <p className="text-[18px] font-bold text-black truncate">{booking.domainName}</p>
+          <p className="text-[14px] text-[#9F9F9F]">
+            {formatHebrewShortDate(booking.scheduledDate)}
+          </p>
+        </div>
+      </div>
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="size-[18px] rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-medium shrink-0">
+            {initial}
+          </div>
+          <span className="text-[13px] text-[#666] shrink-0">שם המטופל:</span>
+          <span className="text-[13px] text-black truncate">{booking.patientName}</span>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <div className="size-[20px] rounded-full bg-[#F6F6F6] flex items-center justify-center">
+            <Clock className="size-3 text-muted" />
+          </div>
+          <span className="text-[13px] text-[#13D464]">{booking.scheduledTime}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AvailabilityPage() {
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
   const [blocks, setBlocks] = useState<BlockedDate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [weekOffset, setWeekOffset] = useState(0);
-  const [activeTab, setActiveTab] = useState<"calendar" | "manage">("calendar");
+  const [activeTab, setActiveTab] = useState<"daily" | "calendar" | "manage">("daily");
 
   // Add slot form
   const [newWeekday, setNewWeekday] = useState(0);
@@ -55,8 +117,18 @@ export default function AvailabilityPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [blockDate, setBlockDate] = useState("");
 
+  // Daily view state
+  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
+  const [miniMonthCursor, setMiniMonthCursor] = useState<Date>(() => new Date());
+  const [dayBookings, setDayBookings] = useState<BookingForCalendar[]>([]);
+  const [upcomingBookings, setUpcomingBookings] = useState<BookingForCalendar[]>([]);
+  const [isLoadingDayBookings, setIsLoadingDayBookings] = useState(false);
+
   const weekDates = useMemo(() => getWeekDates(weekOffset), [weekOffset]);
   const blockedSet = useMemo(() => new Set(blocks.map((b) => b.blockedDate)), [blocks]);
+  const monthGrid = useMemo(() => buildMonthGrid(miniMonthCursor), [miniMonthCursor]);
+  const todayIso = formatDate(new Date());
+  const selectedIso = formatDate(selectedDate);
 
   useEffect(() => {
     async function load() {
@@ -67,6 +139,22 @@ export default function AvailabilityPage() {
     }
     load();
   }, []);
+
+  // Daily view: fetch bookings for the selected date when this tab is active.
+  useEffect(() => {
+    if (activeTab !== "daily") return;
+    setIsLoadingDayBookings(true);
+    fetchBookingsForRange(selectedIso, selectedIso).then((d) => {
+      setDayBookings(d);
+      setIsLoadingDayBookings(false);
+    });
+  }, [activeTab, selectedIso]);
+
+  // Daily view: fetch the 3 next upcoming bookings when the tab opens.
+  useEffect(() => {
+    if (activeTab !== "daily") return;
+    fetchUpcomingBookingsForPractitioner(3).then(setUpcomingBookings);
+  }, [activeTab]);
 
   const handleAddSlot = async () => {
     if (newStart >= newEnd) { toast.error("שעת סיום חייבת להיות אחרי שעת התחלה"); return; }
@@ -109,7 +197,10 @@ export default function AvailabilityPage() {
       <p className="text-[16px] text-muted mb-6">ניהול שעות קבלה ותצוגת יומן שבועי</p>
 
       {/* Tabs */}
-      <div className="flex rounded-[10px] bg-white p-[6px] mb-6 w-full max-w-[400px]">
+      <div className="flex rounded-[10px] bg-white p-[6px] mb-6 w-full max-w-[600px]">
+        <button onClick={() => setActiveTab("daily")} className={`flex-1 py-2.5 rounded-[8px] text-[16px] transition-colors ${activeTab === "daily" ? "bg-accent font-normal text-black" : "font-light text-black"}`}>
+          תצוגה יומית
+        </button>
         <button onClick={() => setActiveTab("calendar")} className={`flex-1 py-2.5 rounded-[8px] text-[16px] transition-colors ${activeTab === "calendar" ? "bg-accent font-normal text-black" : "font-light text-black"}`}>
           תצוגת יומן
         </button>
@@ -118,7 +209,165 @@ export default function AvailabilityPage() {
         </button>
       </div>
 
-      {/* ═══ CALENDAR VIEW ═══ */}
+      {/* ═══ DAILY VIEW (Screen 29 minimal) ═══ */}
+      {activeTab === "daily" && (
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Sidebar — first in DOM = visual RIGHT in RTL */}
+          <div className="w-full lg:w-[375px] shrink-0 flex flex-col gap-6">
+            {/* Mini month calendar */}
+            <div className="rounded-[10px] border border-border-input bg-white p-4">
+              <div className="flex items-center justify-between mb-3">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setMiniMonthCursor((d) => {
+                      const n = new Date(d);
+                      n.setMonth(d.getMonth() - 1);
+                      return n;
+                    })
+                  }
+                  className="p-1 rounded hover:bg-muted/20"
+                  aria-label="חודש קודם"
+                >
+                  <ChevronRight className="size-5" />
+                </button>
+                <span className="text-[16px] font-medium text-black">
+                  {miniMonthCursor.toLocaleDateString("he-IL", { month: "long", year: "numeric" })}
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setMiniMonthCursor((d) => {
+                      const n = new Date(d);
+                      n.setMonth(d.getMonth() + 1);
+                      return n;
+                    })
+                  }
+                  className="p-1 rounded hover:bg-muted/20"
+                  aria-label="חודש הבא"
+                >
+                  <ChevronLeft className="size-5" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-7 gap-1 mb-2">
+                {MINI_DAY_LETTERS.map((letter) => (
+                  <div key={letter} className="text-center text-[12px] text-muted py-1">
+                    {letter}
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-7 gap-1">
+                {monthGrid.map((day, i) => {
+                  if (!day) return <div key={i} className="h-9" />;
+                  const iso = formatDate(day);
+                  const isSelected = iso === selectedIso;
+                  const isToday = iso === todayIso;
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setSelectedDate(day)}
+                      className={`h-9 rounded-full text-[14px] flex items-center justify-center transition-colors ${
+                        isSelected
+                          ? "bg-[#CCFFE1] border border-[#13D464] text-[#13D464] font-medium"
+                          : isToday
+                            ? "border border-border-input text-black"
+                            : "text-black hover:bg-muted/20"
+                      }`}
+                    >
+                      {day.getDate()}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Upcoming treatments */}
+            <div>
+              <h3 className="text-[20px] md:text-[24px] font-medium text-black mb-4">
+                טיפולים קרובים
+              </h3>
+              {upcomingBookings.length === 0 ? (
+                <p className="text-[14px] text-muted">אין טיפולים קרובים</p>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  {upcomingBookings.map((b) => (
+                    <UpcomingCard key={b.id} booking={b} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Main — day schedule (visual LEFT in RTL = last in DOM) */}
+          <div className="flex-1 rounded-[10px] border border-border-input bg-white overflow-hidden">
+            <div className="px-5 py-4 border-b border-border">
+              <h2 className="text-[20px] md:text-[24px] font-medium text-black">
+                {formatHebrewLongDate(selectedDate)}
+              </h2>
+            </div>
+
+            {isLoadingDayBookings ? (
+              <div className="flex justify-center py-20"><Spinner /></div>
+            ) : (
+              <div className="relative" style={{ height: HOURS.length * HOUR_HEIGHT }}>
+                {/* Hour rows (alternating row backgrounds, time labels) */}
+                {HOURS.map((hour, i) => (
+                  <div
+                    key={hour}
+                    className={`absolute left-0 right-0 grid grid-cols-[100px_1fr] border-b border-border/40 ${
+                      i % 2 === 0 ? "bg-white" : "bg-[#FAFAFA]"
+                    }`}
+                    style={{ top: i * HOUR_HEIGHT, height: HOUR_HEIGHT }}
+                  >
+                    <div className="px-3 py-2 text-[13px] text-[#9F9F9F] border-l border-border/40">
+                      {hour}:00 {hour < 12 ? "בבוקר" : "בצהריים"}
+                    </div>
+                    <div />
+                  </div>
+                ))}
+
+                {/* Booking blocks overlaid by start time. Default 60-min height
+                    since the bookings schema has no duration column. */}
+                {dayBookings.map((b) => {
+                  const [hh, mm] = b.scheduledTime.split(":").map(Number);
+                  const startMin = (hh - 8) * 60 + (mm || 0);
+                  if (startMin < 0 || startMin >= HOURS.length * 60) return null;
+                  const top = (startMin / 60) * HOUR_HEIGHT;
+                  const isPending = b.status === "pending_practitioner_approval";
+                  return (
+                    <div
+                      key={b.id}
+                      className={`absolute rounded-[8px] p-3 shadow-sm ${
+                        isPending
+                          ? "bg-[#F0E9FD] border border-[#AD80FF]"
+                          : "bg-[#DCFCE7] border border-[#13D464]"
+                      }`}
+                      style={{
+                        top,
+                        height: HOUR_HEIGHT - 6,
+                        right: 108,
+                        left: 8,
+                      }}
+                    >
+                      <p className={`text-[14px] font-medium ${isPending ? "text-[#AD80FF]" : "text-black"}`}>
+                        {b.domainName}
+                      </p>
+                      <p className={`text-[12px] ${isPending ? "text-[#AD80FF]" : "text-[#13D464]"}`}>
+                        {b.scheduledTime} • {b.patientName}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ CALENDAR VIEW (week grid — existing) ═══ */}
       {activeTab === "calendar" && (
         <div className="rounded-[16px] border border-border bg-white overflow-hidden">
           {/* Week navigation */}
@@ -185,7 +434,7 @@ export default function AvailabilityPage() {
         </div>
       )}
 
-      {/* ═══ MANAGE VIEW ═══ */}
+      {/* ═══ MANAGE VIEW (existing) ═══ */}
       {activeTab === "manage" && (
         <>
           {/* Add slot form */}
