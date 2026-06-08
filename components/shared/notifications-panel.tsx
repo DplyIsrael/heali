@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { X, Bell } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -28,19 +29,25 @@ function timeAgo(dateStr: string): string {
   return `לפני ${days} ימים`;
 }
 
-function getNotificationText(n: Notification): { title: string; description: string } {
+function getNotificationText(n: Notification): { title: string; description: string; href?: string } {
   const payload = n.payload ?? {};
   switch (n.type) {
     case "new_practitioner":
-      return { title: "מטפל חדש", description: `${payload.practitionerName ?? "מטפל"} נרשם/ה למערכת` };
+      return { title: "מטפל חדש", description: `${payload.practitionerName ?? "מטפל"} נרשם/ה למערכת`, href: "/admin/practitioners" };
     case "new_review":
       return { title: "דירוג חדש", description: `דירוג ${payload.rating ?? ""} כוכבים מ-${payload.reviewerName ?? "מטופל"}` };
     case "booking_confirmed":
-      return { title: "טיפול אושר", description: "הטיפול שלך אושר על ידי המטפל" };
+      return { title: "טיפול אושר", description: "הטיפול שלך אושר על ידי המטפל", href: "/my-treatments" };
     case "booking_declined":
-      return { title: "טיפול נדחה", description: "הטיפול שלך נדחה" };
+      return { title: "טיפול נדחה", description: "הטיפול שלך נדחה", href: "/my-treatments" };
     case "new_booking":
-      return { title: "טיפול חדש", description: `${payload.patientName ?? "מטופל"} הזמין/ה טיפול` };
+      return { title: "טיפול חדש", description: `${payload.patientName ?? "מטופל"} הזמין/ה טיפול`, href: "/dashboard" };
+    case "new_specialty_pending":
+      return {
+        title: "התמחות חדשה ממתינה לאישור",
+        description: `${payload.practitionerName ?? "מטפל"} הוסיף/ה תחום התמחות חדש: ${payload.specialtyName ?? ""}`,
+        href: "/admin/specialties",
+      };
     default:
       return { title: "התראה", description: n.type };
   }
@@ -110,16 +117,25 @@ export function NotificationsPanel({ open, onClose, userId }: NotificationsPanel
             <p className="text-center text-muted py-10">אין התראות</p>
           ) : (
             notifications.map((n) => {
-              const { title, description } = getNotificationText(n);
+              const { title, description, href } = getNotificationText(n);
               const isRead = !!n.readAt;
-              return (
-                <div
-                  key={n.id}
-                  className={`px-5 py-4 border-b border-border ${isRead ? "opacity-50" : ""}`}
-                >
+              const rowClass = `block px-5 py-4 border-b border-border transition-colors ${
+                isRead ? "opacity-50" : ""
+              } ${href ? "hover:bg-[#f4f7f7] cursor-pointer" : ""}`;
+              const body = (
+                <>
                   <p className="text-[16px] font-semibold text-black">{title}</p>
                   <p className="text-[14px] text-[#666] mt-0.5">{description}</p>
                   <p className="text-[12px] text-[#b8b8b8] mt-1">{timeAgo(n.createdAt)}</p>
+                </>
+              );
+              return href ? (
+                <Link key={n.id} href={href} onClick={onClose} className={rowClass}>
+                  {body}
+                </Link>
+              ) : (
+                <div key={n.id} className={rowClass}>
+                  {body}
                 </div>
               );
             })
