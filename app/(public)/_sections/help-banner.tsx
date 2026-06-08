@@ -1,110 +1,101 @@
-import Image from "next/image";
 import Link from "next/link";
 
-/* Floating avatar bubble with frosted glass ring */
-function AvatarBubble({
-  size,
-  padding,
-  top,
-  left,
-  image,
-}: {
-  size: number;
-  padding: number;
-  top: string;
-  left: string;
-  image: string;
-}) {
-  const outerSize = size + padding * 2;
+/* Authentic WhatsApp glyph — same path reused from app/(public)/contact/page.tsx
+   so the brand mark stays consistent across the site. */
+function WhatsAppIcon({ className }: { className?: string }) {
   return (
-    <div
-      className="absolute rounded-full bg-[rgba(247,247,247,0.09)] flex items-center justify-center overflow-hidden"
-      style={{
-        width: outerSize,
-        height: outerSize,
-        top,
-        left,
-      }}
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={className}
+      aria-hidden="true"
     >
-      <div
-        className="rounded-full overflow-hidden relative"
-        style={{
-          width: size,
-          height: size,
-        }}
-      >
-        <Image src={image} alt="" fill className="object-cover" />
-      </div>
-    </div>
-  );
-}
-
-/* Support headset icon in green circle */
-function SupportIcon() {
-  return (
-    <div className="absolute right-4 md:right-[40px] top-4 md:top-[30px] size-[46px] md:size-[58px] rounded-full bg-accent border-[1.3px] border-white flex items-center justify-center">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M18 16.5V14a6 6 0 0 0-12 0v2.5" />
-        <path d="M4 16.5C4 15.12 5.12 14 6.5 14H8v4H6.5C5.12 18 4 16.88 4 15.5v-1z" fill="white" stroke="none" />
-        <path d="M16 14h1.5c1.38 0 2.5 1.12 2.5 2.5v0c0 1.38-1.12 2.5-2.5 2.5H16v-5z" fill="white" stroke="none" />
-        <path d="M18 19c0 1.66-1.34 3-3 3h-2" />
-      </svg>
-    </div>
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+    </svg>
   );
 }
 
 export function HelpBanner() {
   return (
-    <section className="mx-auto max-w-[1440px] px-4 md:px-[50px] py-4">
-      <div className="rounded-[16px] bg-[#1d4847] overflow-hidden relative min-h-[250px] md:h-[300px]">
+    <section className="mx-auto max-w-[1440px] px-4 md:px-[50px] py-12 md:py-20">
+      <div className="relative w-full overflow-hidden rounded-[20px] border border-[#E6EDEC] bg-white px-6 py-14 md:px-16 md:py-20 lg:py-24">
+        {/* Soft teal corner wash — anchors the white card to the Heali palette.
+            Logical -end-32 keeps it pinned to the visual top-right in RTL today
+            and to the trailing edge under any future LTR locale. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-32 -end-32 h-[420px] w-[420px] rounded-full opacity-[0.06] blur-3xl"
+          style={{
+            background:
+              "radial-gradient(circle, #21544E 0%, transparent 70%)",
+          }}
+        />
 
-        {/* ── Left side: decorative constellation — hidden on mobile ── */}
-        <div className="absolute left-[50px] top-1/2 -translate-y-1/2 w-[500px] h-[400px] hidden lg:block">
-          <div className="absolute left-[120px] top-[80px] size-[240px] rounded-full border border-white/[0.08] bg-white/[0.04]" />
-          <div className="absolute left-[145px] top-[105px] size-[190px] rounded-full border border-white/[0.06]" />
-          <div className="absolute left-[170px] top-[130px] size-[140px] rounded-full bg-white/[0.06]" />
-
-          <div className="absolute left-[60px] top-[20px] size-[360px] rounded-full border border-white/[0.06]" />
-          <div className="absolute left-[20px] top-[-20px] size-[440px] rounded-full border border-white/[0.04]" />
-
-          <div className="absolute left-[135px] top-[0px] w-px h-[400px] bg-white/[0.05]" />
-          <div className="absolute left-[270px] top-[0px] w-px h-[400px] bg-white/[0.05]" />
-          <div className="absolute left-[0px] top-[135px] w-[500px] h-px bg-white/[0.05]" />
-          <div className="absolute left-[0px] top-[268px] w-[500px] h-px bg-white/[0.05]" />
-          <div className="absolute left-[0px] top-[200px] w-[500px] h-px bg-white/[0.05]" />
-
-          <AvatarBubble size={66} padding={28} top="-30px" left="230px" image="/images/avatars/avatar-1.jpg" />
-          <AvatarBubble size={66} padding={28} top="-5px" left="10px" image="/images/avatars/avatar-2.jpg" />
-          <AvatarBubble size={66} padding={28} top="190px" left="-30px" image="/images/avatars/avatar-3.jpg" />
-          <AvatarBubble size={66} padding={16} top="105px" left="390px" image="/images/avatars/avatar-4.jpg" />
-          <AvatarBubble size={63} padding={26} top="245px" left="210px" image="/images/avatars/avatar-5.jpg" />
-        </div>
-
-        {/* Support icon — top-right */}
-        <SupportIcon />
-
-        {/* ── Right side: text + CTA ── */}
-        <div className="relative md:absolute right-0 md:right-[80px] top-0 md:top-1/2 md:-translate-y-1/2 flex flex-col gap-6 md:gap-[40px] items-center md:items-end p-8 pt-16 md:p-0 md:w-[574px]">
-          <div className="flex flex-col gap-3 text-center md:text-right w-full">
-            <p className="text-[28px] sm:text-[40px] md:text-[52px] font-semibold text-white leading-[1.1] md:leading-[56px]">
-              עדיין לא מצאת את הטיפול שהכי מתאים לך?
-            </p>
-            <p className="text-[16px] md:text-[20px] font-light text-white/70">
-              נשמח לעזור ולהכווין אותך
-            </p>
+        {/* items-start in flex-col under dir=rtl aligns children to the visual RIGHT */}
+        <div className="relative mx-auto flex max-w-[820px] flex-col items-start gap-6 md:gap-8">
+          {/* Eyebrow with live-channel pulse — grafted from whatsapp-native.
+              flex-wrap keeps the dot adjacent to the label if it ever breaks. */}
+          <div className="flex max-w-full flex-wrap items-center gap-x-2.5 gap-y-1">
+            <span aria-hidden="true" className="relative flex h-2 w-2 shrink-0">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#7DE4A8] opacity-70 motion-reduce:animate-none" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#7DE4A8]" />
+            </span>
+            <span className="text-[12px] font-medium text-[#21544E] md:text-[13px]">
+              <span className="tracking-[0.18em]">HEALI</span>
+              <span aria-hidden="true">{" · "}</span>
+              <span>זמינים עכשיו בוואטסאפ</span>
+            </span>
           </div>
 
+          {/* Headline — typography does the work */}
+          <h2 className="text-right text-[30px] leading-[1.15] text-[#0C2826] sm:text-[40px] sm:leading-[1.1] md:text-[58px] md:leading-[1.08] lg:text-[68px] lg:leading-[1.05]">
+            <span className="block font-light">
+              עדיין מחפשים את הטיפול הנכון?
+            </span>
+            <span className="block font-bold">
+              דברו{" "}
+              <span className="relative inline-block">
+                איתנו
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-x-0 -bottom-[2px] h-[3px] rounded-full bg-[#7DE4A8] md:-bottom-[6px] md:h-[5px]"
+                />
+              </span>
+              .
+            </span>
+          </h2>
+
+          {/* Subtitle — one breath */}
+          <p className="max-w-[560px] text-right text-[16px] font-light text-[#0C2826]/60 md:text-[19px]">
+            רגע אחד בוואטסאפ — ונמצא לכם בדיוק את מה שצריך.
+          </p>
+
+          {/* CTA — wide pill, WhatsApp glyph inset on the trailing edge.
+              In RTL: badge is LAST in DOM = visual LEFT, text leads from the RIGHT.
+              Reading flow: eye reads label right-to-left and lands on the icon.
+              Mobile: full-width up to 420px so the badge can't overflow on 320px
+              viewports. md+: collapses to inline-flex at intrinsic width. */}
           <Link
-            href="https://wa.me/972000000000"
+            href="https://wa.me/9720503822282"
             target="_blank"
-            className="flex h-[42px] w-[226px] items-center justify-center rounded-[10px] text-[16px] font-medium text-black"
-            style={{
-              background:
-                "radial-gradient(ellipse 120% 300% at 50% -80%, #abffbf 0%, #7deaa1 7%, #4ed584 14%, #54fdae 35%, #51ff97 50%, #7de4a8 70%, #b8ffbb 86%, #deffeb 100%)",
-            }}
+            rel="noopener noreferrer"
+            aria-label="פתחו שיחת וואטסאפ עם הצוות של Heali"
+            className="group mt-2 flex w-full max-w-[420px] items-center justify-between gap-3 rounded-full bg-[#7DE4A8] py-2 pe-2 ps-5 text-[#0C2826] shadow-[0_10px_30px_-12px_rgba(125,228,168,0.55)] transition-all duration-200 hover:-translate-y-[1px] hover:bg-[#6CD89A] hover:shadow-[0_14px_36px_-12px_rgba(125,228,168,0.7)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#21544E] focus-visible:ring-offset-2 focus-visible:ring-offset-white motion-reduce:transition-none motion-reduce:hover:translate-y-0 md:inline-flex md:w-auto md:gap-4 md:py-2.5 md:pe-2 md:ps-10"
           >
-            קחו אותי לווטסאפ
+            <span className="whitespace-nowrap text-[16px] font-medium leading-[1.15] md:text-[18px]">
+              שלחו לנו הודעה בוואטסאפ
+            </span>
+            {/* h-11 w-11 = 44px = WCAG 2.5.5 floor — do not shrink below this */}
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0C2826] text-[#7DE4A8] transition-transform duration-200 group-hover:rotate-[-8deg] motion-reduce:transition-none motion-reduce:group-hover:rotate-0 md:h-12 md:w-12">
+              <WhatsAppIcon className="h-5 w-5 md:h-[22px] md:w-[22px]" />
+            </span>
           </Link>
+
+          {/* Trust micro-line — softens the ask. Solid teal at 85% passes
+              WCAG AA at 12-13px (~6.4:1) instead of the prior 3.3:1. */}
+          <p className="text-right text-[12px] font-light text-[#21544E]/85 md:text-[13px]">
+            בני אדם אמיתיים · תשובה תוך דקות
+          </p>
         </div>
       </div>
     </section>
