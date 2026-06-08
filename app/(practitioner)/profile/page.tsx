@@ -122,7 +122,7 @@ export default function PractitionerProfilePage() {
     setIsJoiningPackages(true);
     const result = await joinHealiPackages();
     if (result.success) {
-      toast.success("הצטרפת לחבילות הילי");
+      toast.success("הצטרפת לחבילות Heali");
       // Reload profile so the CTA disappears and the new pricing model
       // shows in the form.
       const data = await fetchProfileData();
@@ -238,10 +238,10 @@ export default function PractitionerProfilePage() {
                       <Package className="size-5 text-primary shrink-0 mt-0.5" />
                       <div>
                         <h3 className="text-[15px] font-semibold text-black mb-1">
-                          הצטרפות לחבילות הטיפולים של הילי
+                          הצטרפות לחבילות הטיפולים של Heali
                         </h3>
                         <p className="text-[13px] font-light leading-snug text-[#666]">
-                          מטפלים בחבילות הטיפול של הילי מקבלים הרבה יותר מטופלים. כל המטפלים בחבילות הם במחיר אחיד של 140 ש&quot;ח פלוס מע&quot;מ.
+                          מטפלים בחבילות הטיפול של Heali מקבלים הרבה יותר מטופלים. כל המטפלים בחבילות הם במחיר אחיד של 140 ש&quot;ח פלוס מע&quot;מ.
                         </p>
                       </div>
                     </div>
@@ -502,7 +502,7 @@ export default function PractitionerProfilePage() {
       <ConfirmDialog
         open={showJoinPackagesDialog}
         onOpenChange={setShowJoinPackagesDialog}
-        title="להצטרף לחבילות הילי?"
+        title="להצטרף לחבילות Heali?"
         description={`לאחר ההצטרפות מודל התמחור יעודכן ל"חבילה דרך Heali" והמחיר יוגדר ל-140 ש"ח. ניתן יהיה לחזור ולערוך בהמשך.`}
         confirmLabel={isJoiningPackages ? "מעדכן..." : "הצטרפות"}
         onConfirm={handleJoinPackages}

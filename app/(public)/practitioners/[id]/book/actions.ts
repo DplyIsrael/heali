@@ -218,7 +218,7 @@ export async function createBooking(
     const lp = await createLowProfile({
       amount: priceAtBooking,
       returnValue: data.id,
-      productName: "טיפול בהילי",
+      productName: "טיפול בHeali",
       successRedirectUrl: `${siteUrl}/api/cardcom/success`,
       failedRedirectUrl: `${siteUrl}/api/cardcom/failure?ReturnValue=${data.id}`,
       webHookUrl: `${siteUrl}/api/cardcom/webhook`,

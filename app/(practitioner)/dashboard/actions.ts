@@ -160,7 +160,7 @@ export async function approveBooking(bookingId: string) {
         token: booking.payment_token,
         amount: Number(booking.price_at_booking),
         returnValue: booking.id,
-        productName: "טיפול בהילי",
+        productName: "טיפול בHeali",
         createInvoice: true,
         customer: {
           fullName: patientUser?.full_name ?? undefined,
