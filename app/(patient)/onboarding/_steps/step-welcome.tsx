@@ -18,7 +18,7 @@ export function StepWelcome({ onNext }: StepWelcomeProps) {
         <Heart className="h-16 w-16 text-primary" />
       </div>
 
-      <h1 className="text-[36px] font-semibold leading-tight text-foreground">
+      <h1 className="text-[40px] font-semibold leading-tight text-foreground">
         {t("step1Title")}
       </h1>
       <p className="mt-4 text-[18px] font-light leading-relaxed text-[#666]">

@@ -64,7 +64,7 @@ export function StepPersonalDetails({
 
   return (
     <div className="flex flex-col">
-      <h1 className="text-[36px] font-semibold leading-tight text-foreground">
+      <h1 className="text-[40px] font-semibold leading-tight text-foreground">
         {t("step3Title")}
       </h1>
       <p className="mt-2 text-[18px] font-light text-[#666]">

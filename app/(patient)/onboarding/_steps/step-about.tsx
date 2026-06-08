@@ -32,7 +32,7 @@ export function StepAbout({ onNext, onBack }: StepAboutProps) {
 
   return (
     <div className="flex flex-col">
-      <h1 className="text-[36px] font-semibold leading-tight text-foreground">
+      <h1 className="text-[40px] font-semibold leading-tight text-foreground">
         {t("step2Title")}
       </h1>
       <p className="mt-2 text-[18px] font-light text-[#666]">
