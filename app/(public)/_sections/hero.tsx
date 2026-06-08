@@ -100,7 +100,8 @@ export function Hero() {
               {/* Main headline */}
               <div className="flex flex-col gap-3 md:gap-[18px] items-end w-full md:w-[599px]">
                 <h1 className="text-[32px] md:text-[48px] lg:text-[64px] leading-none text-white text-right">
-                  <span className="font-light block">כל המטפלים. כל הטיפולים.</span>
+                  <span className="font-light block">כל המטפלים.</span>
+                  <span className="font-light block">כל הטיפולים.</span>
                   <span className="font-bold block">במקום אחד.</span>
                 </h1>
                 <p className="text-[16px] md:text-[20px] font-light text-[#f3f3f3] text-right w-full">
@@ -110,7 +111,7 @@ export function Hero() {
 
               {/* Search — glassmorphism container */}
               <div className="w-full flex flex-col gap-3 items-end">
-                <p className="text-[16px] md:text-[18px] text-[#f3f3f3] text-right">
+                <p className="w-full text-[16px] md:text-[18px] text-[#f3f3f3] text-right">
                   איזה טיפול בא לך היום?
                 </p>
                 <div className="w-full bg-[rgba(255,255,255,0.31)] border border-[rgba(255,255,255,0.33)] rounded-[16px] shadow-[0px_21px_44.6px_-10px_rgba(0,0,0,0.08)] p-3 md:p-4 flex items-center">
