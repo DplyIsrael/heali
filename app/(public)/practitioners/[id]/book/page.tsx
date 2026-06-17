@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, Sun, Cloud, Moon, Check } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
-import { getTimeSlotsForDate, createBooking, type AvailableSlot } from "./actions";
+import { getTimeSlotsForDate, createBooking, fetchActiveCreditBalance, type AvailableSlot } from "./actions";
 import { fetchPractitionerById } from "../actions";
 
 const DAY_NAMES_SHORT = ["א׳", "ב׳", "ג׳", "ד׳", "ה׳", "ו׳", "ש׳"];
@@ -48,19 +48,26 @@ export default function BookingPage() {
   const [step, setStep] = useState<"schedule" | "summary" | "confirmed">("schedule");
   const [isBooking, setIsBooking] = useState(false);
   const [_bookingId, setBookingId] = useState("");
+  const [activeCreditBalance, setActiveCreditBalance] = useState(0);
+  const [applyCredits, setApplyCredits] = useState(false);
 
   const baseDate = new Date();
   baseDate.setDate(baseDate.getDate() + weekOffset * 7);
   const weekDates = getWeekDates(baseDate);
 
-  // Load practitioner info
+  // Load practitioner info + wallet balance (so the summary step can decide
+  // whether to offer the "use credits" toggle).
   useEffect(() => {
     async function load() {
-      const p = await fetchPractitionerById(practitionerId);
+      const [p, balance] = await Promise.all([
+        fetchPractitionerById(practitionerId),
+        fetchActiveCreditBalance(),
+      ]);
       if (p) {
         setPractitioner({ name: p.name, price: p.price, domainNames: p.domainNames, domainIds: p.domainIds });
         if (p.domainNames.length > 0) setSelectedDomain(p.domainNames[0]);
       }
+      setActiveCreditBalance(balance);
     }
     load();
   }, [practitionerId]);
@@ -96,7 +103,8 @@ export default function BookingPage() {
       domainId,
       formatDate(selectedDate),
       selectedTime,
-      practitioner.price
+      practitioner.price,
+      applyCredits
     );
 
     if (result.success) {
@@ -119,8 +127,14 @@ export default function BookingPage() {
   const afternoonSlots = timeSlots.filter((s) => s.period === "afternoon");
   const eveningSlots = timeSlots.filter((s) => s.period === "evening");
 
-  const vat = practitioner ? Math.round(practitioner.price * 0.17) : 0;
-  const total = practitioner ? practitioner.price + vat : 0;
+  // Credits deduct from the pre-VAT listed price (matches how the server applies
+  // them in createBooking — see book/actions.ts). VAT is recalculated on the
+  // discounted amount so the patient also saves the VAT on the credited portion.
+  const listedPrice = practitioner?.price ?? 0;
+  const creditDiscount = applyCredits ? Math.min(activeCreditBalance, listedPrice) : 0;
+  const priceAfterCredit = Math.max(0, listedPrice - creditDiscount);
+  const vat = Math.round(priceAfterCredit * 0.17);
+  const total = priceAfterCredit + vat;
 
   if (!practitioner) {
     return (
@@ -176,11 +190,44 @@ export default function BookingPage() {
 
           <h3 className="text-[24px] text-black mb-4">סיכום הזמנה</h3>
 
+          {/* Use-credits toggle — only shown when patient has a positive balance */}
+          {activeCreditBalance > 0 && (
+            <button
+              type="button"
+              onClick={() => setApplyCredits((v) => !v)}
+              className={`w-full flex items-center justify-between rounded-[10px] border p-3 mb-4 transition-colors ${
+                applyCredits
+                  ? "border-accent bg-accent/10"
+                  : "border-border-input bg-white hover:border-accent/40"
+              }`}
+            >
+              <span className="text-[14px] text-black text-right">
+                השתמש בזיכויים שלי
+                <span className="text-[#9f9f9f] me-1">
+                  (₪{activeCreditBalance.toFixed(2)} זמין)
+                </span>
+              </span>
+              <div
+                className={`size-5 rounded-[6px] border-2 flex items-center justify-center shrink-0 ${
+                  applyCredits ? "border-accent bg-accent" : "border-border-input"
+                }`}
+              >
+                {applyCredits && <Check className="size-3.5 text-black" strokeWidth={3} />}
+              </div>
+            </button>
+          )}
+
           <div className="flex flex-col gap-2 mb-4">
             <div className="flex justify-between text-[16px] font-light text-[#9f9f9f]">
-              <span>₪{practitioner.price}</span>
+              <span>₪{listedPrice}</span>
               <span>סה״כ מחיר לטיפול</span>
             </div>
+            {applyCredits && creditDiscount > 0 && (
+              <div className="flex justify-between text-[16px] font-medium text-[#13D464]">
+                <span>−₪{creditDiscount.toFixed(2)}</span>
+                <span>זיכוי שיוחל</span>
+              </div>
+            )}
             <div className="flex justify-between text-[16px] font-light text-[#9f9f9f]">
               <span>₪{vat}</span>
               <span>מע״מ (17%)</span>
@@ -188,7 +235,7 @@ export default function BookingPage() {
             <div className="h-px bg-border my-1" />
             <div className="flex justify-between text-[18px] font-medium text-[#575757]">
               <span>₪{total}</span>
-              <span>סה״כ</span>
+              <span>סה״כ לתשלום</span>
             </div>
           </div>
 

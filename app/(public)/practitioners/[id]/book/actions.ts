@@ -134,12 +134,31 @@ export async function getTimeSlotsForDate(
   return timeSlots.sort((a, b) => a.time.localeCompare(b.time));
 }
 
+// Returns the patient's currently-active credit balance. Used by the booking
+// summary step to decide whether to show the "use my credits" toggle.
+export async function fetchActiveCreditBalance(): Promise<number> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return 0;
+  const { data } = await supabase
+    .from("credits")
+    .select("amount")
+    .eq("patient_id", user.id)
+    .eq("status", "active");
+  const total = (data ?? []).reduce(
+    (s: number, c: { amount: string | number }) => s + Number(c.amount),
+    0
+  );
+  return Number(total.toFixed(2));
+}
+
 export async function createBooking(
   practitionerId: string,
   domainId: string,
   scheduledDate: string,
   scheduledTime: string,
-  priceAtBooking: number
+  priceAtBooking: number,
+  applyCredits: boolean = false
 ): Promise<ActionResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -181,6 +200,50 @@ export async function createBooking(
     return { success: false, error: "התור כבר תפוס, אנא בחר שעה אחרת" };
   }
 
+  // Credit application — server-authoritative. The client passes a boolean
+  // intent flag; we fetch active credits oldest-first, apply up to the
+  // listed price, and store the post-credit amount as price_at_booking.
+  // Credits deduct from the listed (pre-VAT) price to stay consistent with
+  // how price_at_booking is used elsewhere in the codebase (CardCom charge,
+  // confirmation email, etc.). The last partially-consumed credit is split:
+  // its existing row is marked spent at the used amount, and a new active
+  // credit row is inserted with the leftover.
+  let priceAfterCredit = priceAtBooking;
+  const creditsToConsumeFully: string[] = [];
+  let partialCredit:
+    | { id: string; usedAmount: number; leftover: number }
+    | null = null;
+  let appliedCreditAmount = 0;
+
+  if (applyCredits) {
+    const { data: activeCredits } = await supabase
+      .from("credits")
+      .select("id, amount")
+      .eq("patient_id", user.id)
+      .eq("status", "active")
+      .order("created_at", { ascending: true });
+
+    let remaining = priceAtBooking;
+    for (const c of activeCredits ?? []) {
+      if (remaining <= 0) break;
+      const amt = Number(c.amount);
+      if (amt <= remaining) {
+        creditsToConsumeFully.push(c.id as string);
+        appliedCreditAmount += amt;
+        remaining -= amt;
+      } else {
+        partialCredit = {
+          id: c.id as string,
+          usedAmount: remaining,
+          leftover: Number((amt - remaining).toFixed(2)),
+        };
+        appliedCreditAmount += remaining;
+        remaining = 0;
+      }
+    }
+    priceAfterCredit = Math.max(0, Number((priceAtBooking - appliedCreditAmount).toFixed(2)));
+  }
+
   // Create the booking (payment is mocked — goes straight to pending approval)
   const { data, error } = await supabase
     .from("bookings")
@@ -190,7 +253,7 @@ export async function createBooking(
       domain_id: domainId,
       scheduled_date: scheduledDate,
       scheduled_time: scheduledTime,
-      price_at_booking: priceAtBooking,
+      price_at_booking: priceAfterCredit,
       status: "pending_practitioner_approval",
       payment_status: "pending",
     })
@@ -200,6 +263,34 @@ export async function createBooking(
   if (error) {
     console.error("Create booking error:", error);
     return { success: false, error: "שגיאה ביצירת ההזמנה" };
+  }
+
+  // Now that the booking row exists, consume the credits. If any of these
+  // writes fail we log but don't roll back — better to have a confirmed
+  // booking with an audit gap than to lose the slot. The credit walk above
+  // was bounded by listedPrice so we can't over-spend.
+  if (applyCredits && appliedCreditAmount > 0) {
+    if (creditsToConsumeFully.length > 0) {
+      const { error: spentErr } = await supabase
+        .from("credits")
+        .update({ status: "spent" })
+        .in("id", creditsToConsumeFully);
+      if (spentErr) console.error("[createBooking] credit-spent update failed:", spentErr);
+    }
+    if (partialCredit) {
+      const { error: partialErr } = await supabase
+        .from("credits")
+        .update({ amount: partialCredit.usedAmount, status: "spent" })
+        .eq("id", partialCredit.id);
+      if (partialErr) console.error("[createBooking] partial-credit update failed:", partialErr);
+      const { error: splitErr } = await supabase.from("credits").insert({
+        patient_id: user.id,
+        amount: partialCredit.leftover,
+        status: "active",
+        source_booking_id: null,
+      });
+      if (splitErr) console.error("[createBooking] split-credit insert failed:", splitErr);
+    }
   }
 
   // If CardCom is on, open a hosted Low Profile session so the patient
@@ -216,7 +307,7 @@ export async function createBooking(
       .single();
 
     const lp = await createLowProfile({
-      amount: priceAtBooking,
+      amount: priceAfterCredit,
       returnValue: data.id,
       productName: "טיפול בHeali",
       successRedirectUrl: `${siteUrl}/api/cardcom/success`,

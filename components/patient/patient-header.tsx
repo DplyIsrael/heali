@@ -20,6 +20,7 @@ const NAV_ITEMS = [
   { label: "דף בית", href: "/" },
   { label: "חיפוש מטפלים", href: "/discovery" },
   { label: "הטיפולים שלי", href: "/my-treatments" },
+  { label: "הארנק שלי", href: "/wallet" },
   { label: "חבילות טיפול", href: "/packages" },
   { label: "מאמרים", href: "/articles" },
 ] as const;
