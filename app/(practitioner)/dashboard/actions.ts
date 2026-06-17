@@ -2,6 +2,9 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { isCardcomEnabled, chargeToken } from "@/lib/payments/cardcom";
+import { sendEmail } from "@/lib/email/client";
+import { bookingConfirmedEmail } from "@/lib/email/templates";
+import { generateGoogleCalendarLink } from "@/lib/utils/calendar-link";
 
 export interface DashboardStats {
   totalClosed: number;
@@ -125,10 +128,11 @@ export async function approveBooking(bookingId: string) {
 
   const supabase = await createClient();
 
-  // Load the booking so we have token + price for the CardCom charge.
+  // Load the booking so we have token + price for the CardCom charge, plus
+  // the scheduling fields the confirmation email + Google Calendar link need.
   const { data: booking } = await supabase
     .from("bookings")
-    .select("id, practitioner_id, price_at_booking, payment_token, payment_status, patient_id")
+    .select("id, practitioner_id, price_at_booking, payment_token, payment_status, patient_id, scheduled_date, scheduled_time, domain_id")
     .eq("id", bookingId)
     .eq("practitioner_id", practitionerId)
     .maybeSingle();
@@ -192,6 +196,53 @@ export async function approveBooking(bookingId: string) {
     .maybeSingle();
   if (error) return { success: false, error: "שגיאה באישור הטיפול" };
   if (!data) return { success: false, error: "לא מורשה" };
+
+  // Best-effort: send the patient a confirmation email with an "Add to Google
+  // Calendar" link. Failure here doesn't block the approval — the booking is
+  // already confirmed in the DB and visible in /my-treatments.
+  try {
+    const { data: pracProfile } = await supabase
+      .from("practitioner_profiles")
+      .select("user_id, city")
+      .eq("id", practitionerId)
+      .single();
+
+    if (pracProfile) {
+      const [{ data: patientUser }, { data: pracUser }, { data: domain }] = await Promise.all([
+        supabase.from("users").select("full_name, email").eq("id", booking.patient_id).single(),
+        supabase.from("users").select("full_name").eq("id", pracProfile.user_id).single(),
+        supabase.from("treatment_domains").select("name").eq("id", booking.domain_id).single(),
+      ]);
+
+      if (patientUser?.email) {
+        const practitionerName = pracUser?.full_name ?? "";
+        const domainName = domain?.name ?? "טיפול";
+
+        const calendarLink = generateGoogleCalendarLink({
+          title: `${domainName} עם ${practitionerName}`,
+          date: booking.scheduled_date,
+          time: booking.scheduled_time,
+          // Default duration — bookings schema doesn't carry an explicit length yet.
+          durationMinutes: 60,
+          location: pracProfile.city || undefined,
+          description: `טיפול ב-Heali — ${domainName} עם ${practitionerName}`,
+        });
+
+        const { subject, html } = bookingConfirmedEmail({
+          patientName: patientUser.full_name ?? "",
+          practitionerName,
+          domain: domainName,
+          date: booking.scheduled_date,
+          time: booking.scheduled_time,
+          calendarLink,
+        });
+        await sendEmail({ to: patientUser.email, subject, html });
+      }
+    }
+  } catch (err) {
+    console.error("[approveBooking] confirmation email failed:", err);
+  }
+
   return { success: true };
 }
 

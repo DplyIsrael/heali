@@ -21,6 +21,7 @@ const NAV_ITEMS = [
   { label: "טיפולים", href: "/admin/treatments" },
   { label: "מטפלים", href: "/admin/practitioners" },
   { label: "מטופלים", href: "/admin/patients" },
+  { label: "דירוגים", href: "/admin/reviews" },
   { label: "קטגוריות", href: "/admin/categories" },
   { label: "התמחויות", href: "/admin/specialties" },
   { label: "חבילות טיפול", href: "/admin/packages" },
