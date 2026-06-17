@@ -44,7 +44,7 @@ export async function fetchRefundRequests(
   if (!requests || requests.length === 0) return [];
 
   const patientIds = [
-    ...new Set(requests.map((r: { patient_id: string }) => r.patient_id)),
+    ...new Set(requests.map((r) => r.patient_id as string)),
   ];
   const { data: users } = await supabase
     .from("users")
