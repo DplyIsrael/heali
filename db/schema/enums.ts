@@ -56,3 +56,9 @@ export const pricingModelEnum = pgEnum("pricing_model", [
   "per_package",
   "per_heali_package",
 ]);
+
+export const refundRequestStatusEnum = pgEnum("refund_request_status", [
+  "pending",
+  "approved",
+  "rejected",
+]);

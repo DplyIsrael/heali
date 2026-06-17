@@ -273,14 +273,14 @@ export async function createBooking(
     if (creditsToConsumeFully.length > 0) {
       const { error: spentErr } = await supabase
         .from("credits")
-        .update({ status: "spent" })
+        .update({ status: "used" })
         .in("id", creditsToConsumeFully);
       if (spentErr) console.error("[createBooking] credit-spent update failed:", spentErr);
     }
     if (partialCredit) {
       const { error: partialErr } = await supabase
         .from("credits")
-        .update({ amount: partialCredit.usedAmount, status: "spent" })
+        .update({ amount: partialCredit.usedAmount, status: "used" })
         .eq("id", partialCredit.id);
       if (partialErr) console.error("[createBooking] partial-credit update failed:", partialErr);
       const { error: splitErr } = await supabase.from("credits").insert({

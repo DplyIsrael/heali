@@ -2,12 +2,19 @@
 
 import { createClient } from "@/lib/supabase/server";
 
+interface ActionResult {
+  success: boolean;
+  error?: string;
+}
+
 export interface WalletCredit {
   id: string;
   amount: number;
-  status: "active" | "spent" | "expired";
+  status: "active" | "used" | "refunded";
   createdAt: string;
   sourceLabel: string;
+  /** true when there's a refund_request with status="pending" pointing at this credit */
+  hasPendingRefundRequest: boolean;
 }
 
 export interface WalletData {
@@ -22,11 +29,24 @@ export async function fetchWalletData(): Promise<WalletData> {
   } = await supabase.auth.getUser();
   if (!user) return { activeBalance: 0, credits: [] };
 
-  const { data: credits } = await supabase
-    .from("credits")
-    .select("id, amount, status, source_booking_id, created_at")
-    .eq("patient_id", user.id)
-    .order("created_at", { ascending: false });
+  const [{ data: credits }, { data: pendingRefunds }] = await Promise.all([
+    supabase
+      .from("credits")
+      .select("id, amount, status, source_booking_id, created_at")
+      .eq("patient_id", user.id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("refund_requests")
+      .select("source_credit_id")
+      .eq("patient_id", user.id)
+      .eq("status", "pending"),
+  ]);
+
+  const pendingCreditIds = new Set(
+    (pendingRefunds ?? [])
+      .map((r: { source_credit_id: string | null }) => r.source_credit_id)
+      .filter(Boolean) as string[]
+  );
 
   let activeBalance = 0;
   const mapped: WalletCredit[] = (credits ?? []).map((c: Record<string, unknown>) => {
@@ -41,6 +61,7 @@ export async function fetchWalletData(): Promise<WalletData> {
       // source_booking_id present ⇒ refund from a cancelled booking.
       // null ⇒ admin manually granted credit (no source booking).
       sourceLabel: c.source_booking_id ? "החזר על ביטול טיפול" : "זיכוי מהצוות",
+      hasPendingRefundRequest: pendingCreditIds.has(c.id as string),
     };
   });
 
@@ -48,4 +69,54 @@ export async function fetchWalletData(): Promise<WalletData> {
     activeBalance: Number(activeBalance.toFixed(2)),
     credits: mapped,
   };
+}
+
+// Patient requests a cash refund for one specific active credit. The credit
+// stays active until admin approves the request (at which point its status
+// flips to "refunded" and an external wire transfer is initiated by admin).
+export async function requestRefund(
+  creditId: string,
+  reason: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "לא מחובר" };
+
+  // Validate credit belongs to caller and is currently active.
+  const { data: credit } = await supabase
+    .from("credits")
+    .select("id, patient_id, amount, status")
+    .eq("id", creditId)
+    .single();
+  if (!credit) return { success: false, error: "זיכוי לא נמצא" };
+  if (credit.patient_id !== user.id) return { success: false, error: "לא מורשה" };
+  if (credit.status !== "active") {
+    return { success: false, error: "ניתן לבקש החזר רק על זיכויים זמינים" };
+  }
+
+  // Reject duplicate pending requests for the same credit (unique partial
+  // index also enforces this at the DB level — this just gives a friendly error).
+  const { data: existing } = await supabase
+    .from("refund_requests")
+    .select("id")
+    .eq("source_credit_id", creditId)
+    .eq("status", "pending")
+    .limit(1);
+  if (existing && existing.length > 0) {
+    return { success: false, error: "בקשת החזר על זיכוי זה כבר ממתינה לטיפול" };
+  }
+
+  const { error } = await supabase.from("refund_requests").insert({
+    patient_id: user.id,
+    source_credit_id: creditId,
+    amount: credit.amount,
+    reason: reason.trim() || null,
+    status: "pending",
+  });
+
+  if (error) {
+    console.error("[requestRefund] insert failed:", error);
+    return { success: false, error: "שגיאה בשליחת הבקשה" };
+  }
+  return { success: true };
 }
