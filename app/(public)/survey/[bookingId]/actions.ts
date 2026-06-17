@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendEmail } from "@/lib/email/client";
+import { practitionerReviewReceivedEmail } from "@/lib/email/templates";
 
 interface ActionResult {
   success: boolean;
@@ -140,6 +142,53 @@ export async function submitReview(
         payload: { bookingId, rating, reviewerName: firstName },
       }))
     );
+  }
+
+  // Notify the practitioner — in-app row + email. Best-effort: failure here
+  // doesn't roll back the review (already written).
+  try {
+    // Resolve practitioner_id from booking → user_id.
+    const { data: bookingFull } = await admin
+      .from("bookings")
+      .select("practitioner_id")
+      .eq("id", bookingId)
+      .single();
+    if (bookingFull?.practitioner_id) {
+      const { data: pracProfile } = await admin
+        .from("practitioner_profiles")
+        .select("user_id")
+        .eq("id", bookingFull.practitioner_id)
+        .single();
+
+      if (pracProfile?.user_id) {
+        const reviewerName = isAnonymous ? "מטופל אנונימי" : firstName;
+
+        // In-app notification (matches the existing new_review type — the
+        // notifications panel already renders this case).
+        await admin.from("notifications").insert({
+          user_id: pracProfile.user_id,
+          type: "new_review",
+          payload: { bookingId, rating, reviewerName },
+        });
+
+        // Email — only fires if the practitioner has an email on file.
+        const { data: pracUser } = await admin
+          .from("users")
+          .select("full_name, email")
+          .eq("id", pracProfile.user_id)
+          .single();
+        if (pracUser?.email) {
+          const { subject, html } = practitionerReviewReceivedEmail({
+            practitionerName: pracUser.full_name ?? "",
+            rating,
+            reviewerName,
+          });
+          await sendEmail({ to: pracUser.email, subject, html });
+        }
+      }
+    }
+  } catch (err) {
+    console.error("[submitReview] practitioner notify failed:", err);
   }
 
   return { success: true };

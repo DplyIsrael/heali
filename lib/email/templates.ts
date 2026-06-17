@@ -51,16 +51,55 @@ export function bookingDeclinedEmail(params: {
 
 export function bookingCanceledEmail(params: {
   patientName: string;
+  /** How much money moved. 0 when nothing was charged in the first place. */
   amount: number;
+  /** "wallet" = credited to wallet (late cancellation), "card" = refunded to the card on file, "none" = no money to refund. */
+  refundDestination: "wallet" | "card" | "none";
 }) {
+  const refundLine = (() => {
+    if (params.amount <= 0 || params.refundDestination === "none") return "";
+    if (params.refundDestination === "wallet") {
+      return `<p>סכום של <strong>₪${params.amount}</strong> זוכה לארנק שלך וניתן יהיה להשתמש בו בעת הזמנת טיפול חדש.</p>`;
+    }
+    return `<p>סכום של <strong>₪${params.amount}</strong> יוחזר לכרטיס האשראי שלך תוך 3–5 ימי עסקים.</p>`;
+  })();
+  const subjectSuffix = params.refundDestination === "wallet"
+    ? " — זיכוי לארנק"
+    : params.refundDestination === "card"
+      ? " — החזר לכרטיס"
+      : "";
+
   return {
-    subject: "ביטול טיפול — זיכוי לארנק",
+    subject: `ביטול טיפול${subjectSuffix}`,
     html: `
       <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #21544E;">הטיפול בוטל</h1>
         <p>שלום ${params.patientName},</p>
         <p>הטיפול שלך בוטל בהצלחה.</p>
-        <p>סכום של <strong>₪${params.amount}</strong> זוכה לארנק שלך.</p>
+        ${refundLine}
+        <p style="color:#9f9f9f;margin-top:24px;">צוות Heali</p>
+      </div>
+    `,
+  };
+}
+
+export function practitionerReviewReceivedEmail(params: {
+  practitionerName: string;
+  rating: number;
+  reviewerName: string;
+}) {
+  // Don't include the comment text — reviews go through admin moderation, so
+  // exposing unmoderated content (which might be abusive) to the practitioner
+  // before approval would be a footgun.
+  return {
+    subject: "דירוג חדש שהתקבל",
+    html: `
+      <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h1 style="color: #21544E;">דירוג חדש על הטיפול שלך</h1>
+        <p>שלום ${params.practitionerName},</p>
+        <p><strong>${params.reviewerName}</strong> השאיר/ה לך דירוג חדש:</p>
+        <p style="font-size:28px;font-weight:bold;color:#13D464;margin:16px 0;">${params.rating}/5 ⭐</p>
+        <p>הדירוג ממתין לבדיקת הצוות ויופיע בפרופיל שלך לאחר אישור.</p>
         <p style="color:#9f9f9f;margin-top:24px;">צוות Heali</p>
       </div>
     `,

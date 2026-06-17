@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { isCardcomEnabled, refundTransaction } from "@/lib/payments/cardcom";
+import { sendEmail } from "@/lib/email/client";
+import { bookingCanceledEmail } from "@/lib/email/templates";
 
 interface ActionResult {
   success: boolean;
@@ -175,6 +177,34 @@ export async function cancelBooking(bookingId: string, reason?: string): Promise
     })
     .eq("id", bookingId);
   if (cancelError) return { success: false, error: "שגיאה בביטול ההזמנה" };
+
+  // Best-effort: send the patient a cancellation confirmation. Failure here
+  // doesn't block the cancel (already committed).
+  try {
+    const { data: patientUser } = await supabase
+      .from("users")
+      .select("full_name, email")
+      .eq("id", user.id)
+      .single();
+
+    if (patientUser?.email) {
+      const refundDestination: "wallet" | "card" | "none" =
+        newPaymentStatus === "credited"
+          ? "wallet"
+          : newPaymentStatus === "refunded"
+            ? "card"
+            : "none";
+      const refundedAmount = refundDestination === "none" ? 0 : Number(booking.price_at_booking);
+      const { subject, html } = bookingCanceledEmail({
+        patientName: patientUser.full_name ?? "",
+        amount: refundedAmount,
+        refundDestination,
+      });
+      await sendEmail({ to: patientUser.email, subject, html });
+    }
+  } catch (err) {
+    console.error("[cancelBooking] confirmation email failed:", err);
+  }
 
   return { success: true };
 }
