@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Star, Globe, MessageSquare, Wallet, ArrowRight, Heart, Edit, Trophy } from "lucide-react";
+import { Star, Globe, MessageSquare, Wallet, ArrowRight, Heart, Edit, Trophy, Navigation } from "lucide-react";
 import { PractitionerCard, type PractitionerCardData } from "@/components/shared/practitioner-card";
 import { StartConversationButton } from "@/components/messaging/start-conversation-button";
+import { generateWazeLink } from "@/lib/utils/calendar-link";
 import { fetchPractitionerById, fetchPractitionerReviews, fetchSimilarPractitioners, fetchPractitionerCertificates, fetchPractitionerArticles } from "./actions";
 
 interface PageProps {
@@ -99,6 +100,18 @@ export default async function PractitionerProfilePage({ params }: PageProps) {
                   <div className="flex items-center gap-1.5">
                     <Globe className="size-4 text-primary" />
                     <span>{practitioner.city}</span>
+                    {practitioner.city && (
+                      <a
+                        href={generateWazeLink(practitioner.city)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`נווט אל ${practitioner.city} ב-Waze`}
+                        className="inline-flex items-center gap-1 ms-2 rounded-full bg-[#33CCFF]/10 hover:bg-[#33CCFF]/20 px-2.5 py-1 text-[12px] font-medium text-[#0099CC] transition-colors"
+                      >
+                        <Navigation className="size-3" />
+                        Waze
+                      </a>
+                    )}
                   </div>
                   {practitioner.languages.length > 0 && (
                     <div className="flex items-center gap-1.5">

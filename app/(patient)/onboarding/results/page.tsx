@@ -1,45 +1,29 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Star, MapPin } from "lucide-react";
+/* eslint-disable react-hooks/set-state-in-effect */
 
-// Placeholder matched practitioners — will be replaced with real matching query
-const MOCK_PRACTITIONERS = [
-  {
-    id: "1",
-    name: "ליאת גולדנברג",
-    domain: "דיקור סיני",
-    city: "תל אביב - יפו",
-    rating: 4.8,
-    reviewCount: 24,
-    price: 250,
-    imageUrl: null,
-  },
-  {
-    id: "2",
-    name: "דר׳ יוסי כהן",
-    domain: "נטורופתיה",
-    city: "חיפה",
-    rating: 4.9,
-    reviewCount: 31,
-    price: 300,
-    imageUrl: null,
-  },
-  {
-    id: "3",
-    name: "מיכל אברהם",
-    domain: "רפלקסולוגיה",
-    city: "ירושלים",
-    rating: 4.7,
-    reviewCount: 18,
-    price: 200,
-    imageUrl: null,
-  },
-];
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { Star, MapPin } from "lucide-react";
+import {
+  fetchMatchedPractitioners,
+  type MatchedPractitioner,
+} from "./actions";
 
 export default function OnboardingResultsPage() {
   const router = useRouter();
+  const [practitioners, setPractitioners] = useState<MatchedPractitioner[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchMatchedPractitioners(6).then((p) => {
+      setPractitioners(p);
+      setIsLoading(false);
+    });
+  }, []);
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -50,62 +34,90 @@ export default function OnboardingResultsPage() {
             <Star className="h-8 w-8 text-primary" />
           </div>
           <h1 className="text-[36px] font-semibold leading-tight text-foreground">
-            מצאנו לך מטפלים מתאימים!
+            {practitioners.length > 0
+              ? "מצאנו לך מטפלים מתאימים!"
+              : "ברוכים הבאים ל-Heali"}
           </h1>
           <p className="mt-3 text-[18px] font-light text-[#666]">
-            בהתאם לפרטים ולהעדפות שלך, הנה המטפלים שמתאימים לך ביותר
+            {practitioners.length > 0
+              ? "בהתאם לפרטים ולהעדפות שלך, הנה המטפלים שמתאימים לך ביותר"
+              : "עוד אין מטפלים זמינים באזורך — חזרו אלינו בקרוב או חפשו ידנית"}
           </p>
         </div>
 
         {/* Practitioner cards */}
-        <div className="mt-10 flex flex-col gap-4">
-          {MOCK_PRACTITIONERS.map((practitioner) => (
-            <div
-              key={practitioner.id}
-              className="flex items-center gap-5 rounded-[10px] border border-border-input bg-white p-5 transition-shadow hover:shadow-md"
-            >
-              {/* Avatar placeholder */}
-              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[10px] bg-gradient-to-b from-[#ebecec] to-white">
-                <span className="text-[24px] font-semibold text-primary">
-                  {practitioner.name.charAt(0)}
-                </span>
-              </div>
+        {isLoading ? (
+          <div className="mt-12 flex justify-center">
+            <Spinner />
+          </div>
+        ) : practitioners.length === 0 ? null : (
+          <div className="mt-10 flex flex-col gap-4">
+            {practitioners.map((practitioner) => (
+              <div
+                key={practitioner.id}
+                className="flex items-center gap-5 rounded-[10px] border border-border-input bg-white p-5 transition-shadow hover:shadow-md"
+              >
+                {/* Avatar */}
+                <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[10px] bg-gradient-to-b from-[#ebecec] to-white overflow-hidden">
+                  {practitioner.profilePhotoUrl ? (
+                    <Image
+                      src={practitioner.profilePhotoUrl}
+                      alt={practitioner.name}
+                      width={80}
+                      height={80}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-[24px] font-semibold text-primary">
+                      {practitioner.name.charAt(0)}
+                    </span>
+                  )}
+                </div>
 
-              {/* Info */}
-              <div className="flex-1">
-                <h3 className="text-[20px] font-medium text-foreground">
-                  {practitioner.name}
-                </h3>
-                <p className="mt-0.5 text-[15px] text-[#666]">
-                  {practitioner.domain}
-                </p>
-                <div className="mt-2 flex items-center gap-4 text-[14px] text-[#666]">
-                  <span className="flex items-center gap-1">
-                    <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
-                    {practitioner.rating} ({practitioner.reviewCount})
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <MapPin className="h-4 w-4" />
-                    {practitioner.city}
-                  </span>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-[20px] font-medium text-foreground truncate">
+                    {practitioner.name}
+                  </h3>
+                  {practitioner.domain && (
+                    <p className="mt-0.5 text-[15px] text-[#666] truncate">
+                      {practitioner.domain}
+                    </p>
+                  )}
+                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[14px] text-[#666]">
+                    {practitioner.reviewCount > 0 && (
+                      <span className="flex items-center gap-1">
+                        <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                        {practitioner.rating.toFixed(1)} ({practitioner.reviewCount})
+                      </span>
+                    )}
+                    {practitioner.city && (
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4" />
+                        {practitioner.city}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Price + action */}
+                <div className="flex flex-col items-center gap-2 shrink-0">
+                  {practitioner.price > 0 && (
+                    <span className="text-[18px] font-semibold text-primary">
+                      ₪{practitioner.price}
+                    </span>
+                  )}
+                  <Button
+                    size="sm"
+                    onClick={() => router.push(`/practitioners/${practitioner.id}`)}
+                  >
+                    צפה בפרופיל
+                  </Button>
                 </div>
               </div>
-
-              {/* Price + action */}
-              <div className="flex flex-col items-center gap-2">
-                <span className="text-[18px] font-semibold text-primary">
-                  ₪{practitioner.price}
-                </span>
-                <Button
-                  size="sm"
-                  onClick={() => router.push(`/practitioners/${practitioner.id}`)}
-                >
-                  צפה בפרופיל
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Browse all */}
         <div className="mt-8 flex flex-col items-center gap-4 pb-12">
