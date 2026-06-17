@@ -26,12 +26,20 @@ export async function fetchRefundRequests(
 ): Promise<RefundRequest[]> {
   const supabase = await createClient();
 
-  const { data: requests } = await supabase
-    .from("refund_requests")
-    .select("id, patient_id, source_credit_id, amount, reason, status, admin_notes, created_at, resolved_at")
-    .eq("status", statusFilter)
-    .order("created_at", { ascending: false })
-    .limit(100);
+  // Tolerate the case where the migration hasn't been applied yet —
+  // admin sees an empty list instead of a 500.
+  let requests: Array<Record<string, unknown>> | null = null;
+  try {
+    const { data } = await supabase
+      .from("refund_requests")
+      .select("id, patient_id, source_credit_id, amount, reason, status, admin_notes, created_at, resolved_at")
+      .eq("status", statusFilter)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    requests = data;
+  } catch {
+    return [];
+  }
 
   if (!requests || requests.length === 0) return [];
 

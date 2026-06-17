@@ -29,24 +29,31 @@ export async function fetchWalletData(): Promise<WalletData> {
   } = await supabase.auth.getUser();
   if (!user) return { activeBalance: 0, credits: [] };
 
-  const [{ data: credits }, { data: pendingRefunds }] = await Promise.all([
-    supabase
-      .from("credits")
-      .select("id, amount, status, source_booking_id, created_at")
-      .eq("patient_id", user.id)
-      .order("created_at", { ascending: false }),
-    supabase
+  const { data: credits } = await supabase
+    .from("credits")
+    .select("id, amount, status, source_booking_id, created_at")
+    .eq("patient_id", user.id)
+    .order("created_at", { ascending: false });
+
+  // refund_requests table may not exist yet on environments where the
+  // migration (db/migrations/2026-06-refund-requests.sql) hasn't been
+  // applied. Tolerate that — credits still render; pending badges just
+  // won't appear until the migration lands.
+  let pendingCreditIds = new Set<string>();
+  try {
+    const { data: pendingRefunds } = await supabase
       .from("refund_requests")
       .select("source_credit_id")
       .eq("patient_id", user.id)
-      .eq("status", "pending"),
-  ]);
-
-  const pendingCreditIds = new Set(
-    (pendingRefunds ?? [])
-      .map((r: { source_credit_id: string | null }) => r.source_credit_id)
-      .filter(Boolean) as string[]
-  );
+      .eq("status", "pending");
+    pendingCreditIds = new Set(
+      (pendingRefunds ?? [])
+        .map((r: { source_credit_id: string | null }) => r.source_credit_id)
+        .filter(Boolean) as string[]
+    );
+  } catch {
+    // Table doesn't exist yet — treat as no pending refunds.
+  }
 
   let activeBalance = 0;
   const mapped: WalletCredit[] = (credits ?? []).map((c: Record<string, unknown>) => {
