@@ -10,6 +10,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ThreeDotsMenu } from "@/components/shared/three-dots-menu";
 import { EmptyState } from "@/components/shared/empty-state";
+import { RichTextEditor } from "@/components/shared/rich-text-editor";
+import { stripHtmlToText } from "@/lib/utils/html-sanitize";
 import { toast } from "sonner";
 import {
   fetchMyArticles,
@@ -138,7 +140,7 @@ export default function PractitionerArticlesPage() {
                 </div>
 
                 <h3 className="text-[15px] font-medium text-black line-clamp-2 mb-1">{article.title}</h3>
-                <p className="text-[13px] font-light text-[#9f9f9f] line-clamp-2">{article.content}</p>
+                <p className="text-[13px] font-light text-[#9f9f9f] line-clamp-2">{stripHtmlToText(article.content)}</p>
               </div>
             </div>
           ))}
@@ -182,11 +184,10 @@ export default function PractitionerArticlesPage() {
 
               <div className="flex flex-col gap-1">
                 <label className="text-[16px] text-black">תוכן המאמר</label>
-                <textarea
+                <RichTextEditor
                   value={newContent}
-                  onChange={(e) => setNewContent(e.target.value)}
+                  onChange={setNewContent}
                   placeholder="הקלד/י כאן..."
-                  className="min-h-[300px] rounded-[10px] border border-border-input bg-white px-3 py-2 text-[14px] resize-none"
                 />
               </div>
 

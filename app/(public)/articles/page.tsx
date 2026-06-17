@@ -9,6 +9,7 @@ import { Search, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { EmptyState } from "@/components/shared/empty-state";
+import { stripHtmlToText } from "@/lib/utils/html-sanitize";
 import { fetchPublicArticles, fetchArticleCategories, type PublicArticle } from "./actions";
 
 export default function ArticlesPage() {
@@ -121,7 +122,7 @@ function ArticleCard({ article }: { article: PublicArticle }) {
         {/* Body */}
         <div className="p-3">
           <h3 className="text-[15px] font-medium text-black line-clamp-2 mb-1">{article.title}</h3>
-          <p className="text-[13px] font-light text-[#9f9f9f] line-clamp-2 mb-2">{article.content}</p>
+          <p className="text-[13px] font-light text-[#9f9f9f] line-clamp-2 mb-2">{stripHtmlToText(article.content)}</p>
           <p className="text-[12px] text-black">פורסם ע״י {article.authorName}</p>
         </div>
       </div>

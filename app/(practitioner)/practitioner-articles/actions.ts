@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { sanitizeArticleHtml } from "@/lib/utils/html-sanitize";
 
 interface ActionResult {
   success: boolean;
@@ -85,7 +86,10 @@ export async function createArticle(
 
   const { error } = await supabase.from("articles").insert({
     title,
-    content,
+    // Sanitize before persisting — the client could bypass the TipTap toolbar
+    // and post arbitrary HTML; sanitize allows only the tags StarterKit + Link
+    // produce. See lib/utils/html-sanitize.ts.
+    content: sanitizeArticleHtml(content),
     slug,
     category_id: categoryId || null,
     practitioner_id: profile.id,

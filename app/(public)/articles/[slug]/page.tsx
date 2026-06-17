@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { fetchArticleBySlug } from "../actions";
 import { createClient } from "@/lib/supabase/server";
+import { sanitizeArticleHtml, stripHtmlToText } from "@/lib/utils/html-sanitize";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -14,12 +15,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   const article = await fetchArticleBySlug(slug);
   if (!article) return { title: "מאמר לא נמצא" };
+  // Strip HTML so the OpenGraph / meta description is plain text.
+  const description = stripHtmlToText(article.content).slice(0, 160);
   return {
     title: `${article.title} | Heali`,
-    description: article.content.slice(0, 160),
+    description,
     openGraph: {
       title: article.title,
-      description: article.content.slice(0, 160),
+      description,
       images: article.backgroundImageUrl ? [article.backgroundImageUrl] : undefined,
     },
   };
@@ -84,10 +87,13 @@ export default async function ArticleDetailPage({ params }: PageProps) {
           פורסם ע״י {article.authorName}
         </p>
 
-        {/* Content */}
-        <div className="prose prose-lg max-w-none text-[16px] leading-relaxed text-[#333] whitespace-pre-line">
-          {article.content}
-        </div>
+        {/* Content — sanitized at render to defend against malformed/legacy
+            HTML in the article store. Defends against XSS even though the
+            create paths already sanitize on save (defense in depth). */}
+        <div
+          className="article-body text-[16px] leading-relaxed text-[#333] [&_h2]:text-[22px] [&_h2]:font-bold [&_h2]:text-black [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:text-[18px] [&_h3]:font-bold [&_h3]:text-black [&_h3]:mt-5 [&_h3]:mb-2 [&_p]:mb-4 [&_ul]:list-disc [&_ul]:pe-6 [&_ul]:mb-4 [&_ol]:list-decimal [&_ol]:pe-6 [&_ol]:mb-4 [&_li]:mb-1 [&_a]:text-primary [&_a]:underline [&_blockquote]:border-s-4 [&_blockquote]:border-accent [&_blockquote]:ps-4 [&_blockquote]:italic [&_blockquote]:my-4 [&_strong]:font-bold"
+          dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(article.content) }}
+        />
 
         {/* Related practitioners */}
         <RelatedPractitioners categoryName={article.categoryName} />

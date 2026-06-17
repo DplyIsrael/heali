@@ -12,6 +12,8 @@ import { StatusBadge } from "@/components/shared/status-badge";
 import { ThreeDotsMenu } from "@/components/shared/three-dots-menu";
 import { toast } from "sonner";
 import { createClient } from "@/lib/supabase/client";
+import { RichTextEditor } from "@/components/shared/rich-text-editor";
+import { sanitizeArticleHtml, stripHtmlToText } from "@/lib/utils/html-sanitize";
 
 interface Article { id: string; title: string; content: string; authorName: string; status: string; backgroundImageUrl: string; categoryName: string; createdAt: string; }
 
@@ -99,7 +101,9 @@ export default function AdminArticlesPage() {
     // Admin gets auto-approved
     const { data: { user } } = await supabase.auth.getUser();
     await supabase.from("articles").insert({
-      title: newTitle, content: newContent, slug,
+      title: newTitle,
+      content: sanitizeArticleHtml(newContent),
+      slug,
       category_id: newCategoryId || null,
       practitioner_id: newPractitionerId || null,
       author_id: user?.id,
@@ -159,7 +163,7 @@ export default function AdminArticlesPage() {
                   <StatusBadge status={article.status as "submitted" | "approved" | "rejected" | "draft"} />
                 </div>
                 <h3 className="text-[15px] font-medium text-black line-clamp-2 mb-1">{article.title}</h3>
-                <p className="text-[13px] font-light text-[#9f9f9f] line-clamp-2 mb-2">{article.content}</p>
+                <p className="text-[13px] font-light text-[#9f9f9f] line-clamp-2 mb-2">{stripHtmlToText(article.content)}</p>
                 <p className="text-[12px] text-black">פורסם ע״י {article.authorName}</p>
               </div>
             </div>
@@ -196,7 +200,11 @@ export default function AdminArticlesPage() {
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-[16px] text-black">תוכן המאמר</label>
-                <textarea value={newContent} onChange={(e) => setNewContent(e.target.value)} placeholder="הקלד/י כאן..." className="min-h-[300px] rounded-[10px] border border-border-input bg-white px-3 py-2 text-[14px] resize-none" />
+                <RichTextEditor
+                  value={newContent}
+                  onChange={setNewContent}
+                  placeholder="הקלד/י כאן..."
+                />
               </div>
               <Button onClick={handleCreate} disabled={isCreating} className="w-full h-[48px] bg-accent text-black text-[16px]">
                 {isCreating ? <Spinner size="sm" /> : "יצירת מאמר"}
