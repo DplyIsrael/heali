@@ -215,34 +215,62 @@ export async function signUpPractitioner(
   // false-positived on orphan rows from incomplete signups. Now we let
   // Supabase decide and recover unconfirmed orphans below.
 
-  // Use regular signUp to trigger the confirmation email automatically
+  // Use regular signUp to trigger the confirmation email automatically.
+  // Wrapped in a helper so we can retry once after orphan recovery.
   const supabase = await createClient();
-  const { data: authData, error: authError } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: { full_name: fullName, role: "practitioner", gender },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://heali.vercel.app"}/auth/callback`,
-    },
-  });
+  const doSignUp = () =>
+    supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: fullName, role: "practitioner", gender },
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://heali.vercel.app"}/auth/callback`,
+      },
+    });
 
-  if (authError) {
-    if (authError.message.includes("already registered") || authError.message.includes("rate limit")) {
+  let { data: authData, error: authError } = await doSignUp();
+
+  // Detect Supabase's two "duplicate" signals: an explicit auth error OR a
+  // user object with an empty identities array (Supabase's signal that the
+  // email is already on file but unconfirmed; it deliberately doesn't return
+  // an error message there for privacy reasons).
+  const looksLikeDuplicate =
+    (authError &&
+      (authError.message.includes("already registered") ||
+        authError.message.includes("rate limit"))) ||
+    (authData?.user && authData.user.identities?.length === 0);
+
+  if (looksLikeDuplicate) {
+    // Try to clean up an orphan (unconfirmed auth.users row from a prior
+    // abandoned signup). If we succeed, retry the signUp fresh. If the email
+    // belongs to a confirmed user, fall back to the existing canResume hint.
+    const recovered = await recoverOrphanUnconfirmedAuthUser(admin, email);
+    if (recovered) {
+      const retry = await doSignUp();
+      authData = retry.data;
+      authError = retry.error;
+    } else {
       return {
         success: false,
         canResume: true,
-        error: "כתובת מייל זו כבר רשומה במערכת או שהגעת למגבלת שליחות. נסה להתחבר.",
+        error: "כתובת מייל זו כבר רשומה ומאומתת במערכת. נסה להתחבר.",
       };
+    }
+  }
+
+  if (authError) {
+    if (authError.message.includes("rate limit")) {
+      return { success: false, error: "הגעת למגבלת שליחות, נסה שוב בעוד דקות ספורות" };
     }
     return { success: false, error: authError.message };
   }
 
-  // Supabase returns user with empty identities if email already taken
-  if (authData.user && authData.user.identities?.length === 0) {
+  if (authData?.user && authData.user.identities?.length === 0) {
+    // Recovery didn't fully clear it (rare) — surface the canResume hint.
     return {
       success: false,
       canResume: true,
-      error: "כתובת מייל זו כבר רשומה במערכת. נסה להתחבר כדי להמשיך את תהליך ההרשמה.",
+      error: "כתובת מייל זו כבר רשומה במערכת. נסה להתחבר.",
     };
   }
 
