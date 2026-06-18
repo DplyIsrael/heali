@@ -1,0 +1,19 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 1440 630.286" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Mask group">
+<rect id="Rectangle 24735" width="1440" height="630.286" fill="url(#paint0_linear_0_4)"/>
+<g id="Ellipse 2984" filter="url(#filter0_f_0_4)">
+<circle cx="719.5" cy="223.5" r="57.5" fill="var(--fill-0, #50D7A3)" fill-opacity="0.24"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_f_0_4" x="509.099" y="13.0994" width="420.801" height="420.801" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="76.4503" result="effect1_foregroundBlur_0_4"/>
+</filter>
+<linearGradient id="paint0_linear_0_4" x1="705.5" y1="-27.5" x2="705.5" y2="835.2" gradientUnits="userSpaceOnUse">
+<stop stop-color="#21544E"/>
+<stop offset="1" stop-color="white"/>
+</linearGradient>
+</defs>
+</svg>
