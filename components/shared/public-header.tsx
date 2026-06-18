@@ -18,8 +18,11 @@ export function PublicHeader() {
   const pathname = usePathname();
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white">
-      <div className="mx-auto flex h-full max-w-[1440px] items-center justify-between px-4 md:px-[60px] py-[10px]">
+    <header className="sticky top-0 z-50 h-[80px] w-full bg-white">
+      {/* h-full on the inner div needs a defined parent height to resolve to a
+          real value — without it, clicks were landing on the hero behind us
+          because the header collapsed to 0 hit-area in some browsers. */}
+      <div className="relative mx-auto flex h-full max-w-[1440px] items-center justify-between px-4 md:px-[60px]">
 
         {/* RIGHT side in RTL (first in DOM): logo + nav grouped */}
         <div className="flex items-center gap-6 lg:gap-[83px]">
@@ -41,7 +44,7 @@ export function PublicHeader() {
         </div>
 
         {/* LEFT side in RTL (second in DOM): auth buttons (hidden on mobile) */}
-        <div className="hidden items-center gap-[11px] lg:flex">
+        <div className="relative z-[1] hidden items-center gap-[11px] lg:flex">
           <Link
             href="/login"
             className="flex h-[42px] w-[125px] items-center justify-center rounded-full bg-[#7de4a8] text-[16px] text-[#102424] whitespace-nowrap"
