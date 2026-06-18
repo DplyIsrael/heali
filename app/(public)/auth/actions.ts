@@ -226,88 +226,78 @@ export async function signUpPractitioner(
     .map((a) => `${a.city} - ${a.street}`);
   const admin = createAdminClient();
 
-  // See note on the patient path. We previously pre-checked public.users and
-  // false-positived on orphan rows from incomplete signups. Now we let
-  // Supabase decide and recover unconfirmed orphans below.
+  // CREATE THE AUTH USER WITH THE ADMIN API — exactly like signUpPatient, and
+  // deliberately NOT supabase.auth.signUp().
+  //
+  // Root cause this fixes: auth.signUp() couples account creation to the
+  // confirmation-email send. When the project's Auth email-send quota is
+  // exhausted, signUp returns 429 `over_email_send_rate_limit` and creates NO
+  // user — so practitioner signup failed for EVERY email, including brand-new
+  // ones, regardless of DB state or browser session. (Older builds also
+  // mis-reported that 429 as "email already registered".) The patient path was
+  // immune because admin.createUser never sends mail. signUp's empty-identities
+  // "duplicate" signal also only ever matches *confirmed* users, which the
+  // orphan-recovery refuses to delete, so that branch could never self-heal.
+  //
+  // admin.createUser can't be throttled by the email rate limit; the
+  // verification mail is sent separately and best-effort below.
+  const meta = { full_name: fullName, role: "practitioner", gender };
+  let { data: authData, error: authError } = await admin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: false, // Require email verification
+    user_metadata: meta,
+  });
 
-  // Use regular signUp to trigger the confirmation email automatically.
-  // Wrapped in a helper so we can retry once after orphan recovery.
-  const supabase = await createClient();
-  const doSignUp = () =>
-    supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName, role: "practitioner", gender },
-        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://heali.vercel.app"}/auth/callback`,
-      },
-    });
-
-  let { data: authData, error: authError } = await doSignUp();
-
-  // First check explicit auth errors — separating rate-limit (which is a
-  // real server-side signup throttle) from "already registered" (real
-  // duplicate). My earlier version conflated them and triggered orphan
-  // recovery on rate limits, then surfaced the wrong message when no
-  // orphan existed.
   if (authError) {
     const msg = (authError.message ?? "").toLowerCase();
+    // RATE LIMIT — Supabase's own throttle. Not a duplicate.
     if (msg.includes("rate limit") || msg.includes("too many")) {
       return {
         success: false,
         error: "הגעת למגבלת הרשמות במערכת. נסה שוב בעוד כמה דקות.",
       };
     }
+    // EMAIL VALIDATION — invalid format, bounced domain, etc.
     if (msg.includes("invalid") && msg.includes("email")) {
       return { success: false, error: "כתובת המייל אינה תקינה" };
     }
-    if (!msg.includes("already registered") && !msg.includes("already exists")) {
+    // DUPLICATE — try orphan recovery first, then retry once.
+    if (
+      msg.includes("already been registered") ||
+      msg.includes("already exists") ||
+      msg.includes("already registered")
+    ) {
+      const recovered = await recoverOrphanUnconfirmedAuthUser(admin, email);
+      if (recovered) {
+        const retry = await admin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: false,
+          user_metadata: meta,
+        });
+        authData = retry.data;
+        authError = retry.error;
+        if (authError) {
+          console.error("[signUpPractitioner] retry after recovery failed:", authError);
+          return { success: false, error: "כתובת מייל זו כבר רשומה במערכת. נסה להתחבר." };
+        }
+      } else {
+        // Genuine confirmed duplicate — offer to resume by logging in.
+        return {
+          success: false,
+          canResume: true,
+          error: "כתובת מייל זו כבר רשומה ומאומתת במערכת. נסה להתחבר.",
+        };
+      }
+    } else {
+      // UNKNOWN — surface the raw message instead of pretending it's a dupe.
       console.error("[signUpPractitioner] unhandled auth error:", authError);
       return { success: false, error: authError.message };
     }
-    // Fall through to duplicate-handling below.
   }
 
-  // Now check the duplicate signal: explicit "already registered" auth
-  // error OR a user object with an empty identities array (Supabase's
-  // privacy-preserving "dupe but unconfirmed" signal).
-  const isAlreadyRegisteredError =
-    authError &&
-    ((authError.message ?? "").toLowerCase().includes("already registered") ||
-      (authError.message ?? "").toLowerCase().includes("already exists"));
-  const isEmptyIdentities =
-    !!authData?.user && authData.user.identities?.length === 0;
-
-  if (isAlreadyRegisteredError || isEmptyIdentities) {
-    const recovered = await recoverOrphanUnconfirmedAuthUser(admin, email);
-    if (recovered) {
-      const retry = await doSignUp();
-      authData = retry.data;
-      authError = retry.error;
-      if (authError) {
-        console.error("[signUpPractitioner] retry after recovery failed:", authError);
-        return { success: false, error: authError.message };
-      }
-    } else {
-      return {
-        success: false,
-        canResume: true,
-        error: "כתובת מייל זו כבר רשומה ומאומתת במערכת. נסה להתחבר.",
-      };
-    }
-  }
-
-  if (authData?.user && authData.user.identities?.length === 0) {
-    // Recovery didn't fully clear it (rare) — log + surface canResume hint.
-    console.error("[signUpPractitioner] still empty identities after recovery:", { email });
-    return {
-      success: false,
-      canResume: true,
-      error: "כתובת מייל זו כבר רשומה במערכת. נסה להתחבר.",
-    };
-  }
-
-  if (authData.user) {
+  if (authData?.user) {
     // Use admin client for DB inserts (bypasses RLS)
     const { error: userError } = await admin.from("users").insert({
       id: authData.user.id,
@@ -339,6 +329,13 @@ export async function signUpPractitioner(
       console.error("Practitioner profile insert error:", profileError);
       return { success: false, error: `DB profile error: ${profileError.message}` };
     }
+
+    // Best-effort verification email (same pattern as patient). A send failure
+    // (e.g. email rate limit) must NOT fail the signup — the account exists and
+    // the user can request a fresh code on the verify screen.
+    const supabase = await createClient();
+    const { error: mailError } = await supabase.auth.resend({ type: "signup", email });
+    if (mailError) console.error("[signUpPractitioner] verification email send failed:", mailError);
   }
 
   return { success: true, needsVerification: true };
