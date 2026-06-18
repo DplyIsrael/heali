@@ -12,6 +12,42 @@ interface ActionResult {
   canResume?: boolean;
 }
 
+/**
+ * Recover an orphan unconfirmed auth user so a fresh signup can proceed.
+ * Returns true when we found-and-deleted the orphan (caller should retry the
+ * signup). Returns false when no orphan was found, OR the orphan IS confirmed
+ * (a real duplicate — caller should surface the duplicate-email error).
+ *
+ * The "orphan" scenarios this handles:
+ *   - auth.users has the email, email_confirmed_at IS NULL — abandoned signup
+ *   - public.users may or may not have a mirror row; we delete both to be safe
+ */
+async function recoverOrphanUnconfirmedAuthUser(
+  admin: ReturnType<typeof createAdminClient>,
+  email: string
+): Promise<boolean> {
+  try {
+    // listUsers is paginated; the lowest-pain way to find by email is the
+    // page-1 default which Supabase sorts by created_at desc. Most orphans
+    // sit on the first page; fall back to no-op if not found there.
+    const { data: list } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
+    const lower = email.trim().toLowerCase();
+    const orphan = list?.users?.find(
+      (u) => (u.email ?? "").toLowerCase() === lower
+    );
+    if (!orphan) return false;
+    if (orphan.email_confirmed_at) return false; // genuine confirmed user — don't delete
+    // Drop the public.users mirror first (FKs cascade from auth.users delete
+    // for some tables but not all — be explicit).
+    await admin.from("users").delete().eq("id", orphan.id);
+    await admin.auth.admin.deleteUser(orphan.id);
+    return true;
+  } catch (err) {
+    console.error("[recoverOrphanUnconfirmedAuthUser] failed:", err);
+    return false;
+  }
+}
+
 export async function signIn(
   email: string,
   password: string
@@ -77,11 +113,14 @@ export async function signUpPatient(
 
   const admin = createAdminClient();
 
-  // Check if user already exists
-  const { data: existingUsers } = await admin.from("users").select("id, onboarding_completed").eq("email", email).limit(1);
-  if (existingUsers && existingUsers.length > 0) {
-    return { success: false, error: "כתובת מייל זו כבר רשומה במערכת. נסה להתחבר." };
-  }
+  // NOTE: we used to pre-check `public.users` here and short-circuit when a
+  // row existed. That false-positived on orphan rows from earlier signups
+  // that never completed verification — the row was in public.users but the
+  // corresponding auth.users entry was unconfirmed (or even missing), so the
+  // user couldn't sign up AND couldn't log in. We now let Supabase be the
+  // source of truth, and on "already registered" we try to recover stale
+  // unconfirmed rows so the user isn't permanently locked out by their own
+  // earlier abandonment.
 
   // Use admin API — still requires email verification
   const { data: authData, error: authError } = await admin.auth.admin.createUser({
@@ -92,8 +131,39 @@ export async function signUpPatient(
   });
 
   if (authError) {
-    if (authError.message.includes("already been registered") || authError.message.includes("already exists")) {
-      return { success: false, error: "כתובת מייל זו כבר רשומה במערכת. נסה להתחבר." };
+    const msg = authError.message ?? "";
+    if (msg.includes("already been registered") || msg.includes("already exists") || msg.includes("already registered")) {
+      // Try to recover: if the existing auth user is unconfirmed, delete
+      // them + their public.users mirror and retry as a fresh signup.
+      const recovered = await recoverOrphanUnconfirmedAuthUser(admin, email);
+      if (recovered) {
+        const retry = await admin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: false,
+          user_metadata: { full_name: fullName, role: "patient" },
+        });
+        if (retry.error) {
+          return { success: false, error: "כתובת מייל זו כבר רשומה במערכת. נסה להתחבר." };
+        }
+        if (retry.data.user) {
+          const { error: insertError } = await admin.from("users").insert({
+            id: retry.data.user.id,
+            email,
+            full_name: fullName,
+            role: "patient",
+            onboarding_completed: false,
+          });
+          if (insertError) {
+            console.error("Patient insert error (after recovery):", insertError);
+            return { success: false, error: `DB error: ${insertError.message}` };
+          }
+          const supabase = await createClient();
+          await supabase.auth.resend({ type: "signup", email });
+        }
+        return { success: true, needsVerification: true };
+      }
+      return { success: false, error: "כתובת מייל זו כבר רשומה ומאומתת במערכת. נסה להתחבר." };
     }
     return { success: false, error: authError.message };
   }
@@ -141,20 +211,9 @@ export async function signUpPractitioner(
     .map((a) => `${a.city} - ${a.street}`);
   const admin = createAdminClient();
 
-  // Check if user already exists with incomplete onboarding
-  const { data: existingUsers } = await admin.from("users").select("id, onboarding_completed, role").eq("email", email).limit(1);
-  if (existingUsers && existingUsers.length > 0) {
-    const existing = existingUsers[0];
-    if (existing.role === "practitioner" && !existing.onboarding_completed) {
-      // Allow them to resume — sign them in
-      return {
-        success: false,
-        canResume: true,
-        error: "כתובת מייל זו כבר רשומה במערכת. נסה להתחבר כדי להמשיך את תהליך ההרשמה.",
-      };
-    }
-    return { success: false, error: "כתובת מייל זו כבר רשומה במערכת. נסה להתחבר." };
-  }
+  // See note on the patient path. We previously pre-checked public.users and
+  // false-positived on orphan rows from incomplete signups. Now we let
+  // Supabase decide and recover unconfirmed orphans below.
 
   // Use regular signUp to trigger the confirmation email automatically
   const supabase = await createClient();
