@@ -77,17 +77,20 @@ export function StepClientReferences({
       const formData = new FormData();
       formData.append("file", file);
       const res = await fetch("/api/upload-client-reference", { method: "POST", body: formData });
-      const data: { url?: string; name?: string; error?: string } = await res
+      // Route returns { path, name } — storage path under the PRIVATE
+      // client-documents bucket. We persist the path; signed URLs are
+      // issued at display time via getSignedClientDocumentUrl.
+      const data: { path?: string; name?: string; error?: string } = await res
         .json()
         .catch(() => ({ error: "שגיאת שרת" }));
-      if (!res.ok || !data.url) {
+      if (!res.ok || !data.path) {
         setSlotErrors((prev) =>
           prev.map((er, i) =>
             i === index ? { ...er, file: data.error ?? "שגיאה בהעלאה" } : er
           )
         );
       } else {
-        updateSlot(index, { fileUrl: data.url, fileName: data.name ?? file.name });
+        updateSlot(index, { fileUrl: data.path, fileName: data.name ?? file.name });
       }
     } catch {
       setSlotErrors((prev) =>
