@@ -1,46 +1,74 @@
-"use client";
+import { Zap, CircleCheck, Users } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { fetchAdminStats, fetchAdminTransactions, fetchTreatmentDomains } from "./actions";
+import { TransactionsTable } from "@/components/admin/transactions-table";
 
-import { useEffect, useState } from "react";
-import { Users, UserCheck, Calendar, DollarSign, Clock, MessageSquare } from "lucide-react";
-import { Spinner } from "@/components/ui/spinner";
-import { fetchAdminStats } from "./actions";
+function greeting(): string {
+  const hour = new Date().getHours();
+  if (hour >= 6 && hour < 12) return "בוקר טוב";
+  if (hour >= 12 && hour < 16) return "צהריים טובים";
+  if (hour >= 16 && hour < 20) return "ערב טוב";
+  return "לילה טוב";
+}
 
-export default function AdminDashboardPage() {
-  const [stats, setStats] = useState<Awaited<ReturnType<typeof fetchAdminStats>> | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export default async function AdminDashboardPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  useEffect(() => {
-    fetchAdminStats().then((s) => { setStats(s); setIsLoading(false); });
-  }, []);
+  let name = "";
+  if (user) {
+    const { data } = await supabase.from("users").select("full_name").eq("id", user.id).single();
+    name = data?.full_name ?? "";
+  }
 
-  if (isLoading) return <div className="flex min-h-[60vh] items-center justify-center"><Spinner /></div>;
+  const [stats, transactions, domains] = await Promise.all([
+    fetchAdminStats(),
+    fetchAdminTransactions({}),
+    fetchTreatmentDomains(),
+  ]);
 
   const kpis = [
-    { label: "סה״כ משתמשים", value: stats?.totalUsers ?? 0, icon: Users, color: "bg-blue-100 text-blue-600" },
-    { label: "מטפלים", value: stats?.totalPractitioners ?? 0, icon: UserCheck, color: "bg-green-100 text-green-600" },
-    { label: "מטופלים", value: stats?.totalPatients ?? 0, icon: Users, color: "bg-purple-100 text-purple-600" },
-    { label: "סה״כ הזמנות", value: stats?.totalBookings ?? 0, icon: Calendar, color: "bg-yellow-100 text-yellow-600" },
-    { label: "סה״כ הכנסות", value: `₪${(stats?.totalRevenue ?? 0).toLocaleString()}`, icon: DollarSign, color: "bg-emerald-100 text-emerald-600" },
-    { label: "מטפלים ממתינים", value: stats?.pendingPractitioners ?? 0, icon: Clock, color: "bg-orange-100 text-orange-600" },
-    { label: "דירוגים ממתינים", value: stats?.pendingReviews ?? 0, icon: MessageSquare, color: "bg-red-100 text-red-600" },
+    { label: "סה״כ הזמנות", value: stats.totalBookings, trend: stats.trends.bookings, icon: Zap, iconClass: "bg-accent/20 text-primary" },
+    { label: "מטפלים הממתינים לאישור", value: stats.pendingPractitioners, trend: stats.trends.practitioners, icon: CircleCheck, iconClass: "bg-yellow-100 text-yellow-600" },
+    { label: "סה״כ מטופלים", value: stats.totalPatients, trend: stats.trends.patients, icon: Users, iconClass: "bg-blue-100 text-blue-600" },
+    { label: "סה״כ מטפלים", value: stats.totalPractitioners, trend: stats.trends.practitioners, icon: Users, iconClass: "bg-purple-100 text-purple-600" },
   ];
 
   return (
-    <div>
-      <h1 className="text-[28px] md:text-[36px] font-bold text-black mb-6">דשבורד</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    <div className="flex flex-col gap-8">
+      {/* Greeting */}
+      <div className="text-right">
+        <h1 className="text-[28px] md:text-[36px] font-bold text-black">
+          {greeting()} {name}!
+        </h1>
+        <p className="mt-1 text-[15px] text-muted">סקירה כללית של הפעילות במערכת Heali</p>
+      </div>
+
+      {/* KPI cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map((kpi) => (
-          <div key={kpi.label} className="rounded-[12px] border border-border bg-white p-5 flex items-center gap-4">
-            <div className={`size-[48px] rounded-full flex items-center justify-center shrink-0 ${kpi.color}`}>
-              <kpi.icon className="size-5" />
+          <div key={kpi.label} className="rounded-[16px] border border-border bg-white p-5">
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-[14px] leading-snug text-muted">{kpi.label}</p>
+              <div className={`flex size-[48px] shrink-0 items-center justify-center rounded-[12px] ${kpi.iconClass}`}>
+                <kpi.icon className="size-5" />
+              </div>
             </div>
-            <div>
-              <p className="text-[13px] text-muted">{kpi.label}</p>
-              <p className="text-[22px] font-bold text-black">{kpi.value}</p>
-            </div>
+            <p className="mt-3 text-[28px] font-bold text-black">{kpi.value.toLocaleString()}</p>
+            <p className="mt-2 text-[13px] text-muted">
+              <span className={kpi.trend >= 0 ? "text-green-600" : "text-destructive"}>
+                {kpi.trend >= 0 ? "+" : ""}{kpi.trend}%
+              </span>{" "}
+              מהחודש שעבר
+            </p>
           </div>
         ))}
       </div>
+
+      {/* Transactions table */}
+      <TransactionsTable initialTransactions={transactions} domains={domains} />
     </div>
   );
 }
