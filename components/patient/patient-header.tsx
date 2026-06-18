@@ -17,7 +17,7 @@ import { signOut } from "@/app/(public)/auth/actions";
 import { NotificationsBell } from "@/components/shared/notifications-bell";
 
 const NAV_ITEMS = [
-  { label: "דף בית", href: "/" },
+  { label: "דף בית", href: "/home" },
   { label: "חיפוש מטפלים", href: "/discovery" },
   { label: "הטיפולים שלי", href: "/my-treatments" },
   { label: "הארנק שלי", href: "/wallet" },
@@ -54,9 +54,7 @@ export function PatientHeader({
                 href={item.href}
                 className={cn(
                   "text-[16px] text-foreground transition-colors hover:text-primary whitespace-nowrap",
-                  (item.href === "/" ? pathname === "/" : pathname.startsWith(item.href))
-                    ? "font-medium"
-                    : "font-normal"
+                  pathname.startsWith(item.href) ? "font-medium" : "font-normal"
                 )}
               >
                 {item.label}

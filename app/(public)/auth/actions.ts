@@ -91,8 +91,12 @@ export async function signIn(
         return { success: true, redirectTo: "/practitioner-onboarding" };
       }
       return { success: true, redirectTo: "/dashboard" };
-    } else if (profile?.role === "patient" && !profile.onboarding_completed) {
-      return { success: true, redirectTo: "/onboarding" };
+    } else if (profile?.role === "patient") {
+      if (!profile.onboarding_completed) {
+        return { success: true, redirectTo: "/onboarding" };
+      }
+      // Patient's home is the /home dashboard, not the public landing ("/").
+      return { success: true, redirectTo: "/home" };
     }
   }
 

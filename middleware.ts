@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PROTECTED_PREFIXES = ["/patient", "/practitioner", "/admin"];
+const PROTECTED_PREFIXES = ["/patient", "/practitioner", "/admin", "/home"];
 const AUTH_PAGES = ["/login", "/register"];
 
 const supabaseConfigured =
@@ -84,11 +84,16 @@ export async function middleware(request: NextRequest) {
           return NextResponse.redirect(url);
         }
       } else if (profile.role === "patient") {
-        if (!profile.onboarding_completed && isAuthPage) {
-          url.pathname = "/onboarding";
-          return NextResponse.redirect(url);
-        } else if (isAuthPage) {
-          url.pathname = "/";
+        // A patient's home is the /home dashboard — send them there from the
+        // auth pages AND from the public landing ("/"). Incomplete onboarding
+        // takes priority.
+        if (!profile.onboarding_completed) {
+          if (isAuthPage || pathname === "/") {
+            url.pathname = "/onboarding";
+            return NextResponse.redirect(url);
+          }
+        } else if (isAuthPage || pathname === "/") {
+          url.pathname = "/home";
           return NextResponse.redirect(url);
         }
       }
