@@ -76,7 +76,7 @@ export function HelpBanner() {
               Mobile: full-width up to 420px so the badge can't overflow on 320px
               viewports. md+: collapses to inline-flex at intrinsic width. */}
           <Link
-            href="https://wa.me/9720503822282"
+            href="https://wa.me/972512727631"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="פתחו שיחת וואטסאפ עם הצוות של Heali"

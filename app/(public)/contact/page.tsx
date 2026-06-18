@@ -69,7 +69,7 @@ export default function ContactPage() {
             info@heali.co.il
           </a>
           <a
-            href="https://wa.me/9720503822282"
+            href="https://wa.me/972512727631"
             target="_blank"
             className="flex items-center gap-2 h-[44px] px-5 rounded-full border border-border bg-white text-[16px] text-black hover:bg-muted/10 transition-colors"
           >
