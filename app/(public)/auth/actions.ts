@@ -131,10 +131,21 @@ export async function signUpPatient(
   });
 
   if (authError) {
-    const msg = authError.message ?? "";
+    const msg = (authError.message ?? "").toLowerCase();
+    // RATE LIMIT — Supabase's own per-IP / per-project signup throttle.
+    // This is NOT a duplicate; surface it as such instead of misclassifying.
+    if (msg.includes("rate limit") || msg.includes("too many")) {
+      return {
+        success: false,
+        error: "הגעת למגבלת הרשמות במערכת. נסה שוב בעוד כמה דקות.",
+      };
+    }
+    // EMAIL VALIDATION — invalid format, bounced domain, etc.
+    if (msg.includes("invalid") && msg.includes("email")) {
+      return { success: false, error: "כתובת המייל אינה תקינה" };
+    }
+    // DUPLICATE — try orphan recovery first.
     if (msg.includes("already been registered") || msg.includes("already exists") || msg.includes("already registered")) {
-      // Try to recover: if the existing auth user is unconfirmed, delete
-      // them + their public.users mirror and retry as a fresh signup.
       const recovered = await recoverOrphanUnconfirmedAuthUser(admin, email);
       if (recovered) {
         const retry = await admin.auth.admin.createUser({
@@ -144,6 +155,7 @@ export async function signUpPatient(
           user_metadata: { full_name: fullName, role: "patient" },
         });
         if (retry.error) {
+          console.error("[signUpPatient] retry after recovery failed:", retry.error);
           return { success: false, error: "כתובת מייל זו כבר רשומה במערכת. נסה להתחבר." };
         }
         if (retry.data.user) {
@@ -155,7 +167,7 @@ export async function signUpPatient(
             onboarding_completed: false,
           });
           if (insertError) {
-            console.error("Patient insert error (after recovery):", insertError);
+            console.error("[signUpPatient] insert after recovery failed:", insertError);
             return { success: false, error: `DB error: ${insertError.message}` };
           }
           const supabase = await createClient();
@@ -165,6 +177,9 @@ export async function signUpPatient(
       }
       return { success: false, error: "כתובת מייל זו כבר רשומה ומאומתת במערכת. נסה להתחבר." };
     }
+    // UNKNOWN — log everything we have, surface the raw message so it's
+    // actionable instead of pretending it's a duplicate.
+    console.error("[signUpPatient] unhandled auth error:", authError);
     return { success: false, error: authError.message };
   }
 
@@ -230,25 +245,49 @@ export async function signUpPractitioner(
 
   let { data: authData, error: authError } = await doSignUp();
 
-  // Detect Supabase's two "duplicate" signals: an explicit auth error OR a
-  // user object with an empty identities array (Supabase's signal that the
-  // email is already on file but unconfirmed; it deliberately doesn't return
-  // an error message there for privacy reasons).
-  const looksLikeDuplicate =
-    (authError &&
-      (authError.message.includes("already registered") ||
-        authError.message.includes("rate limit"))) ||
-    (authData?.user && authData.user.identities?.length === 0);
+  // First check explicit auth errors — separating rate-limit (which is a
+  // real server-side signup throttle) from "already registered" (real
+  // duplicate). My earlier version conflated them and triggered orphan
+  // recovery on rate limits, then surfaced the wrong message when no
+  // orphan existed.
+  if (authError) {
+    const msg = (authError.message ?? "").toLowerCase();
+    if (msg.includes("rate limit") || msg.includes("too many")) {
+      return {
+        success: false,
+        error: "הגעת למגבלת הרשמות במערכת. נסה שוב בעוד כמה דקות.",
+      };
+    }
+    if (msg.includes("invalid") && msg.includes("email")) {
+      return { success: false, error: "כתובת המייל אינה תקינה" };
+    }
+    if (!msg.includes("already registered") && !msg.includes("already exists")) {
+      console.error("[signUpPractitioner] unhandled auth error:", authError);
+      return { success: false, error: authError.message };
+    }
+    // Fall through to duplicate-handling below.
+  }
 
-  if (looksLikeDuplicate) {
-    // Try to clean up an orphan (unconfirmed auth.users row from a prior
-    // abandoned signup). If we succeed, retry the signUp fresh. If the email
-    // belongs to a confirmed user, fall back to the existing canResume hint.
+  // Now check the duplicate signal: explicit "already registered" auth
+  // error OR a user object with an empty identities array (Supabase's
+  // privacy-preserving "dupe but unconfirmed" signal).
+  const isAlreadyRegisteredError =
+    authError &&
+    ((authError.message ?? "").toLowerCase().includes("already registered") ||
+      (authError.message ?? "").toLowerCase().includes("already exists"));
+  const isEmptyIdentities =
+    !!authData?.user && authData.user.identities?.length === 0;
+
+  if (isAlreadyRegisteredError || isEmptyIdentities) {
     const recovered = await recoverOrphanUnconfirmedAuthUser(admin, email);
     if (recovered) {
       const retry = await doSignUp();
       authData = retry.data;
       authError = retry.error;
+      if (authError) {
+        console.error("[signUpPractitioner] retry after recovery failed:", authError);
+        return { success: false, error: authError.message };
+      }
     } else {
       return {
         success: false,
@@ -258,15 +297,9 @@ export async function signUpPractitioner(
     }
   }
 
-  if (authError) {
-    if (authError.message.includes("rate limit")) {
-      return { success: false, error: "הגעת למגבלת שליחות, נסה שוב בעוד דקות ספורות" };
-    }
-    return { success: false, error: authError.message };
-  }
-
   if (authData?.user && authData.user.identities?.length === 0) {
-    // Recovery didn't fully clear it (rare) — surface the canResume hint.
+    // Recovery didn't fully clear it (rare) — log + surface canResume hint.
+    console.error("[signUpPractitioner] still empty identities after recovery:", { email });
     return {
       success: false,
       canResume: true,
