@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { saveAgreement } from "../actions";
@@ -10,6 +11,12 @@ interface StepAgreementProps {
   onBack: () => void;
 }
 
+// Hardcoded for now — flip once the client supplies the real legal text and
+// the server-side AGREEMENT_TEXT_FINAL env is set to "true". Keeping the
+// banner client-side too means the visible warning + the server-side
+// signed_at write get removed together (one PR touches both).
+const AGREEMENT_IS_DRAFT = true;
+
 export function StepAgreement({ onNext, onBack }: StepAgreementProps) {
   const [agreed, setAgreed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -17,7 +24,11 @@ export function StepAgreement({ onNext, onBack }: StepAgreementProps) {
 
   const handleNext = async () => {
     if (!agreed) {
-      setError("יש לאשר את ההסכם כדי להמשיך");
+      setError(
+        AGREEMENT_IS_DRAFT
+          ? "יש לאשר את הטיוטה כדי להמשיך בהרשמה"
+          : "יש לאשר את ההסכם כדי להמשיך"
+      );
       return;
     }
     setIsLoading(true);
@@ -37,18 +48,37 @@ export function StepAgreement({ onNext, onBack }: StepAgreementProps) {
         הסכם מטפל
       </h1>
       <p className="mt-2 text-[18px] font-light text-[#666]">
-        אנא קרא את ההסכם הבא ואשר כדי להמשיך
+        {AGREEMENT_IS_DRAFT
+          ? "טיוטה ראשונית — ההסכם הסופי יישלח לחתימה לפני תחילת העבודה בפועל"
+          : "אנא קרא את ההסכם הבא ואשר כדי להמשיך"}
       </p>
 
-      {/* Agreement text placeholder */}
-      <div className="mt-8 max-h-[400px] overflow-y-auto rounded-[10px] border border-border-input bg-white p-6">
+      {/* Non-binding draft banner — only when AGREEMENT_IS_DRAFT.
+          Surfaces clearly that this text isn't legally binding. */}
+      {AGREEMENT_IS_DRAFT && (
+        <div className="mt-6 flex items-start gap-3 rounded-[10px] border border-[#F5C518] bg-[#FFF8DC] p-4">
+          <AlertTriangle className="mt-0.5 size-5 shrink-0 text-[#9A6700]" />
+          <div className="text-[14px] leading-snug text-[#5C4A00]">
+            <p className="font-semibold mb-1">טקסט זה הוא טיוטה — לא לחתימה משפטית</p>
+            <p>
+              ההסכם המלא והמחייב יישלח אליך בנפרד לחתימה לפני תחילת מתן השירותים בפלטפורמה. אישור בשלב זה הוא לצורך התקדמות בתהליך ההרשמה בלבד ואינו מהווה התקשרות משפטית.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Agreement text */}
+      <div className="mt-6 max-h-[400px] overflow-y-auto rounded-[10px] border border-border-input bg-white p-6">
         <h3 className="text-[18px] font-medium text-foreground">
-          הסכם שימוש למטפלים בפלטפורמת Heali
+          {AGREEMENT_IS_DRAFT
+            ? "טיוטת תנאי שימוש למטפלים בפלטפורמת Heali"
+            : "הסכם שימוש למטפלים בפלטפורמת Heali"}
         </h3>
         <div className="mt-4 space-y-4 text-[15px] leading-relaxed text-[#666]">
           <p>
-            הסכם זה מסדיר את תנאי השימוש שלך כמטפל/ת בפלטפורמת Heali. באישורך, אתה
-            מסכים לתנאים הבאים:
+            {AGREEMENT_IS_DRAFT
+              ? "מסמך זה מציג את הציפיות המרכזיות שלנו ממטפלים בפלטפורמה. הסעיפים הסופיים, כולל תנאי תשלום ותנאי ביטול, יישלחו לחתימה בהמשך."
+              : "הסכם זה מסדיר את תנאי השימוש שלך כמטפל/ת בפלטפורמת Heali. באישורך, אתה מסכים לתנאים הבאים:"}
           </p>
           <p>
             <strong className="text-foreground">1. זמינות:</strong> אתה מתחייב לעדכן את
@@ -70,9 +100,6 @@ export function StepAgreement({ onNext, onBack }: StepAgreementProps) {
             <strong className="text-foreground">5. תוכן:</strong> אתה אחראי לדיוק
             המידע בפרופיל שלך, כולל תעודות, ניסיון, ותיאור השירותים.
           </p>
-          <p className="text-[13px] italic">
-            * הסכם מלא יפורסם בקרוב. זהו טקסט מקום (placeholder).
-          </p>
         </div>
       </div>
 
@@ -85,7 +112,9 @@ export function StepAgreement({ onNext, onBack }: StepAgreementProps) {
           className="mt-1 h-5 w-5 rounded border-border-input accent-primary"
         />
         <span className="text-[15px] text-foreground">
-          קראתי את ההסכם ואני מסכים/ה לתנאים
+          {AGREEMENT_IS_DRAFT
+            ? "קראתי את הטיוטה ואני מאשר/ת את ההתקדמות בתהליך ההרשמה (אינו מהווה חתימה משפטית)"
+            : "קראתי את ההסכם ואני מסכים/ה לתנאים"}
         </span>
       </label>
 

@@ -250,18 +250,46 @@ export async function saveBio(
   return { success: true };
 }
 
+// When AGREEMENT_TEXT_FINAL !== "true", the agreement step is in DRAFT mode:
+// we still advance the wizard (the practitioner can keep onboarding for
+// staging/testing), but we deliberately:
+//   - do NOT write agreement_signed_at (so the DB doesn't show a legally
+//     "signed" timestamp against placeholder copy)
+//   - do NOT send the agreement-copy email (so the practitioner doesn't get
+//     a mailbox artifact emitting placeholder language)
+// Flip AGREEMENT_TEXT_FINAL=true in the env once the client supplies real
+// legal text and we've updated step-agreement.tsx to match. The client UI
+// banner is driven by a constant in step-agreement.tsx so the two should
+// flip in the same PR.
+function isAgreementFinal(): boolean {
+  return process.env.AGREEMENT_TEXT_FINAL === "true";
+}
+
 export async function saveAgreement(): Promise<ActionResult> {
   const userId = await getAuthUserId();
   if (!userId) return { success: false, error: "לא מחובר" };
 
   const admin = createAdminClient();
+  const finalText = isAgreementFinal();
   const signedAt = new Date();
+
+  // Always advance onboarding_step so the wizard can proceed. Only write
+  // agreement_signed_at when the legal text is final.
+  const update: Record<string, unknown> = { onboarding_step: 10 };
+  if (finalText) {
+    update.agreement_signed_at = signedAt.toISOString();
+  }
+
   const { error } = await admin
     .from("practitioner_profiles")
-    .update({ agreement_signed_at: signedAt.toISOString(), onboarding_step: 10 })
+    .update(update)
     .eq("user_id", userId);
 
   if (error) return { success: false, error: "שגיאה בשמירת הסכם" };
+
+  // Skip the agreement-copy email in draft mode for the same reason —
+  // don't ship placeholder legal language to practitioner inboxes.
+  if (!finalText) return { success: true };
 
   // Best-effort: email the practitioner a copy of what they just signed.
   // Failure here doesn't block the save — we don't want to bounce them out
