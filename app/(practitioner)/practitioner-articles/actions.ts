@@ -69,6 +69,14 @@ export async function createArticle(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "לא מחובר" };
 
+  // Server-side validation: meaningful title + content (content is HTML).
+  if (title.trim().length < 3 || title.length > 200) {
+    return { success: false, error: "כותרת לא תקינה (3–200 תווים)" };
+  }
+  if (content.replace(/<[^>]*>/g, "").trim().length < 20) {
+    return { success: false, error: "תוכן המאמר קצר מדי" };
+  }
+
   const { data: profile } = await supabase
     .from("practitioner_profiles")
     .select("id")

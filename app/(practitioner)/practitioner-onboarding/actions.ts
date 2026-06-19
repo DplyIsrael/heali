@@ -328,6 +328,20 @@ export async function submitForApproval(): Promise<ActionResult> {
   // Use admin client for DB updates to bypass RLS
   const admin = createAdminClient();
 
+  // Verify completeness + a valid status transition before submitting.
+  const { data: prof } = await admin
+    .from("practitioner_profiles")
+    .select("domain_ids, price, bio, verification_status")
+    .eq("user_id", user.id)
+    .single();
+  if (!prof) return { success: false, error: "פרופיל לא נמצא" };
+  if (!["draft", "rejected"].includes(prof.verification_status)) {
+    return { success: false, error: "הפרופיל כבר נשלח או אושר" };
+  }
+  if (!(prof.domain_ids as string[] | null)?.length || !Number(prof.price) || !(prof.bio as string | null)?.trim()) {
+    return { success: false, error: "יש להשלים תחומי טיפול, מחיר וביוגרפיה לפני השליחה" };
+  }
+
   // Update verification status
   const { error: profileError } = await admin
     .from("practitioner_profiles")

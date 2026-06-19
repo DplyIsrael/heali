@@ -74,6 +74,15 @@ export async function saveAvailabilitySlot(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "לא מחובר" };
 
+  // Validate the slot: valid weekday, HH:MM times, start strictly before end.
+  const timeRe = /^([01]\d|2[0-3]):[0-5]\d$/;
+  if (!Number.isInteger(weekday) || weekday < 0 || weekday > 6) {
+    return { success: false, error: "יום לא תקין" };
+  }
+  if (!timeRe.test(startTime) || !timeRe.test(endTime) || startTime >= endTime) {
+    return { success: false, error: "טווח שעות לא תקין" };
+  }
+
   const { data: profile } = await supabase
     .from("practitioner_profiles")
     .select("id")
@@ -81,6 +90,17 @@ export async function saveAvailabilitySlot(
     .single();
 
   if (!profile) return { success: false, error: "פרופיל לא נמצא" };
+
+  // Reject a range that overlaps an existing slot on the same weekday.
+  const { data: existingSlots } = await supabase
+    .from("practitioner_availability")
+    .select("start_time, end_time")
+    .eq("practitioner_id", profile.id)
+    .eq("weekday", weekday);
+  const overlaps = (existingSlots ?? []).some(
+    (s: { start_time: string; end_time: string }) => startTime < s.end_time && endTime > s.start_time
+  );
+  if (overlaps) return { success: false, error: "הטווח חופף לזמינות קיימת" };
 
   const { error } = await supabase
     .from("practitioner_availability")
