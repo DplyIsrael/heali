@@ -16,18 +16,24 @@ import {
 import { signOut } from "@/app/(public)/auth/actions";
 import { NotificationsBell } from "@/components/shared/notifications-bell";
 
+// Primary nav — the 7 Figma-confirmed items (RTL order: dashboard nearest the logo).
 const NAV_ITEMS = [
   { label: "דשבורד", href: "/admin" },
   { label: "טיפולים", href: "/admin/treatments" },
   { label: "מטפלים", href: "/admin/practitioners" },
   { label: "מטופלים", href: "/admin/patients" },
+  { label: "קטגוריות", href: "/admin/categories" },
+  { label: "חבילות טיפול", href: "/admin/packages" },
+  { label: "מאמרים", href: "/admin/articles" },
+] as const;
+
+// Secondary admin sections — kept reachable via the avatar dropdown so the top
+// bar matches the Figma's 7-item nav.
+const MORE_ITEMS = [
   { label: "דירוגים", href: "/admin/reviews" },
   { label: "בקשות החזר", href: "/admin/refund-requests" },
-  { label: "קטגוריות", href: "/admin/categories" },
   { label: "התמחויות", href: "/admin/specialties" },
-  { label: "חבילות טיפול", href: "/admin/packages" },
   { label: "תשלומים", href: "/admin/payouts" },
-  { label: "מאמרים", href: "/admin/articles" },
 ] as const;
 
 interface AdminHeaderProps {
@@ -66,7 +72,13 @@ export function AdminHeader({
               <span className="text-[16px] font-sans">{userName}</span>
               <ChevronDown className="size-4 text-muted-foreground" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuContent align="end" className="w-48">
+              {MORE_ITEMS.map((item) => (
+                <DropdownMenuItem key={item.href} onClick={() => router.push(item.href)}>
+                  {item.label}
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => router.push("/admin/settings")}>
                 אזור אישי
               </DropdownMenuItem>
