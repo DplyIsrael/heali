@@ -1,8 +1,7 @@
 "use client";
 
-/* eslint-disable react-hooks/set-state-in-effect */
-
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Wallet, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -11,18 +10,13 @@ import { toast } from "sonner";
 import { fetchPendingPayouts, markPayoutAsPaid, type PayoutGroup } from "./actions";
 
 export default function AdminPayoutsPage() {
-  const [groups, setGroups] = useState<PayoutGroup[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [confirmTarget, setConfirmTarget] = useState<PayoutGroup | null>(null);
 
-  const load = async () => {
-    setIsLoading(true);
-    setGroups(await fetchPendingPayouts());
-    setIsLoading(false);
-  };
-
-  useEffect(() => { void load(); }, []);
+  const { data: groups = [], isLoading, isError, refetch } = useQuery({
+    queryKey: ["admin-payouts"],
+    queryFn: fetchPendingPayouts,
+  });
 
   const handleMarkPaid = async () => {
     if (!confirmTarget) return;
@@ -30,7 +24,7 @@ export default function AdminPayoutsPage() {
     const result = await markPayoutAsPaid(confirmTarget.bookingIds);
     if (result.success) {
       toast.success(`סומן כשולם — ${confirmTarget.bookingCount} טיפולים`);
-      setGroups((prev) => prev.filter((g) => g.practitionerId !== confirmTarget.practitionerId));
+      void refetch();
     } else {
       toast.error(result.error);
     }
@@ -68,6 +62,11 @@ export default function AdminPayoutsPage() {
 
       {isLoading ? (
         <div className="flex justify-center py-20"><Spinner /></div>
+      ) : isError ? (
+        <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3">
+          <p className="text-[15px] text-muted-foreground">שגיאה בטעינת התשלומים</p>
+          <Button onClick={() => void refetch()} variant="secondary" className="bg-[#f4f7f7]">נסה שוב</Button>
+        </div>
       ) : groups.length === 0 ? (
         <div className="rounded-[12px] border border-border bg-white py-12 text-center text-muted-foreground">
           <Wallet className="size-10 mx-auto mb-3 text-muted-foreground/50" />

@@ -1,16 +1,16 @@
 "use client";
 
-/* eslint-disable react-hooks/set-state-in-effect */
-
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ThreeDotsMenu } from "@/components/shared/three-dots-menu";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { toast } from "sonner";
-import { fetchAllPractitioners, approvePractitioner, rejectPractitioner, type AdminPractitioner } from "./actions";
+import { fetchAllPractitioners, approvePractitioner, rejectPractitioner } from "./actions";
 
 const STATUS_TABS = [
   { key: "all", label: "הכל" },
@@ -20,41 +20,34 @@ const STATUS_TABS = [
 ];
 
 export default function AdminPractitionersPage() {
-  const [practitioners, setPractitioners] = useState<AdminPractitioner[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [rejectTarget, setRejectTarget] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
 
-  const loadData = async (filter?: string) => {
-    setIsLoading(true);
-    const data = await fetchAllPractitioners(filter ?? statusFilter);
-    setPractitioners(data);
-    setIsLoading(false);
-  };
-
-  useEffect(() => { void loadData(); }, []);
+  const { data: practitioners, isLoading, isError, refetch } = useQuery({
+    queryKey: ["admin-practitioners", statusFilter],
+    queryFn: () => fetchAllPractitioners(statusFilter),
+  });
 
   const handleTabChange = (tab: string) => {
     setStatusFilter(tab);
-    loadData(tab);
   };
 
   const handleApprove = async (id: string) => {
     const res = await approvePractitioner(id);
-    if (res.success) { toast.success("המטפל אושר"); loadData(); }
+    if (res.success) { toast.success("המטפל אושר"); void refetch(); }
     else toast.error(res.error);
   };
 
   const handleReject = async () => {
     if (!rejectTarget) return;
     const res = await rejectPractitioner(rejectTarget, rejectReason);
-    if (res.success) { toast.success("המטפל נדחה"); setRejectTarget(null); setRejectReason(""); loadData(); }
+    if (res.success) { toast.success("המטפל נדחה"); setRejectTarget(null); setRejectReason(""); void refetch(); }
     else toast.error(res.error);
   };
 
-  const filtered = practitioners.filter((p) =>
+  const filtered = (practitioners ?? []).filter((p) =>
     !search || p.name.includes(search) || p.email.includes(search) || p.city.includes(search)
   );
 
@@ -85,6 +78,11 @@ export default function AdminPractitionersPage() {
 
       {isLoading ? (
         <div className="flex justify-center py-20"><Spinner /></div>
+      ) : isError ? (
+        <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3">
+          <p className="text-[15px] text-muted-foreground">שגיאה בטעינת המטפלים</p>
+          <Button onClick={() => void refetch()} variant="secondary" className="bg-[#f4f7f7]">נסה שוב</Button>
+        </div>
       ) : (
         <div className="rounded-[12px] border border-border bg-white overflow-x-auto">
           <table className="w-full text-[14px]">

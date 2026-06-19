@@ -1,49 +1,53 @@
 "use client";
 
-/* eslint-disable react-hooks/set-state-in-effect */
-
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Search, MoreVertical } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ThreeDotsMenu } from "@/components/shared/three-dots-menu";
 import { EmptyState } from "@/components/shared/empty-state";
 import { toast } from "sonner";
-import { fetchDashboardData, approveBooking, declineBooking, type RecentBooking } from "../dashboard/actions";
+import { fetchDashboardData, approveBooking, declineBooking } from "../dashboard/actions";
 
 export default function MyPatientsPage() {
-  const [bookings, setBookings] = useState<RecentBooking[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  const loadData = async () => {
-    const data = await fetchDashboardData();
-    setBookings(data.recentBookings);
-    setIsLoading(false);
-  };
-
-  useEffect(() => { void loadData(); }, []);
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["practitioner-dashboard"],
+    queryFn: fetchDashboardData,
+  });
 
   const handleApprove = async (id: string) => {
     const res = await approveBooking(id);
-    if (res.success) { toast.success("הטיפול אושר"); loadData(); }
+    if (res.success) { toast.success("הטיפול אושר"); void refetch(); }
     else toast.error(res.error);
   };
 
   const handleDecline = async (id: string) => {
     const res = await declineBooking(id);
-    if (res.success) { toast.success("הטיפול נדחה"); loadData(); }
+    if (res.success) { toast.success("הטיפול נדחה"); void refetch(); }
     else toast.error(res.error);
   };
-
-  const filtered = bookings.filter((b) =>
-    !search || b.patientName.includes(search) || b.domain.includes(search)
-  );
 
   if (isLoading) {
     return <div className="flex min-h-[60vh] items-center justify-center"><Spinner /></div>;
   }
+  if (isError || !data) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
+        <p className="text-[15px] text-muted-foreground">שגיאה בטעינת הנתונים</p>
+        <Button onClick={() => void refetch()} variant="secondary" className="bg-[#f4f7f7]">נסה שוב</Button>
+      </div>
+    );
+  }
+
+  const bookings = data.recentBookings;
+  const filtered = bookings.filter((b) =>
+    !search || b.patientName.includes(search) || b.domain.includes(search)
+  );
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 md:px-[50px] py-6 md:py-10">

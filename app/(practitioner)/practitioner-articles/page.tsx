@@ -1,8 +1,7 @@
 "use client";
 
-/* eslint-disable react-hooks/set-state-in-effect */
-
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Plus, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,13 +17,9 @@ import {
   createArticle,
   deleteArticle,
   fetchCategories,
-  type ArticleItem,
 } from "./actions";
 
 export default function PractitionerArticlesPage() {
-  const [articles, setArticles] = useState<ArticleItem[]>([]);
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
 
@@ -34,14 +29,13 @@ export default function PractitionerArticlesPage() {
   const [newCategoryId, setNewCategoryId] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
-  const loadData = async () => {
-    const [arts, cats] = await Promise.all([fetchMyArticles(), fetchCategories()]);
-    setArticles(arts);
-    setCategories(cats);
-    setIsLoading(false);
-  };
-
-  useEffect(() => { void loadData(); }, []);
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["practitioner-articles"],
+    queryFn: async () => {
+      const [arts, cats] = await Promise.all([fetchMyArticles(), fetchCategories()]);
+      return { articles: arts, categories: cats };
+    },
+  });
 
   const handleCreate = async () => {
     if (!newTitle.trim() || !newContent.trim()) {
@@ -56,7 +50,7 @@ export default function PractitionerArticlesPage() {
       setNewTitle("");
       setNewContent("");
       setNewCategoryId("");
-      loadData();
+      void refetch();
     } else {
       toast.error(result.error);
     }
@@ -67,19 +61,29 @@ export default function PractitionerArticlesPage() {
     const result = await deleteArticle(id);
     if (result.success) {
       toast.success("המאמר נמחק");
-      setArticles((prev) => prev.filter((a) => a.id !== id));
+      void refetch();
     } else {
       toast.error(result.error);
     }
   };
 
-  const filtered = articles.filter((a) =>
-    !search || a.title.includes(search) || a.categoryName.includes(search)
-  );
-
   if (isLoading) {
     return <div className="flex min-h-[60vh] items-center justify-center"><Spinner /></div>;
   }
+  if (isError || !data) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
+        <p className="text-[15px] text-muted-foreground">שגיאה בטעינת המאמרים</p>
+        <Button onClick={() => void refetch()} variant="secondary" className="bg-[#f4f7f7]">נסה שוב</Button>
+      </div>
+    );
+  }
+
+  const articles = data.articles;
+  const categories = data.categories;
+  const filtered = articles.filter((a) =>
+    !search || a.title.includes(search) || a.categoryName.includes(search)
+  );
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 md:px-[50px] py-6 md:py-10">

@@ -1,8 +1,7 @@
 "use client";
 
-/* eslint-disable react-hooks/set-state-in-effect */
-
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Star, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -11,7 +10,6 @@ import {
   fetchPendingReviews,
   approveReview,
   rejectReview,
-  type PendingReview,
 } from "./actions";
 
 const TABS = [
@@ -47,27 +45,19 @@ function StarRow({ rating }: { rating: number }) {
 export default function AdminReviewsPage() {
   const [statusFilter, setStatusFilter] =
     useState<"submitted" | "approved" | "rejected">("submitted");
-  const [reviews, setReviews] = useState<PendingReview[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  const loadData = async () => {
-    setIsLoading(true);
-    const data = await fetchPendingReviews(statusFilter);
-    setReviews(data);
-    setIsLoading(false);
-  };
-
-  useEffect(() => {
-    void loadData();
-  }, [statusFilter]);
+  const { data: reviews = [], isLoading, isError, refetch } = useQuery({
+    queryKey: ["admin-reviews", statusFilter],
+    queryFn: () => fetchPendingReviews(statusFilter),
+  });
 
   const handleApprove = async (id: string) => {
     setBusyId(id);
     const result = await approveReview(id);
     if (result.success) {
       toast.success("הדירוג אושר");
-      await loadData();
+      void refetch();
     } else {
       toast.error(result.error ?? "שגיאה");
     }
@@ -79,7 +69,7 @@ export default function AdminReviewsPage() {
     const result = await rejectReview(id);
     if (result.success) {
       toast.success("הדירוג נדחה");
-      await loadData();
+      void refetch();
     } else {
       toast.error(result.error ?? "שגיאה");
     }
@@ -115,6 +105,11 @@ export default function AdminReviewsPage() {
       {isLoading ? (
         <div className="flex justify-center py-20">
           <Spinner />
+        </div>
+      ) : isError ? (
+        <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3">
+          <p className="text-[15px] text-muted-foreground">שגיאה בטעינת הדירוגים</p>
+          <Button onClick={() => void refetch()} variant="secondary" className="bg-[#f4f7f7]">נסה שוב</Button>
         </div>
       ) : reviews.length === 0 ? (
         <div className="rounded-[16px] border border-border bg-white py-16 text-center text-[15px] text-muted-foreground">

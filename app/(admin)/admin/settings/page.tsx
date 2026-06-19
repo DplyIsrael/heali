@@ -1,8 +1,7 @@
 "use client";
 
-/* eslint-disable react-hooks/set-state-in-effect */
-
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Upload } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,8 +17,6 @@ interface AdminProfile {
 }
 
 export default function AdminSettingsPage() {
-  const [profile, setProfile] = useState<AdminProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState("");
@@ -27,27 +24,25 @@ export default function AdminSettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    async function load() {
+  const { data: profile, isLoading, isError, refetch } = useQuery({
+    queryKey: ["admin-settings-profile"],
+    queryFn: async (): Promise<AdminProfile | null> => {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setIsLoading(false); return; }
+      if (!user) return null;
       const { data: row } = await supabase
         .from("users")
         .select("full_name, email, profile_photo_url")
         .eq("id", user.id)
         .single();
-      if (row) {
-        setProfile({
-          fullName: row.full_name ?? "",
-          email: row.email ?? "",
-          profilePhotoUrl: row.profile_photo_url ?? "",
-        });
-      }
-      setIsLoading(false);
-    }
-    load();
-  }, []);
+      if (!row) return null;
+      return {
+        fullName: row.full_name ?? "",
+        email: row.email ?? "",
+        profilePhotoUrl: row.profile_photo_url ?? "",
+      };
+    },
+  });
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -59,7 +54,7 @@ export default function AdminSettingsPage() {
       const res = await fetch("/api/upload-avatar", { method: "POST", body: formData });
       const data = await res.json();
       if (res.ok && data.url) {
-        setProfile((p) => (p ? { ...p, profilePhotoUrl: data.url } : p));
+        void refetch();
         toast.success("התמונה עודכנה");
       } else {
         toast.error(data.error ?? "שגיאה בהעלאת תמונה");
@@ -100,6 +95,13 @@ export default function AdminSettingsPage() {
   };
 
   if (isLoading) return <div className="flex min-h-[60vh] items-center justify-center"><Spinner /></div>;
+  if (isError)
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
+        <p className="text-[15px] text-muted-foreground">שגיאה בטעינת הפרופיל</p>
+        <Button onClick={() => void refetch()} variant="secondary" className="bg-[#f4f7f7]">נסה שוב</Button>
+      </div>
+    );
 
   return (
     <div>

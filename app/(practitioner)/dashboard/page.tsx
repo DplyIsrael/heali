@@ -1,9 +1,9 @@
 "use client";
 
-/* eslint-disable react-hooks/set-state-in-effect */
-
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Activity, Users, DollarSign, TrendingUp, MoreVertical, ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ThreeDotsMenu } from "@/components/shared/three-dots-menu";
@@ -12,8 +12,6 @@ import {
   fetchDashboardData,
   approveBooking,
   declineBooking,
-  type DashboardStats,
-  type RecentBooking,
 } from "./actions";
 
 function getGreeting(): string {
@@ -25,39 +23,42 @@ function getGreeting(): string {
 }
 
 export default function PractitionerDashboardPage() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [bookings, setBookings] = useState<RecentBooking[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [filterType, setFilterType] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
-  const [userName, setUserName] = useState("");
   const greeting = useMemo(() => getGreeting(), []);
 
-  const loadData = async () => {
-    const data = await fetchDashboardData();
-    setStats(data.stats);
-    setBookings(data.recentBookings);
-    setUserName(data.practitionerName);
-    setIsLoading(false);
-  };
-
-  useEffect(() => { void loadData(); }, []);
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["practitioner-dashboard"],
+    queryFn: fetchDashboardData,
+  });
 
   const handleApprove = async (id: string) => {
     const res = await approveBooking(id);
-    if (res.success) { toast.success("הטיפול אושר"); loadData(); }
+    if (res.success) { toast.success("הטיפול אושר"); void refetch(); }
     else toast.error(res.error);
   };
 
   const handleDecline = async (id: string) => {
     const res = await declineBooking(id);
-    if (res.success) { toast.success("הטיפול נדחה"); loadData(); }
+    if (res.success) { toast.success("הטיפול נדחה"); void refetch(); }
     else toast.error(res.error);
   };
 
   if (isLoading) {
     return <div className="flex min-h-[60vh] items-center justify-center"><Spinner /></div>;
   }
+  if (isError || !data) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
+        <p className="text-[15px] text-muted-foreground">שגיאה בטעינת הנתונים</p>
+        <Button onClick={() => void refetch()} variant="secondary" className="bg-[#f4f7f7]">נסה שוב</Button>
+      </div>
+    );
+  }
+
+  const stats = data.stats;
+  const bookings = data.recentBookings;
+  const userName = data.practitionerName;
 
   const kpis = [
     { label: "סה״כ טיפולים סגורים", value: stats?.totalClosed ?? 0, icon: Activity, color: "bg-blue-100 text-blue-600" },

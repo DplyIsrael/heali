@@ -1,29 +1,31 @@
 "use client";
 
-/* eslint-disable react-hooks/set-state-in-effect */
-
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Star, MapPin } from "lucide-react";
-import {
-  fetchMatchedPractitioners,
-  type MatchedPractitioner,
-} from "./actions";
+import { fetchMatchedPractitioners } from "./actions";
 
 export default function OnboardingResultsPage() {
   const router = useRouter();
-  const [practitioners, setPractitioners] = useState<MatchedPractitioner[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchMatchedPractitioners(6).then((p) => {
-      setPractitioners(p);
-      setIsLoading(false);
-    });
-  }, []);
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["matched-practitioners"],
+    queryFn: () => fetchMatchedPractitioners(6),
+  });
+
+  if (isError) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background">
+        <p className="text-[15px] text-muted-foreground">שגיאה בטעינת המטפלים</p>
+        <Button onClick={() => void refetch()} variant="secondary" className="bg-[#f4f7f7]">נסה שוב</Button>
+      </div>
+    );
+  }
+
+  const practitioners = data ?? [];
 
   return (
     <div className="flex min-h-screen flex-col bg-background">

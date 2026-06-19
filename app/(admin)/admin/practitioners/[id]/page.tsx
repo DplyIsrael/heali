@@ -3,6 +3,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -46,8 +47,6 @@ export default function AdminPractitionerDetailPage() {
   const router = useRouter();
   const id = params.id as string;
 
-  const [practitioner, setPractitioner] = useState<PractitionerDetail | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
 
@@ -62,8 +61,9 @@ export default function AdminPractitionerDetailPage() {
   const [languagesText, setLanguagesText] = useState("");
   const [bio, setBio] = useState("");
 
-  useEffect(() => {
-    async function load() {
+  const { data: practitioner, isLoading, isError, refetch } = useQuery({
+    queryKey: ["admin-practitioner", id],
+    queryFn: async (): Promise<PractitionerDetail | null> => {
       const supabase = createClient();
       const { data: profile } = await supabase
         .from("practitioner_profiles")
@@ -71,7 +71,7 @@ export default function AdminPractitionerDetailPage() {
         .eq("id", id)
         .single();
 
-      if (!profile) { setIsLoading(false); return; }
+      if (!profile) return null;
 
       const domainIds = (profile.domain_ids as string[]) ?? [];
       const specialtyIds = (profile.specialty_ids as string[]) ?? [];
@@ -94,7 +94,7 @@ export default function AdminPractitionerDetailPage() {
 
       const users = profile.users as unknown as { full_name: string; email: string };
 
-      const detail: PractitionerDetail = {
+      return {
         id: profile.id,
         userId: profile.user_id,
         name: users.full_name,
@@ -118,23 +118,22 @@ export default function AdminPractitionerDetailPage() {
           url: d.file_url,
         })),
       };
-      setPractitioner(detail);
+    },
+  });
 
-      // Seed editable state with current values
-      setPhone(detail.phone);
-      setCity(detail.city);
-      setClinicCitiesText(detail.clinicCities.join(", "));
-      setClinicAddressesText(detail.clinicAddresses.join("\n"));
-      setHomeVisits(detail.homeVisits);
-      setPricingModel(detail.pricingModel);
-      setPrice(detail.price);
-      setLanguagesText(detail.languages.join(", "));
-      setBio(detail.bio);
-
-      setIsLoading(false);
-    }
-    load();
-  }, [id]);
+  // Seed editable state with current values once the profile loads.
+  useEffect(() => {
+    if (!practitioner) return;
+    setPhone(practitioner.phone);
+    setCity(practitioner.city);
+    setClinicCitiesText(practitioner.clinicCities.join(", "));
+    setClinicAddressesText(practitioner.clinicAddresses.join("\n"));
+    setHomeVisits(practitioner.homeVisits);
+    setPricingModel(practitioner.pricingModel);
+    setPrice(practitioner.price);
+    setLanguagesText(practitioner.languages.join(", "));
+    setBio(practitioner.bio);
+  }, [practitioner]);
 
   const handleApprove = async () => {
     if (!practitioner) return;
@@ -180,6 +179,13 @@ export default function AdminPractitionerDetailPage() {
   };
 
   if (isLoading) return <div className="flex min-h-[60vh] items-center justify-center"><Spinner /></div>;
+  if (isError)
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
+        <p className="text-[15px] text-muted-foreground">שגיאה בטעינת המטפל</p>
+        <Button onClick={() => void refetch()} variant="secondary" className="bg-[#f4f7f7]">נסה שוב</Button>
+      </div>
+    );
   if (!practitioner) return <div className="flex min-h-[60vh] items-center justify-center text-muted-foreground">מטפל לא נמצא</div>;
 
   const isPending = ["submitted", "pending_approval"].includes(practitioner.status);

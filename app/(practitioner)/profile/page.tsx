@@ -3,6 +3,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link2, Trash2, Upload, Package } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -17,12 +18,9 @@ import {
   uploadAvatar,
   joinHealiPackages,
   updateBankDetails,
-  type PractitionerProfileData,
 } from "./actions";
 
 export default function PractitionerProfilePage() {
-  const [profile, setProfile] = useState<PractitionerProfileData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"business" | "personal">("business");
   const [price, setPrice] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -46,22 +44,23 @@ export default function PractitionerProfilePage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
+  const { data: profile, isLoading, isError, refetch } = useQuery({
+    queryKey: ["practitioner-profile"],
+    queryFn: fetchProfileData,
+  });
+
+  // Seed editable form state from the loaded profile (re-seeds after refetch,
+  // e.g. once the practitioner joins Heali packages).
   useEffect(() => {
-    async function load() {
-      const data = await fetchProfileData();
-      setProfile(data);
-      if (data) {
-        setPrice(String(data.price));
-        setAvatarUrl(data.profilePhotoUrl);
-        setBankName(data.bankName);
-        setBankAccountNumber(data.bankAccountNumber);
-        setBankBranchNumber(data.bankBranchNumber);
-        setBankNumber(data.bankNumber);
-      }
-      setIsLoading(false);
+    if (profile) {
+      setPrice(String(profile.price));
+      setAvatarUrl(profile.profilePhotoUrl);
+      setBankName(profile.bankName);
+      setBankAccountNumber(profile.bankAccountNumber);
+      setBankBranchNumber(profile.bankBranchNumber);
+      setBankNumber(profile.bankNumber);
     }
-    load();
-  }, []);
+  }, [profile]);
 
   const handleSaveBank = async () => {
     setIsSavingBank(true);
@@ -124,10 +123,8 @@ export default function PractitionerProfilePage() {
     if (result.success) {
       toast.success("הצטרפת לחבילות Heali");
       // Reload profile so the CTA disappears and the new pricing model
-      // shows in the form.
-      const data = await fetchProfileData();
-      setProfile(data);
-      if (data) setPrice(String(data.price));
+      // shows in the form. The seeding effect re-applies the new price.
+      void refetch();
     } else {
       toast.error(result.error);
     }
@@ -153,6 +150,15 @@ export default function PractitionerProfilePage() {
 
   if (isLoading) {
     return <div className="flex min-h-[60vh] items-center justify-center"><Spinner /></div>;
+  }
+
+  if (isError) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
+        <p className="text-[15px] text-muted-foreground">שגיאה בטעינת הפרופיל</p>
+        <Button onClick={() => void refetch()} variant="secondary" className="bg-[#f4f7f7]">נסה שוב</Button>
+      </div>
+    );
   }
 
   if (!profile) {

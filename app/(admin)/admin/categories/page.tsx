@@ -1,8 +1,7 @@
 "use client";
 
-/* eslint-disable react-hooks/set-state-in-effect */
-
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Plus, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -21,8 +20,6 @@ interface Category {
 }
 
 export default function AdminCategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
@@ -34,16 +31,16 @@ export default function AdminCategoriesPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [editTarget, setEditTarget] = useState<Category | null>(null);
 
-  const loadData = async () => {
-    const supabase = createClient();
-    const { data } = await supabase.from("categories").select("*").order("created_at", { ascending: false });
-    setCategories((data ?? []).map((c) => ({
-      id: c.id, name: c.name, pointsAmount: c.points_amount, fieldOfKnowledge: c.field_of_knowledge ?? "", createdAt: c.created_at,
-    })));
-    setIsLoading(false);
-  };
-
-  useEffect(() => { void loadData(); }, []);
+  const { data: categories = [], isLoading, isError, refetch } = useQuery({
+    queryKey: ["admin-categories"],
+    queryFn: async (): Promise<Category[]> => {
+      const supabase = createClient();
+      const { data } = await supabase.from("categories").select("*").order("created_at", { ascending: false });
+      return (data ?? []).map((c) => ({
+        id: c.id, name: c.name, pointsAmount: c.points_amount, fieldOfKnowledge: c.field_of_knowledge ?? "", createdAt: c.created_at,
+      }));
+    },
+  });
 
   const handleCreate = async () => {
     if (!name.trim()) { toast.error("יש להזין שם קטגוריה"); return; }
@@ -61,7 +58,7 @@ export default function AdminCategoriesPage() {
       if (error) { toast.error("שגיאה ביצירת קטגוריה"); setIsSaving(false); return; }
       toast.success("קטגוריה נוצרה");
     }
-    setShowCreate(false); setName(""); setPoints("0"); setField(""); setEditTarget(null); loadData();
+    setShowCreate(false); setName(""); setPoints("0"); setField(""); setEditTarget(null); void refetch();
     setIsSaving(false);
   };
 
@@ -70,11 +67,19 @@ export default function AdminCategoriesPage() {
     const supabase = createClient();
     const { error } = await supabase.from("categories").delete().eq("id", deleteTarget);
     if (error) toast.error("שגיאה במחיקת קטגוריה");
-    else { toast.success("קטגוריה נמחקה"); loadData(); }
+    else { toast.success("קטגוריה נמחקה"); void refetch(); }
     setDeleteTarget(null);
   };
 
   const filtered = categories.filter((c) => !search || c.name.includes(search));
+
+  if (isError)
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
+        <p className="text-[15px] text-muted-foreground">שגיאה בטעינת הקטגוריות</p>
+        <Button onClick={() => void refetch()} variant="secondary" className="bg-[#f4f7f7]">נסה שוב</Button>
+      </div>
+    );
 
   return (
     <div>

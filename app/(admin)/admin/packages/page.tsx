@@ -1,8 +1,7 @@
 "use client";
 
-/* eslint-disable react-hooks/set-state-in-effect */
-
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -23,8 +22,6 @@ const THEMES = Object.keys(GRADIENTS);
 interface Pkg { id: string; name: string; description: string; numTreatments: number; pricePerTreatment: number; gradientTheme: string; }
 
 export default function AdminPackagesPage() {
-  const [packages, setPackages] = useState<Pkg[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   // Holds the package being edited; null means the modal is in "create" mode.
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -54,17 +51,17 @@ export default function AdminPackagesPage() {
     setShowModal(true);
   };
 
-  const loadData = async () => {
-    const supabase = createClient();
-    const { data } = await supabase.from("treatment_packages").select("*").order("created_at", { ascending: false });
-    setPackages((data ?? []).map((p) => ({
-      id: p.id, name: p.name, description: p.description ?? "", numTreatments: p.num_treatments,
-      pricePerTreatment: Number(p.price_per_treatment), gradientTheme: p.gradient_theme,
-    })));
-    setIsLoading(false);
-  };
-
-  useEffect(() => { void loadData(); }, []);
+  const { data: packages = [], isLoading, isError, refetch } = useQuery({
+    queryKey: ["admin-packages"],
+    queryFn: async (): Promise<Pkg[]> => {
+      const supabase = createClient();
+      const { data } = await supabase.from("treatment_packages").select("*").order("created_at", { ascending: false });
+      return (data ?? []).map((p) => ({
+        id: p.id, name: p.name, description: p.description ?? "", numTreatments: p.num_treatments,
+        pricePerTreatment: Number(p.price_per_treatment), gradientTheme: p.gradient_theme,
+      }));
+    },
+  });
 
   const handleSave = async () => {
     if (!name.trim()) { toast.error("יש להזין שם חבילה"); return; }
@@ -87,7 +84,7 @@ export default function AdminPackagesPage() {
       toast.success(editingId ? "החבילה עודכנה" : "חבילה נוצרה");
       setShowModal(false);
       resetForm();
-      loadData();
+      void refetch();
     }
     setIsSaving(false);
   };
@@ -96,10 +93,17 @@ export default function AdminPackagesPage() {
     if (!deleteTarget) return;
     const supabase = createClient();
     await supabase.from("treatment_packages").delete().eq("id", deleteTarget);
-    toast.success("חבילה נמחקה"); setDeleteTarget(null); loadData();
+    toast.success("חבילה נמחקה"); setDeleteTarget(null); void refetch();
   };
 
   if (isLoading) return <div className="flex min-h-[60vh] items-center justify-center"><Spinner /></div>;
+  if (isError)
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
+        <p className="text-[15px] text-muted-foreground">שגיאה בטעינת החבילות</p>
+        <Button onClick={() => void refetch()} variant="secondary" className="bg-[#f4f7f7]">נסה שוב</Button>
+      </div>
+    );
 
   const totalPackages = packages.length;
   const totalTreatments = packages.reduce((s, p) => s + p.numTreatments, 0);

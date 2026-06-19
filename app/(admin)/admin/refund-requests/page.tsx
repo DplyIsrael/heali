@@ -1,8 +1,7 @@
 "use client";
 
-/* eslint-disable react-hooks/set-state-in-effect */
-
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -11,7 +10,6 @@ import {
   fetchRefundRequests,
   approveRefundRequest,
   rejectRefundRequest,
-  type RefundRequest,
 } from "./actions";
 
 const TABS = [
@@ -31,29 +29,21 @@ function formatHebrewDate(iso: string) {
 export default function AdminRefundRequestsPage() {
   const [statusFilter, setStatusFilter] =
     useState<"pending" | "approved" | "rejected">("pending");
-  const [requests, setRequests] = useState<RefundRequest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   // Per-row admin-notes field, keyed by request id.
   const [notes, setNotes] = useState<Record<string, string>>({});
 
-  const loadData = async () => {
-    setIsLoading(true);
-    const data = await fetchRefundRequests(statusFilter);
-    setRequests(data);
-    setIsLoading(false);
-  };
-
-  useEffect(() => {
-    void loadData();
-  }, [statusFilter]);
+  const { data: requests = [], isLoading, isError, refetch } = useQuery({
+    queryKey: ["admin-refund-requests", statusFilter],
+    queryFn: () => fetchRefundRequests(statusFilter),
+  });
 
   const handleApprove = async (id: string) => {
     setBusyId(id);
     const result = await approveRefundRequest(id, notes[id]);
     if (result.success) {
       toast.success("הבקשה אושרה והזיכוי סומן כהוחזר");
-      await loadData();
+      void refetch();
     } else {
       toast.error(result.error ?? "שגיאה");
     }
@@ -65,7 +55,7 @@ export default function AdminRefundRequestsPage() {
     const result = await rejectRefundRequest(id, notes[id]);
     if (result.success) {
       toast.success("הבקשה נדחתה");
-      await loadData();
+      void refetch();
     } else {
       toast.error(result.error ?? "שגיאה");
     }
@@ -101,6 +91,11 @@ export default function AdminRefundRequestsPage() {
       {isLoading ? (
         <div className="flex justify-center py-20">
           <Spinner />
+        </div>
+      ) : isError ? (
+        <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3">
+          <p className="text-[15px] text-muted-foreground">שגיאה בטעינת הבקשות</p>
+          <Button onClick={() => void refetch()} variant="secondary" className="bg-[#f4f7f7]">נסה שוב</Button>
         </div>
       ) : requests.length === 0 ? (
         <div className="rounded-[16px] border border-border bg-white py-16 text-center text-[15px] text-muted-foreground">

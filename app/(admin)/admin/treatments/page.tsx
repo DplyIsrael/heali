@@ -1,10 +1,10 @@
 "use client";
 
-/* eslint-disable react-hooks/set-state-in-effect */
-
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { createClient } from "@/lib/supabase/client";
@@ -30,16 +30,15 @@ const STATUS_TABS = [
 ] as const;
 
 export default function AdminTreatmentsPage() {
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [domainFilter, setDomainFilter] = useState<string>("");
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
 
-  useEffect(() => {
-    async function load() {
+  const { data: bookings = [], isLoading, isError, refetch } = useQuery({
+    queryKey: ["admin-treatments"],
+    queryFn: async (): Promise<Booking[]> => {
       const supabase = createClient();
       const { data } = await supabase
         .from("bookings")
@@ -58,7 +57,7 @@ export default function AdminTreatmentsPage() {
         domainMap = (doms ?? []).reduce((a: Record<string, string>, d: { id: string; name: string }) => { a[d.id] = d.name; return a; }, {});
       }
 
-      setBookings((data ?? []).map((b: Record<string, unknown>) => {
+      return (data ?? []).map((b: Record<string, unknown>) => {
         const patient = b.patient as { full_name: string } | null;
         const profile = b.practitioner_profiles as unknown as { users: { full_name: string } };
         return {
@@ -71,11 +70,9 @@ export default function AdminTreatmentsPage() {
           status: b.status as string,
           price: Number(b.price_at_booking || 0),
         };
-      }));
-      setIsLoading(false);
-    }
-    load();
-  }, []);
+      });
+    },
+  });
 
   // Distinct domains for the dropdown — derived from the loaded set so it
   // only shows domains that actually have bookings.
@@ -113,6 +110,14 @@ export default function AdminTreatmentsPage() {
   // Live totals across the filtered set
   const total = filtered.length;
   const totalRevenue = filtered.reduce((s, b) => s + b.price, 0);
+
+  if (isError)
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
+        <p className="text-[15px] text-muted-foreground">שגיאה בטעינת הטיפולים</p>
+        <Button onClick={() => void refetch()} variant="secondary" className="bg-[#f4f7f7]">נסה שוב</Button>
+      </div>
+    );
 
   return (
     <div>

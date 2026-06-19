@@ -1,8 +1,7 @@
 "use client";
 
-/* eslint-disable react-hooks/set-state-in-effect */
-
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Plus, Trash2, CalendarOff, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -15,8 +14,6 @@ import {
   deleteAvailabilitySlot,
   addBlockedDate,
   removeBlockedDate,
-  type AvailabilitySlot,
-  type BlockedDate,
   type BookingForCalendar,
 } from "./actions";
 
@@ -104,9 +101,6 @@ function UpcomingCard({ booking }: { booking: BookingForCalendar }) {
 }
 
 export default function AvailabilityPage() {
-  const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
-  const [blocks, setBlocks] = useState<BlockedDate[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [weekOffset, setWeekOffset] = useState(0);
   const [activeTab, setActiveTab] = useState<"daily" | "calendar" | "manage">("daily");
 
@@ -120,41 +114,35 @@ export default function AvailabilityPage() {
   // Daily view state
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
   const [miniMonthCursor, setMiniMonthCursor] = useState<Date>(() => new Date());
-  const [dayBookings, setDayBookings] = useState<BookingForCalendar[]>([]);
-  const [upcomingBookings, setUpcomingBookings] = useState<BookingForCalendar[]>([]);
-  const [isLoadingDayBookings, setIsLoadingDayBookings] = useState(false);
+
+  const todayIso = formatDate(new Date());
+  const selectedIso = formatDate(selectedDate);
+
+  const { data: availability, isLoading, isError, refetch } = useQuery({
+    queryKey: ["practitioner-availability"],
+    queryFn: fetchAvailability,
+  });
+
+  const slots = useMemo(() => availability?.slots ?? [], [availability]);
+  const blocks = useMemo(() => availability?.blocks ?? [], [availability]);
 
   const weekDates = useMemo(() => getWeekDates(weekOffset), [weekOffset]);
   const blockedSet = useMemo(() => new Set(blocks.map((b) => b.blockedDate)), [blocks]);
   const monthGrid = useMemo(() => buildMonthGrid(miniMonthCursor), [miniMonthCursor]);
-  const todayIso = formatDate(new Date());
-  const selectedIso = formatDate(selectedDate);
-
-  useEffect(() => {
-    async function load() {
-      const data = await fetchAvailability();
-      setSlots(data.slots);
-      setBlocks(data.blocks);
-      setIsLoading(false);
-    }
-    load();
-  }, []);
 
   // Daily view: fetch bookings for the selected date when this tab is active.
-  useEffect(() => {
-    if (activeTab !== "daily") return;
-    setIsLoadingDayBookings(true);
-    fetchBookingsForRange(selectedIso, selectedIso).then((d) => {
-      setDayBookings(d);
-      setIsLoadingDayBookings(false);
-    });
-  }, [activeTab, selectedIso]);
+  const { data: dayBookings = [], isLoading: isLoadingDayBookings } = useQuery({
+    queryKey: ["availability-day-bookings", selectedIso],
+    queryFn: () => fetchBookingsForRange(selectedIso, selectedIso),
+    enabled: activeTab === "daily",
+  });
 
   // Daily view: fetch the 3 next upcoming bookings when the tab opens.
-  useEffect(() => {
-    if (activeTab !== "daily") return;
-    fetchUpcomingBookingsForPractitioner(3).then(setUpcomingBookings);
-  }, [activeTab]);
+  const { data: upcomingBookings = [] } = useQuery<BookingForCalendar[]>({
+    queryKey: ["availability-upcoming-bookings"],
+    queryFn: () => fetchUpcomingBookingsForPractitioner(3),
+    enabled: activeTab === "daily",
+  });
 
   const handleAddSlot = async () => {
     if (newStart >= newEnd) { toast.error("שעת סיום חייבת להיות אחרי שעת התחלה"); return; }
@@ -162,32 +150,39 @@ export default function AvailabilityPage() {
     const result = await saveAvailabilitySlot(newWeekday, newStart, newEnd);
     if (result.success) {
       toast.success("זמינות נוספה");
-      const data = await fetchAvailability();
-      setSlots(data.slots);
+      void refetch();
     } else { toast.error(result.error); }
     setIsSaving(false);
   };
 
   const handleDeleteSlot = async (slotId: string) => {
     const result = await deleteAvailabilitySlot(slotId);
-    if (result.success) { setSlots((p) => p.filter((s) => s.id !== slotId)); toast.success("זמינות הוסרה"); }
+    if (result.success) { toast.success("זמינות הוסרה"); void refetch(); }
     else toast.error(result.error);
   };
 
   const handleAddBlock = async () => {
     if (!blockDate) return;
     const result = await addBlockedDate(blockDate);
-    if (result.success) { toast.success("תאריך נחסם"); const data = await fetchAvailability(); setBlocks(data.blocks); setBlockDate(""); }
+    if (result.success) { toast.success("תאריך נחסם"); setBlockDate(""); void refetch(); }
     else toast.error(result.error);
   };
 
   const handleRemoveBlock = async (blockId: string) => {
     const result = await removeBlockedDate(blockId);
-    if (result.success) { setBlocks((p) => p.filter((b) => b.id !== blockId)); toast.success("חסימה הוסרה"); }
+    if (result.success) { toast.success("חסימה הוסרה"); void refetch(); }
     else toast.error(result.error);
   };
 
   if (isLoading) return <div className="flex min-h-[60vh] items-center justify-center"><Spinner /></div>;
+  if (isError || !availability) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
+        <p className="text-[15px] text-muted-foreground">שגיאה בטעינת היומן</p>
+        <Button onClick={() => void refetch()} variant="secondary" className="bg-[#f4f7f7]">נסה שוב</Button>
+      </div>
+    );
+  }
 
   const slotsByDay = DAY_NAMES.map((_, i) => slots.filter((s) => s.weekday === i));
 

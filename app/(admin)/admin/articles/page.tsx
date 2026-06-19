@@ -1,8 +1,7 @@
 "use client";
 
-/* eslint-disable react-hooks/set-state-in-effect */
-
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import { Search, Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -17,11 +16,13 @@ import { sanitizeArticleHtml, stripHtmlToText } from "@/lib/utils/html-sanitize"
 
 interface Article { id: string; title: string; content: string; authorName: string; status: string; backgroundImageUrl: string; categoryName: string; createdAt: string; }
 
+interface ArticlesData {
+  articles: Article[];
+  categories: { id: string; name: string }[];
+  practitioners: { id: string; name: string }[];
+}
+
 export default function AdminArticlesPage() {
-  const [articles, setArticles] = useState<Article[]>([]);
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
-  const [practitioners, setPractitioners] = useState<{ id: string; name: string }[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
 
@@ -32,65 +33,69 @@ export default function AdminArticlesPage() {
   const [newPractitionerId, setNewPractitionerId] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
-  const loadData = async () => {
-    const supabase = createClient();
-    const { data } = await supabase
-      .from("articles")
-      .select("id, title, content, status, background_image_url, category_id, created_at, users!articles_author_id_fkey(full_name)")
-      .order("created_at", { ascending: false });
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["admin-articles"],
+    queryFn: async (): Promise<ArticlesData> => {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("articles")
+        .select("id, title, content, status, background_image_url, category_id, created_at, users!articles_author_id_fkey(full_name)")
+        .order("created_at", { ascending: false });
 
-    const catIds = [...new Set((data ?? []).map((a: Record<string, unknown>) => a.category_id as string).filter(Boolean))];
-    let catMap: Record<string, string> = {};
-    if (catIds.length > 0) {
-      const { data: cats } = await supabase.from("categories").select("id, name").in("id", catIds);
-      catMap = (cats ?? []).reduce((acc: Record<string, string>, c: { id: string; name: string }) => { acc[c.id] = c.name; return acc; }, {});
-    }
+      const catIds = [...new Set((data ?? []).map((a: Record<string, unknown>) => a.category_id as string).filter(Boolean))];
+      let catMap: Record<string, string> = {};
+      if (catIds.length > 0) {
+        const { data: cats } = await supabase.from("categories").select("id, name").in("id", catIds);
+        catMap = (cats ?? []).reduce((acc: Record<string, string>, c: { id: string; name: string }) => { acc[c.id] = c.name; return acc; }, {});
+      }
 
-    setArticles((data ?? []).map((a: Record<string, unknown>) => {
-      const author = a.users as unknown as { full_name: string } | null;
-      return {
-        id: a.id as string, title: a.title as string, content: (a.content as string) ?? "",
-        authorName: author?.full_name ?? "", status: a.status as string,
-        backgroundImageUrl: (a.background_image_url as string) ?? "",
-        categoryName: catMap[a.category_id as string] ?? "",
-        createdAt: a.created_at as string,
-      };
-    }));
+      const articles: Article[] = (data ?? []).map((a: Record<string, unknown>) => {
+        const author = a.users as unknown as { full_name: string } | null;
+        return {
+          id: a.id as string, title: a.title as string, content: (a.content as string) ?? "",
+          authorName: author?.full_name ?? "", status: a.status as string,
+          backgroundImageUrl: (a.background_image_url as string) ?? "",
+          categoryName: catMap[a.category_id as string] ?? "",
+          createdAt: a.created_at as string,
+        };
+      });
 
-    // Load categories + practitioners for create modal
-    const { data: cats } = await supabase.from("categories").select("id, name").order("name");
-    setCategories(cats ?? []);
+      // Load categories + practitioners for create modal
+      const { data: cats } = await supabase.from("categories").select("id, name").order("name");
 
-    const { data: pracs } = await supabase
-      .from("practitioner_profiles")
-      .select("id, users!inner(full_name)")
-      .eq("verification_status", "approved");
-    setPractitioners((pracs ?? []).map((p: Record<string, unknown>) => {
-      const u = p.users as unknown as { full_name: string };
-      return { id: p.id as string, name: u.full_name };
-    }));
+      const { data: pracs } = await supabase
+        .from("practitioner_profiles")
+        .select("id, users!inner(full_name)")
+        .eq("verification_status", "approved");
+      const practitioners = (pracs ?? []).map((p: Record<string, unknown>) => {
+        const u = p.users as unknown as { full_name: string };
+        return { id: p.id as string, name: u.full_name };
+      });
 
-    setIsLoading(false);
-  };
+      return { articles, categories: cats ?? [], practitioners };
+    },
+  });
 
-  useEffect(() => { void loadData(); }, []);
+  const articles = data?.articles ?? [];
+  const categories = data?.categories ?? [];
+  const practitioners = data?.practitioners ?? [];
 
   const handleApprove = async (id: string) => {
     const supabase = createClient();
     await supabase.from("articles").update({ status: "approved", updated_at: new Date().toISOString() }).eq("id", id);
-    toast.success("המאמר אושר"); loadData();
+    toast.success("המאמר אושר"); void refetch();
   };
 
   const handleReject = async (id: string) => {
     const supabase = createClient();
     await supabase.from("articles").update({ status: "rejected", updated_at: new Date().toISOString() }).eq("id", id);
-    toast.success("המאמר נדחה"); loadData();
+    toast.success("המאמר נדחה"); void refetch();
   };
 
   const handleDelete = async (id: string) => {
     const supabase = createClient();
     await supabase.from("articles").delete().eq("id", id);
-    toast.success("המאמר נמחק"); loadData();
+    toast.success("המאמר נמחק"); void refetch();
   };
 
   const handleCreate = async () => {
@@ -109,13 +114,20 @@ export default function AdminArticlesPage() {
       author_id: user?.id,
       status: "approved",
     });
-    toast.success("המאמר נוצר"); setShowCreate(false); setNewTitle(""); setNewContent(""); loadData();
+    toast.success("המאמר נוצר"); setShowCreate(false); setNewTitle(""); setNewContent(""); void refetch();
     setIsCreating(false);
   };
 
   const filtered = articles.filter((a) => !search || a.title.includes(search) || a.authorName.includes(search));
 
   if (isLoading) return <div className="flex min-h-[60vh] items-center justify-center"><Spinner /></div>;
+  if (isError)
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
+        <p className="text-[15px] text-muted-foreground">שגיאה בטעינת המאמרים</p>
+        <Button onClick={() => void refetch()} variant="secondary" className="bg-[#f4f7f7]">נסה שוב</Button>
+      </div>
+    );
 
   return (
     <div>

@@ -1,8 +1,7 @@
 "use client";
 
-/* eslint-disable react-hooks/set-state-in-effect */
-
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowRight, Plus, Ban, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -38,11 +37,6 @@ export default function AdminPatientDetailPage() {
   const router = useRouter();
   const id = params.id as string;
 
-  const [patient, setPatient] = useState<PatientDetail | null>(null);
-  const [bookings, setBookings] = useState<PatientBooking[]>([]);
-  const [creditBalance, setCreditBalance] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-
   // Modals + busy state for admin actions
   const [showCreditModal, setShowCreditModal] = useState(false);
   const [creditAmount, setCreditAmount] = useState("");
@@ -50,20 +44,21 @@ export default function AdminPatientDetailPage() {
   const [showBlockConfirm, setShowBlockConfirm] = useState(false);
   const [isTogglingBlock, setIsTogglingBlock] = useState(false);
 
-  useEffect(() => {
-    async function load() {
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["admin-patient-detail", id],
+    queryFn: async (): Promise<{ patient: PatientDetail; bookings: PatientBooking[]; creditBalance: number } | null> => {
       const supabase = createClient();
 
       const { data: user } = await supabase.from("users").select("id, full_name, email, created_at, is_blocked").eq("id", id).single();
-      if (!user) { setIsLoading(false); return; }
+      if (!user) return null;
 
-      setPatient({
+      const patient: PatientDetail = {
         id: user.id,
         name: user.full_name,
         email: user.email,
         createdAt: user.created_at,
         isBlocked: user.is_blocked ?? false,
-      });
+      };
 
       // Fetch bookings
       const { data: bks } = await supabase
@@ -79,7 +74,7 @@ export default function AdminPatientDetailPage() {
         domainMap = (doms ?? []).reduce((a: Record<string, string>, d: { id: string; name: string }) => { a[d.id] = d.name; return a; }, {});
       }
 
-      setBookings((bks ?? []).map((b: Record<string, unknown>) => {
+      const bookings: PatientBooking[] = (bks ?? []).map((b: Record<string, unknown>) => {
         const profile = b.practitioner_profiles as unknown as { users: { full_name: string } };
         return {
           id: b.id as string,
@@ -89,17 +84,19 @@ export default function AdminPatientDetailPage() {
           status: b.status as string,
           price: Number(b.price_at_booking || 0),
         };
-      }));
+      });
 
       // Fetch credits
       const { data: credits } = await supabase.from("credits").select("amount").eq("patient_id", id).eq("status", "active");
-      const total = (credits ?? []).reduce((sum: number, c: { amount: string }) => sum + Number(c.amount || 0), 0);
-      setCreditBalance(total);
+      const creditBalance = (credits ?? []).reduce((sum: number, c: { amount: string }) => sum + Number(c.amount || 0), 0);
 
-      setIsLoading(false);
-    }
-    load();
-  }, [id]);
+      return { patient, bookings, creditBalance };
+    },
+  });
+
+  const patient = data?.patient ?? null;
+  const bookings = data?.bookings ?? [];
+  const creditBalance = data?.creditBalance ?? 0;
 
   const handleAddCredit = async () => {
     if (!patient) return;
@@ -113,9 +110,9 @@ export default function AdminPatientDetailPage() {
     setIsAddingCredit(false);
     if (result.success) {
       toast.success(`נוסף זיכוי של ₪${amount}`);
-      setCreditBalance((c) => c + amount);
       setCreditAmount("");
       setShowCreditModal(false);
+      void refetch();
     } else {
       toast.error(result.error ?? "שגיאה");
     }
@@ -128,14 +125,21 @@ export default function AdminPatientDetailPage() {
     setIsTogglingBlock(false);
     if (result.success) {
       toast.success(patient.isBlocked ? "המטופל שוחרר" : "המטופל נחסם");
-      setPatient({ ...patient, isBlocked: !patient.isBlocked });
       setShowBlockConfirm(false);
+      void refetch();
     } else {
       toast.error(result.error ?? "שגיאה");
     }
   };
 
   if (isLoading) return <div className="flex min-h-[60vh] items-center justify-center"><Spinner /></div>;
+  if (isError)
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
+        <p className="text-[15px] text-muted-foreground">שגיאה בטעינת המטופל</p>
+        <Button onClick={() => void refetch()} variant="secondary" className="bg-[#f4f7f7]">נסה שוב</Button>
+      </div>
+    );
   if (!patient) return <div className="flex min-h-[60vh] items-center justify-center text-muted-foreground">מטופל לא נמצא</div>;
 
   return (

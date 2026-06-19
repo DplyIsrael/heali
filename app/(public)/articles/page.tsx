@@ -1,45 +1,51 @@
 "use client";
 
-/* eslint-disable react-hooks/set-state-in-effect */
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import Link from "next/link";
 import { Search, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { EmptyState } from "@/components/shared/empty-state";
 import { stripHtmlToText } from "@/lib/utils/html-sanitize";
 import { fetchPublicArticles, fetchArticleCategories, type PublicArticle } from "./actions";
 
 export default function ArticlesPage() {
-  const [articles, setArticles] = useState<PublicArticle[]>([]);
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState("");
-  const [total, setTotal] = useState(0);
+  const [submittedSearch, setSubmittedSearch] = useState("");
 
-  const loadArticles = async (s?: string, cat?: string) => {
-    setIsLoading(true);
-    const result = await fetchPublicArticles({
-      search: s || undefined,
-      categoryId: cat || undefined,
-    });
-    setArticles(result.articles);
-    setTotal(result.total);
-    setIsLoading(false);
-  };
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["public-articles", submittedSearch, categoryId],
+    queryFn: async () => {
+      const [result, cats] = await Promise.all([
+        fetchPublicArticles({
+          search: submittedSearch || undefined,
+          categoryId: categoryId || undefined,
+        }),
+        fetchArticleCategories(),
+      ]);
+      return { articles: result.articles, total: result.total, categories: cats };
+    },
+  });
 
-  useEffect(() => {
-    void Promise.all([loadArticles(), fetchArticleCategories().then(setCategories)]);
-  }, []);
+  const articles = data?.articles ?? [];
+  const categories = data?.categories ?? [];
+  const total = data?.total ?? 0;
 
-  const handleSearch = () => loadArticles(search, categoryId);
-  const handleCategoryChange = (id: string) => {
-    setCategoryId(id);
-    loadArticles(search, id);
-  };
+  const handleSearch = () => setSubmittedSearch(search);
+  const handleCategoryChange = (id: string) => setCategoryId(id);
+
+  if (isError) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
+        <p className="text-[15px] text-muted-foreground">שגיאה בטעינת המאמרים</p>
+        <Button onClick={() => void refetch()} variant="secondary" className="bg-[#f4f7f7]">נסה שוב</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
