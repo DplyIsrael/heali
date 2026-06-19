@@ -3,7 +3,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 
 import { useEffect, useRef, useState } from "react";
-import { Search, Send } from "lucide-react";
+import { Search, Send, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
@@ -161,8 +161,13 @@ export function MessagingShell({
         <h1 className="text-[28px] md:text-[36px] font-bold text-black mb-6">{title}</h1>
 
         <div className="flex h-[600px] rounded-[12px] border border-border bg-white overflow-hidden">
-          {/* Conversations list — right side in RTL */}
-          <div className="w-full md:w-[350px] border-l border-border flex flex-col shrink-0">
+          {/* Conversations list — right side in RTL. On mobile it takes the
+              full panel and hides once a conversation is opened. */}
+          <div
+            className={`w-full md:w-[350px] border-l border-border flex-col shrink-0 ${
+              selectedId ? "hidden md:flex" : "flex"
+            }`}
+          >
             <div className="p-3 border-b border-border">
               <div className="relative">
                 <Search className="absolute top-1/2 right-3 -translate-y-1/2 size-4 text-muted-foreground" />
@@ -230,10 +235,23 @@ export function MessagingShell({
             </div>
           </div>
 
-          {/* Thread — left side in RTL */}
-          <div className="hidden md:flex flex-1 flex-col">
+          {/* Thread — left side in RTL. On mobile it's full-screen when a
+              conversation is open, otherwise hidden behind the list. */}
+          <div className={`${selectedId ? "flex" : "hidden"} md:flex flex-1 flex-col`}>
             {selectedId ? (
               <>
+                {/* Mobile-only back-to-list header */}
+                <div className="flex items-center p-3 border-b border-border md:hidden">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedId(null)}
+                    aria-label="חזרה לרשימת השיחות"
+                    className="flex items-center gap-1 text-[14px] font-medium text-primary"
+                  >
+                    <ChevronRight className="size-5" />
+                    חזרה
+                  </button>
+                </div>
                 <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-2">
                   {isLoadingMsgs ? (
                     <div className="flex justify-center pt-8"><Spinner /></div>
