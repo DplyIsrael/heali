@@ -150,6 +150,25 @@ export async function searchPractitioners(
     }, {});
   }
 
+  // Real "available today" signal: the practitioner has at least one availability
+  // slot for today's weekday and today isn't blocked.
+  const practIds = (data ?? []).map((p: Record<string, unknown>) => p.id as string);
+  let availableSet = new Set<string>();
+  if (practIds.length > 0) {
+    const todayWeekday = new Date().getDay(); // 0=Sunday … 6=Saturday
+    const todayStr = new Date().toISOString().split("T")[0];
+    const [availRes, blockRes] = await Promise.all([
+      supabase.from("practitioner_availability").select("practitioner_id").in("practitioner_id", practIds).eq("weekday", todayWeekday),
+      supabase.from("availability_blocks").select("practitioner_id").in("practitioner_id", practIds).eq("blocked_date", todayStr),
+    ]);
+    const blocked = new Set((blockRes.data ?? []).map((b: { practitioner_id: string }) => b.practitioner_id));
+    availableSet = new Set(
+      (availRes.data ?? [])
+        .map((a: { practitioner_id: string }) => a.practitioner_id)
+        .filter((id: string) => !blocked.has(id))
+    );
+  }
+
   const practitioners: PractitionerListItem[] = (data ?? []).map((p: Record<string, unknown>) => {
     const domainIds = (p.domain_ids as string[]) || [];
 
@@ -163,7 +182,7 @@ export async function searchPractitioners(
       city: (p.city as string) ?? "",
       rating: `${Number(p.average_rating || 0).toFixed(1)}/5`,
       reviews: (p.total_reviews as number) ?? 0,
-      available: true, // TODO: compute from availability schedule
+      available: availableSet.has(p.id as string),
       bio: (p.bio as string) ?? "",
       image: (p.profile_photo_url as string) ?? "/images/practitioners/practitioner-1.jpg",
       languages: (p.languages as string[]) ?? [],
