@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -22,8 +23,11 @@ export async function GET(request: Request) {
           .single();
 
         if (!profile) {
-          // New OAuth user — create patient by default
-          await supabase.from("users").insert({
+          // New OAuth user — create patient by default. Insert via the
+          // service-role client: the public users INSERT policy is intentionally
+          // omitted so a user can't self-assign role at signup.
+          const admin = createAdminClient();
+          await admin.from("users").insert({
             id: user.id,
             email: user.email!,
             full_name:
