@@ -1,8 +1,7 @@
 "use client";
 
-/* eslint-disable react-hooks/set-state-in-effect */
-
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Upload } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -21,8 +20,6 @@ interface PatientProfile {
 }
 
 export default function PatientProfilePage() {
-  const [profile, setProfile] = useState<PatientProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState("");
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
@@ -32,30 +29,24 @@ export default function PatientProfilePage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isChangingPw, setIsChangingPw] = useState(false);
 
-  useEffect(() => {
-    async function load() {
+  const { data: profile, isLoading, isError, refetch } = useQuery({
+    queryKey: ["patient-profile"],
+    queryFn: async (): Promise<PatientProfile | null> => {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setIsLoading(false); return; }
-
+      if (!user) return null;
       const { data: userData } = await supabase.from("users").select("full_name, email").eq("id", user.id).single();
-
-      // Try to get patient profile
       const { data: patientProfile } = await supabase.from("patient_profiles").select("*").eq("user_id", user.id).single();
-
-      setProfile({
+      return {
         name: userData?.full_name ?? "",
         email: userData?.email ?? "",
         phone: patientProfile?.phone ?? "",
         city: patientProfile?.city ?? "",
         dateOfBirth: patientProfile?.date_of_birth ?? "",
         profilePhotoUrl: patientProfile?.profile_photo_url ?? "",
-      });
-      setAvatarUrl(patientProfile?.profile_photo_url ?? "");
-      setIsLoading(false);
-    }
-    load();
-  }, []);
+      };
+    },
+  });
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -90,6 +81,13 @@ export default function PatientProfilePage() {
   };
 
   if (isLoading) return <div className="flex min-h-[60vh] items-center justify-center"><Spinner /></div>;
+  if (isError)
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
+        <p className="text-[15px] text-muted-foreground">שגיאה בטעינת הפרופיל</p>
+        <Button onClick={() => void refetch()} variant="secondary" className="bg-[#f4f7f7]">נסה שוב</Button>
+      </div>
+    );
   if (!profile) return <div className="flex min-h-[60vh] items-center justify-center text-muted-foreground">פרופיל לא נמצא</div>;
 
   return (
@@ -103,9 +101,9 @@ export default function PatientProfilePage() {
             <div className="rounded-[12px] border border-border bg-white p-6 flex flex-col items-center">
               {/* Avatar upload */}
               <label className="relative size-[144px] rounded-[8px] bg-[#f4f7f7] border border-[rgba(177,181,185,0.25)] flex items-center justify-center cursor-pointer group mb-4 overflow-hidden">
-                {avatarUrl ? (
+                {avatarUrl || profile.profilePhotoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+                  <img src={avatarUrl || profile.profilePhotoUrl} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <Upload className="size-8 text-muted-foreground" />
                 )}

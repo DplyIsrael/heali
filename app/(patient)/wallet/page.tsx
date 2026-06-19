@@ -1,8 +1,7 @@
 "use client";
 
-/* eslint-disable react-hooks/set-state-in-effect */
-
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { Wallet, ArrowLeft, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,6 @@ import {
   fetchWalletData,
   requestRefund,
   type WalletCredit,
-  type WalletData,
 } from "./actions";
 
 function formatHebrewDate(iso: string) {
@@ -130,19 +128,11 @@ function RefundRequestModal({
 }
 
 export default function WalletPage() {
-  const [data, setData] = useState<WalletData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [refundCredit, setRefundCredit] = useState<WalletCredit | null>(null);
-
-  const loadData = async () => {
-    const d = await fetchWalletData();
-    setData(d);
-    setIsLoading(false);
-  };
-
-  useEffect(() => {
-    void loadData();
-  }, []);
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["wallet"],
+    queryFn: fetchWalletData,
+  });
 
   if (isLoading) {
     return (
@@ -151,7 +141,16 @@ export default function WalletPage() {
       </div>
     );
   }
-  if (!data) return null;
+  if (isError || !data) {
+    return (
+      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
+        <p className="text-[15px] text-muted-foreground">שגיאה בטעינת הארנק</p>
+        <Button onClick={() => void refetch()} variant="secondary" className="bg-[#f4f7f7]">
+          נסה שוב
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-[800px] px-4 md:px-[50px] py-6 md:py-10">
@@ -245,7 +244,7 @@ export default function WalletPage() {
           onClose={() => setRefundCredit(null)}
           onSubmitted={() => {
             setRefundCredit(null);
-            void loadData();
+            void refetch();
           }}
         />
       )}
