@@ -1,5 +1,21 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { GATE_COOKIE, gateEnabled, verifyGateCookie } from "@/lib/gate";
+
+// ── Site-wide access gate ──────────────────────────────────────────────────
+// Paths that must stay reachable even while the whole app is locked:
+//   /gate, /api/gate         → the password screen and its verify endpoint
+//   /api/cardcom/webhook     → CardCom server-to-server callback (no cookie ever)
+//   /api/inngest             → Inngest server-to-server callback (no cookie ever)
+// Each of those machine callbacks enforces its own signature/secret auth.
+const GATE_BYPASS_PREFIXES = [
+  "/gate",
+  "/api/gate",
+  "/api/cardcom/webhook",
+  "/api/inngest",
+];
+const isGateBypass = (pathname: string) =>
+  GATE_BYPASS_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
 // Every protected route prefix mapped to the roles allowed to access it.
 // `admin` is allowed everywhere. Keep this in sync with the route groups.
@@ -36,6 +52,28 @@ const supabaseConfigured =
   !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  // ── Site-wide access gate (runs before everything) ───────────────────────
+  // When SITE_GATE_PASSWORD is set, no request proceeds without a valid gate
+  // cookie: no page renders, no Supabase session/profile lookup runs, and no
+  // API route executes. This is the outermost protection layer.
+  if (gateEnabled() && !isGateBypass(pathname)) {
+    const unlocked = await verifyGateCookie(request.cookies.get(GATE_COOKIE)?.value);
+    if (!unlocked) {
+      // API/data requests get a JSON 401 instead of an HTML redirect.
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json({ error: "site_locked" }, { status: 401 });
+      }
+      const url = request.nextUrl.clone();
+      url.pathname = "/gate";
+      // Remember the intended destination so we can return there after unlock.
+      const dest = pathname + request.nextUrl.search;
+      url.search = dest && dest !== "/" ? `?next=${encodeURIComponent(dest)}` : "";
+      return NextResponse.redirect(url);
+    }
+  }
+
   // Skip all auth logic until Supabase is configured
   if (!supabaseConfigured) {
     return NextResponse.next({ request });
@@ -69,7 +107,6 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const pathname = request.nextUrl.pathname;
   const matchedPrefix = matchRoleRoute(pathname);
   const isAuthOnly = AUTH_ONLY_PREFIXES.some((p) => prefixMatches(pathname, p));
   const isProtected = !!matchedPrefix || isAuthOnly;
