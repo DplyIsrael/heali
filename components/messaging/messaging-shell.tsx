@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { Search, Send } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { toast } from "sonner";
 import { EmptyState } from "@/components/shared/empty-state";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -148,6 +149,9 @@ export function MessagingShell({
       // Append optimistically — Realtime will also fire but de-dup by id.
       setMessages((prev) => (prev.find((m) => m.id === result.data!.id) ? prev : [...prev, result.data!]));
       setDraft("");
+    } else {
+      // Keep the draft so the user doesn't lose their text, and surface the error.
+      toast.error(result.error ?? "שליחת ההודעה נכשלה, נסה שוב");
     }
   };
 
