@@ -88,7 +88,7 @@ export default function PractitionerDashboardPage() {
               <kpi.icon className="size-5" />
             </div>
             <div>
-              <p className="text-[13px] text-muted">{kpi.label}</p>
+              <p className="text-[13px] text-muted-foreground">{kpi.label}</p>
               <p className="text-[22px] font-bold text-black">{kpi.value}</p>
             </div>
           </div>
@@ -111,7 +111,7 @@ export default function PractitionerDashboardPage() {
                   <option key={d} value={d}>{d}</option>
                 ))}
               </select>
-              <ChevronDown className="absolute top-1/2 left-2 -translate-y-1/2 size-3.5 text-muted pointer-events-none" />
+              <ChevronDown className="absolute top-1/2 left-2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
             </div>
             <div className="relative">
               <select
@@ -126,18 +126,18 @@ export default function PractitionerDashboardPage() {
                 <option value="completed">הושלם</option>
                 <option value="canceled">בוטל</option>
               </select>
-              <ChevronDown className="absolute top-1/2 left-2 -translate-y-1/2 size-3.5 text-muted pointer-events-none" />
+              <ChevronDown className="absolute top-1/2 left-2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
             </div>
           </div>
         </div>
 
         {filteredBookings.length === 0 ? (
-          <p className="text-[16px] text-muted py-6 text-center">אין טיפולים עדיין</p>
+          <p className="text-[16px] text-muted-foreground py-6 text-center">אין טיפולים עדיין</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-[14px]">
               <thead>
-                <tr className="border-b border-border text-[13px] text-muted">
+                <tr className="border-b border-border text-[13px] text-muted-foreground">
                   <th className="text-right py-3 pe-4 font-medium">שם המטופל</th>
                   <th className="text-right py-3 pe-4 font-medium">סוג טיפול</th>
                   <th className="text-right py-3 pe-4 font-medium">תאריך טיפול</th>
@@ -153,7 +153,7 @@ export default function PractitionerDashboardPage() {
                     <tr key={b.id} className="border-b border-border/50 last:border-0">
                       <td className="py-3 pe-4">
                         <div className="flex items-center gap-2">
-                          <div className="size-[32px] rounded-full bg-muted/20 flex items-center justify-center text-[12px] font-medium text-muted shrink-0">
+                          <div className="size-[32px] rounded-full bg-muted/20 flex items-center justify-center text-[12px] font-medium text-muted-foreground shrink-0">
                             {b.patientName[0]}
                           </div>
                           <span className="text-black">{b.patientName}</span>
@@ -174,7 +174,7 @@ export default function PractitionerDashboardPage() {
                             ]}
                           />
                         ) : (
-                          <MoreVertical className="size-4 text-muted opacity-30" />
+                          <MoreVertical className="size-4 text-muted-foreground opacity-30" />
                         )}
                       </td>
                     </tr>

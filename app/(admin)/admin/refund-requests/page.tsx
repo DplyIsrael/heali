@@ -77,7 +77,7 @@ export default function AdminRefundRequestsPage() {
       <h1 className="text-[28px] md:text-[36px] font-bold text-black mb-2">
         בקשות החזר
       </h1>
-      <p className="text-[16px] text-muted mb-6">
+      <p className="text-[16px] text-muted-foreground mb-6">
         בקשות מטופלים להמיר זיכוי בארנק להחזר כספי. אישור מסמן את הזיכוי כהוחזר ופותח את הצורך בהעברה בנקאית ידנית.
       </p>
 
@@ -103,7 +103,7 @@ export default function AdminRefundRequestsPage() {
           <Spinner />
         </div>
       ) : requests.length === 0 ? (
-        <div className="rounded-[16px] border border-border bg-white py-16 text-center text-[15px] text-muted">
+        <div className="rounded-[16px] border border-border bg-white py-16 text-center text-[15px] text-muted-foreground">
           {statusFilter === "pending"
             ? "אין בקשות החזר ממתינות"
             : statusFilter === "approved"
@@ -141,7 +141,7 @@ export default function AdminRefundRequestsPage() {
                   </p>
                 </div>
               ) : (
-                <p className="mb-3 text-[14px] text-muted italic">ללא סיבה כתובה</p>
+                <p className="mb-3 text-[14px] text-muted-foreground italic">ללא סיבה כתובה</p>
               )}
 
               {statusFilter === "pending" ? (
@@ -153,7 +153,7 @@ export default function AdminRefundRequestsPage() {
                     }
                     placeholder="הערות למטופל (אופציונלי) — למשל מספר אסמכתא להעברה הבנקאית"
                     rows={2}
-                    className="w-full rounded-[8px] border border-border-input bg-white p-2.5 text-[14px] text-foreground placeholder:text-muted mb-3 resize-none"
+                    className="w-full rounded-[8px] border border-border-input bg-white p-2.5 text-[14px] text-foreground placeholder:text-muted-foreground mb-3 resize-none"
                   />
                   <div className="flex gap-2">
                     <Button

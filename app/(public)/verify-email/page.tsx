@@ -107,7 +107,7 @@ function VerifyInner() {
             onChange={(e) => handleChange(e.target.value)}
             disabled={isSubmitting}
             placeholder="——————"
-            className="w-full h-[64px] rounded-[10px] border-2 border-border-input bg-white text-center text-[28px] font-semibold tracking-[0.5em] text-foreground focus:border-primary focus:outline-none disabled:opacity-50 placeholder:text-muted/40 placeholder:tracking-normal"
+            className="w-full h-[64px] rounded-[10px] border-2 border-border-input bg-white text-center text-[28px] font-semibold tracking-[0.5em] text-foreground focus:border-primary focus:outline-none disabled:opacity-50 placeholder:text-muted-foreground/40 placeholder:tracking-normal"
           />
         </div>
 

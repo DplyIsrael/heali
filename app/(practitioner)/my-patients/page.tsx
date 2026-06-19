@@ -52,7 +52,7 @@ export default function MyPatientsPage() {
       {/* Search */}
       <div className="flex items-center gap-3 mb-6">
         <div className="relative flex-1 max-w-[400px]">
-          <Search className="absolute top-1/2 right-3 -translate-y-1/2 size-[18px] text-muted" />
+          <Search className="absolute top-1/2 right-3 -translate-y-1/2 size-[18px] text-muted-foreground" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -68,7 +68,7 @@ export default function MyPatientsPage() {
         <div className="rounded-[12px] border border-border bg-white overflow-x-auto">
           <table className="w-full text-[14px]">
             <thead>
-              <tr className="border-b border-border text-[13px] text-muted">
+              <tr className="border-b border-border text-[13px] text-muted-foreground">
                 <th className="text-right py-3 px-4 font-medium">שם המטופל</th>
                 <th className="text-right py-3 px-4 font-medium">סוג טיפול</th>
                 <th className="text-right py-3 px-4 font-medium">תאריך טיפול</th>
@@ -84,7 +84,7 @@ export default function MyPatientsPage() {
                   <tr key={b.id} className="border-b border-border/50 last:border-0">
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
-                        <div className="size-[32px] rounded-full bg-muted/20 flex items-center justify-center text-[12px] font-medium text-muted shrink-0">
+                        <div className="size-[32px] rounded-full bg-muted/20 flex items-center justify-center text-[12px] font-medium text-muted-foreground shrink-0">
                           {b.patientName[0]}
                         </div>
                         <span className="text-black">{b.patientName}</span>
@@ -105,7 +105,7 @@ export default function MyPatientsPage() {
                           ]}
                         />
                       ) : (
-                        <MoreVertical className="size-4 text-muted opacity-30" />
+                        <MoreVertical className="size-4 text-muted-foreground opacity-30" />
                       )}
                     </td>
                   </tr>

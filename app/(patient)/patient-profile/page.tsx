@@ -90,7 +90,7 @@ export default function PatientProfilePage() {
   };
 
   if (isLoading) return <div className="flex min-h-[60vh] items-center justify-center"><Spinner /></div>;
-  if (!profile) return <div className="flex min-h-[60vh] items-center justify-center text-muted">פרופיל לא נמצא</div>;
+  if (!profile) return <div className="flex min-h-[60vh] items-center justify-center text-muted-foreground">פרופיל לא נמצא</div>;
 
   return (
     <div className="min-h-screen bg-background">
@@ -107,7 +107,7 @@ export default function PatientProfilePage() {
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
                 ) : (
-                  <Upload className="size-8 text-muted" />
+                  <Upload className="size-8 text-muted-foreground" />
                 )}
                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                   {isUploadingAvatar ? <Spinner size="sm" className="border-white/30 border-t-white" /> : <Upload className="size-6 text-white" />}

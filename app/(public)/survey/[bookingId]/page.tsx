@@ -61,7 +61,7 @@ export default function SurveyPage() {
       <div className="flex min-h-screen items-center justify-center px-4">
         <div className="text-center">
           <h1 className="text-[24px] font-bold text-black mb-2">סקר לא זמין</h1>
-          <p className="text-[16px] text-muted">הסקר אינו זמין — ייתכן שכבר דירגת טיפול זה או שהקישור אינו תקין.</p>
+          <p className="text-[16px] text-muted-foreground">הסקר אינו זמין — ייתכן שכבר דירגת טיפול זה או שהקישור אינו תקין.</p>
         </div>
       </div>
     );
@@ -77,7 +77,7 @@ export default function SurveyPage() {
             </div>
           </div>
           <h1 className="text-[24px] font-bold text-black mb-3">תודה על הדירוג!</h1>
-          <p className="text-[16px] text-muted">המשוב שלך עוזר לנו ולמטפלים להשתפר.</p>
+          <p className="text-[16px] text-muted-foreground">המשוב שלך עוזר לנו ולמטפלים להשתפר.</p>
         </div>
       </div>
     );
@@ -89,7 +89,7 @@ export default function SurveyPage() {
         <h1 className="text-[22px] md:text-[26px] font-semibold text-black mb-2">
           איך הייתה החוויה שלך עם {bookingInfo?.practitionerName}?
         </h1>
-        <p className="text-[16px] text-muted mb-6">
+        <p className="text-[16px] text-muted-foreground mb-6">
           {bookingInfo?.domain} · {bookingInfo?.scheduledDate}
         </p>
 

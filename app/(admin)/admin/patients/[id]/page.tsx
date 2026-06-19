@@ -136,11 +136,11 @@ export default function AdminPatientDetailPage() {
   };
 
   if (isLoading) return <div className="flex min-h-[60vh] items-center justify-center"><Spinner /></div>;
-  if (!patient) return <div className="flex min-h-[60vh] items-center justify-center text-muted">מטופל לא נמצא</div>;
+  if (!patient) return <div className="flex min-h-[60vh] items-center justify-center text-muted-foreground">מטופל לא נמצא</div>;
 
   return (
     <div>
-      <button onClick={() => router.push("/admin/patients")} className="flex items-center gap-2 text-muted hover:text-black mb-6">
+      <button onClick={() => router.push("/admin/patients")} className="flex items-center gap-2 text-muted-foreground hover:text-black mb-6">
         <ArrowRight className="size-4" /> חזרה לרשימת מטופלים
       </button>
 
@@ -170,11 +170,11 @@ export default function AdminPatientDetailPage() {
           <div className="rounded-[12px] border border-border bg-white p-6">
             <h2 className="text-[20px] font-semibold text-black mb-4">היסטוריית טיפולים</h2>
             {bookings.length === 0 ? (
-              <p className="text-muted text-[14px]">אין טיפולים</p>
+              <p className="text-muted-foreground text-[14px]">אין טיפולים</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-[14px]">
-                  <thead><tr className="border-b border-border text-[13px] text-muted">
+                  <thead><tr className="border-b border-border text-[13px] text-muted-foreground">
                     <th className="text-right py-3 px-4 font-medium">מטפל</th>
                     <th className="text-right py-3 px-4 font-medium">סוג טיפול</th>
                     <th className="text-right py-3 px-4 font-medium">תאריך</th>
@@ -185,7 +185,7 @@ export default function AdminPatientDetailPage() {
                     {bookings.map((b) => (
                       <tr key={b.id} className="border-b border-border/50 last:border-0">
                         <td className="py-3 px-4 text-black">{b.practitionerName}</td>
-                        <td className="py-3 px-4 text-muted">{b.domain}</td>
+                        <td className="py-3 px-4 text-muted-foreground">{b.domain}</td>
                         <td className="py-3 px-4 text-black">{b.scheduledDate}</td>
                         <td className="py-3 px-4"><StatusBadge status={b.status as "requested" | "confirmed" | "completed" | "canceled" | "declined"} /></td>
                         <td className="py-3 px-4 text-black">₪{b.price}</td>
@@ -203,7 +203,7 @@ export default function AdminPatientDetailPage() {
           <div className="rounded-[12px] border border-border bg-white p-6">
             <h2 className="text-[18px] font-semibold text-black mb-4">יתרת זכות</h2>
             <p className="text-[36px] font-bold text-primary">₪{creditBalance}</p>
-            <p className="text-[14px] text-muted mt-1">יתרה פעילה בארנק</p>
+            <p className="text-[14px] text-muted-foreground mt-1">יתרה פעילה בארנק</p>
             <Button
               type="button"
               onClick={() => setShowCreditModal(true)}
@@ -217,16 +217,16 @@ export default function AdminPatientDetailPage() {
           <div className="rounded-[12px] border border-border bg-white p-6 mt-4">
             <h2 className="text-[18px] font-semibold text-black mb-2">סטטיסטיקה</h2>
             <div className="flex flex-col gap-2 text-[14px]">
-              <div className="flex justify-between"><span className="text-muted">סה״כ טיפולים</span><span className="text-black font-medium">{bookings.length}</span></div>
-              <div className="flex justify-between"><span className="text-muted">הושלמו</span><span className="text-black font-medium">{bookings.filter((b) => b.status === "completed").length}</span></div>
-              <div className="flex justify-between"><span className="text-muted">בוטלו</span><span className="text-black font-medium">{bookings.filter((b) => b.status === "canceled").length}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">סה״כ טיפולים</span><span className="text-black font-medium">{bookings.length}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">הושלמו</span><span className="text-black font-medium">{bookings.filter((b) => b.status === "completed").length}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">בוטלו</span><span className="text-black font-medium">{bookings.filter((b) => b.status === "canceled").length}</span></div>
             </div>
           </div>
 
           {/* Block / unblock action */}
           <div className="rounded-[12px] border border-border bg-white p-6 mt-4">
             <h2 className="text-[18px] font-semibold text-black mb-2">סטטוס חשבון</h2>
-            <p className="text-[13px] text-muted mb-3">
+            <p className="text-[13px] text-muted-foreground mb-3">
               {patient.isBlocked
                 ? "המטופל חסום וחסום מהזמנת טיפולים."
                 : "המטופל פעיל ויכול להזמין טיפולים."}

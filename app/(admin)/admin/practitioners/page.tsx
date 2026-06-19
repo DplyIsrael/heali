@@ -79,7 +79,7 @@ export default function AdminPractitionersPage() {
 
       {/* Search */}
       <div className="relative max-w-[400px] mb-6">
-        <Search className="absolute top-1/2 right-3 -translate-y-1/2 size-[18px] text-muted" />
+        <Search className="absolute top-1/2 right-3 -translate-y-1/2 size-[18px] text-muted-foreground" />
         <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="חיפוש..." className="pe-10 h-[50px]" />
       </div>
 
@@ -89,7 +89,7 @@ export default function AdminPractitionersPage() {
         <div className="rounded-[12px] border border-border bg-white overflow-x-auto">
           <table className="w-full text-[14px]">
             <thead>
-              <tr className="border-b border-border text-[13px] text-muted">
+              <tr className="border-b border-border text-[13px] text-muted-foreground">
                 <th className="text-right py-3 px-4 font-medium">שם</th>
                 <th className="text-right py-3 px-4 font-medium">אימייל</th>
                 <th className="text-right py-3 px-4 font-medium">תחומים</th>
@@ -106,13 +106,13 @@ export default function AdminPractitionersPage() {
                 return (
                   <tr key={p.id} className="border-b border-border/50 last:border-0 cursor-pointer hover:bg-muted/5" onClick={() => window.location.href = `/admin/practitioners/${p.id}`}>
                     <td className="py-3 px-4 text-black font-medium text-primary underline">{p.name}</td>
-                    <td className="py-3 px-4 text-muted">{p.email}</td>
-                    <td className="py-3 px-4 text-muted">{p.domainNames.join(", ") || "—"}</td>
+                    <td className="py-3 px-4 text-muted-foreground">{p.email}</td>
+                    <td className="py-3 px-4 text-muted-foreground">{p.domainNames.join(", ") || "—"}</td>
                     <td className="py-3 px-4 text-black">{p.city || "—"}</td>
                     <td className="py-3 px-4">
                       <StatusBadge status={p.status as "draft" | "submitted" | "approved" | "rejected"} />
                     </td>
-                    <td className="py-3 px-4 text-muted">{new Date(p.createdAt).toLocaleDateString("he-IL")}</td>
+                    <td className="py-3 px-4 text-muted-foreground">{new Date(p.createdAt).toLocaleDateString("he-IL")}</td>
                     <td className="py-3 px-2">
                       <ThreeDotsMenu
                         items={[

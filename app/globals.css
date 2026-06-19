@@ -115,7 +115,9 @@
   /* secondary = light teal tint */
   --secondary: #e8f2f1;
   --secondary-foreground: #21544e;
-  /* muted = #9F9F9F */
+  /* muted: --muted is the light-gray BACKGROUND (use `bg-muted`);
+     --muted-foreground #9F9F9F is the secondary-TEXT gray (use `text-muted-foreground`).
+     Do NOT use `text-muted` for text — it renders the near-white background color. */
   --muted: #f5f5f5;
   --muted-foreground: #9f9f9f;
   /* accent = green #7DE4A8 */

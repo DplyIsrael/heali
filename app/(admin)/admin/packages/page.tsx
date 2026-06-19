@@ -115,25 +115,25 @@ export default function AdminPackagesPage() {
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="rounded-[12px] border border-border bg-white p-4 text-center">
-          <p className="text-[13px] text-muted">סה״כ חבילות</p>
+          <p className="text-[13px] text-muted-foreground">סה״כ חבילות</p>
           <p className="text-[24px] font-bold text-black">{totalPackages}</p>
         </div>
         <div className="rounded-[12px] border border-border bg-white p-4 text-center">
-          <p className="text-[13px] text-muted">סה״כ טיפולים בחבילות</p>
+          <p className="text-[13px] text-muted-foreground">סה״כ טיפולים בחבילות</p>
           <p className="text-[24px] font-bold text-black">{totalTreatments}</p>
         </div>
         <div className="rounded-[12px] border border-border bg-white p-4 text-center">
-          <p className="text-[13px] text-muted">מחיר ממוצע לטיפול</p>
+          <p className="text-[13px] text-muted-foreground">מחיר ממוצע לטיפול</p>
           <p className="text-[24px] font-bold text-black">₪{avgPrice}</p>
         </div>
         <div className="rounded-[12px] border border-border bg-white p-4 text-center">
-          <p className="text-[13px] text-muted">חבילות נמכרו</p>
+          <p className="text-[13px] text-muted-foreground">חבילות נמכרו</p>
           <p className="text-[24px] font-bold text-black">0</p>
         </div>
       </div>
 
       {packages.length === 0 ? (
-        <p className="text-center text-muted py-20">אין חבילות עדיין</p>
+        <p className="text-center text-muted-foreground py-20">אין חבילות עדיין</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {packages.map((pkg) => (
@@ -161,7 +161,7 @@ export default function AdminPackagesPage() {
               <h2 className="text-[22px] font-bold text-black">
                 {editingId ? "עריכת חבילה" : "חבילה חדשה"}
               </h2>
-              <button onClick={() => { setShowModal(false); resetForm(); }}><X className="size-5 text-muted" /></button>
+              <button onClick={() => { setShowModal(false); resetForm(); }}><X className="size-5 text-muted-foreground" /></button>
             </div>
             <div className="flex flex-col gap-4">
               <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="שם החבילה" />

@@ -156,7 +156,7 @@ export default function PractitionerOnboardingPage() {
                     ? "bg-primary text-white"
                     : isCompleted
                       ? "bg-accent text-foreground"
-                      : "bg-muted/20 text-muted"
+                      : "bg-muted/20 text-muted-foreground"
                 } ${canJumpTo && !isCurrent ? "cursor-pointer hover:opacity-80" : ""} ${!canJumpTo ? "cursor-not-allowed" : ""}`}
               >
                 {stepNum}

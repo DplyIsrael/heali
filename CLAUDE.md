@@ -125,7 +125,8 @@ Defined in `tailwind.config.ts`:
 | `border-input` | `#CDDBDB` | All form field borders |
 | `background` | `#FAFAFA` | Page background |
 | `destructive` | `#E70202` | Errors, delete actions |
-| `muted` | `#9F9F9F` | Secondary text |
+| `muted-foreground` | `#9F9F9F` | Secondary text — use `text-muted-foreground` |
+| `muted` | `#F5F5F5` | Light-gray **background** only (`bg-muted`); never `text-muted` |
 
 Fonts:
 - **Discovery Fs** (Light/Regular/Medium/Demi-bold/Bold) — body and headings, registered via `@font-face`

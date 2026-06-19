@@ -105,16 +105,16 @@ export function NotificationsPanel({ open, onClose, userId }: NotificationsPanel
             <h2 className="text-[20px] font-bold text-black">התראות</h2>
           </div>
           <button onClick={onClose}>
-            <X className="size-5 text-muted" />
+            <X className="size-5 text-muted-foreground" />
           </button>
         </div>
 
         {/* List */}
         <div className="flex-1 overflow-y-auto">
           {isLoading ? (
-            <p className="text-center text-muted py-10">טוען...</p>
+            <p className="text-center text-muted-foreground py-10">טוען...</p>
           ) : notifications.length === 0 ? (
-            <p className="text-center text-muted py-10">אין התראות</p>
+            <p className="text-center text-muted-foreground py-10">אין התראות</p>
           ) : (
             notifications.map((n) => {
               const { title, description, href } = getNotificationText(n);

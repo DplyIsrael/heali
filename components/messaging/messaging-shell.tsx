@@ -161,7 +161,7 @@ export function MessagingShell({
           <div className="w-full md:w-[350px] border-l border-border flex flex-col shrink-0">
             <div className="p-3 border-b border-border">
               <div className="relative">
-                <Search className="absolute top-1/2 right-3 -translate-y-1/2 size-4 text-muted" />
+                <Search className="absolute top-1/2 right-3 -translate-y-1/2 size-4 text-muted-foreground" />
                 <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -176,7 +176,7 @@ export function MessagingShell({
                 <div className="flex items-center justify-center h-32"><Spinner /></div>
               ) : filtered.length === 0 ? (
                 <div className="flex items-center justify-center h-full">
-                  <p className="text-[14px] text-muted">
+                  <p className="text-[14px] text-muted-foreground">
                     {conversations.length === 0 ? emptyTitle : "לא נמצאו תוצאות"}
                   </p>
                 </div>
@@ -190,7 +190,7 @@ export function MessagingShell({
                       selectedId === conv.id ? "bg-muted/10" : "hover:bg-muted/5"
                     }`}
                   >
-                    <div className="size-[44px] rounded-full bg-muted/20 flex items-center justify-center text-[14px] font-medium text-muted shrink-0 overflow-hidden">
+                    <div className="size-[44px] rounded-full bg-muted/20 flex items-center justify-center text-[14px] font-medium text-muted-foreground shrink-0 overflow-hidden">
                       {conv.otherUserAvatarUrl ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={conv.otherUserAvatarUrl} alt="" className="w-full h-full object-cover" />
@@ -207,12 +207,12 @@ export function MessagingShell({
                         >
                           {conv.otherUserName || "—"}
                         </span>
-                        <span className="text-[12px] text-muted shrink-0 ms-2">
+                        <span className="text-[12px] text-muted-foreground shrink-0 ms-2">
                           {formatClock(conv.lastMessageAt)}
                         </span>
                       </div>
                       <div className="flex items-center justify-between mt-0.5">
-                        <p className="text-[13px] text-muted truncate flex-1">{conv.lastMessage || "—"}</p>
+                        <p className="text-[13px] text-muted-foreground truncate flex-1">{conv.lastMessage || "—"}</p>
                         {conv.unreadCount > 0 && (
                           <span className="ms-2 inline-flex size-5 items-center justify-center rounded-full bg-accent text-black text-[11px] font-medium">
                             {conv.unreadCount > 9 ? "9+" : conv.unreadCount}
@@ -234,7 +234,7 @@ export function MessagingShell({
                   {isLoadingMsgs ? (
                     <div className="flex justify-center pt-8"><Spinner /></div>
                   ) : messages.length === 0 ? (
-                    <p className="text-center text-muted text-[14px]">תחילת השיחה</p>
+                    <p className="text-center text-muted-foreground text-[14px]">תחילת השיחה</p>
                   ) : (
                     messages.map((m) => {
                       const isMine = m.senderId === currentUserId;
@@ -251,7 +251,7 @@ export function MessagingShell({
                             }`}
                           >
                             {m.body}
-                            <div className={`mt-1 text-[10px] ${isMine ? "text-white/70" : "text-muted"}`}>
+                            <div className={`mt-1 text-[10px] ${isMine ? "text-white/70" : "text-muted-foreground"}`}>
                               {formatClock(m.createdAt)}
                             </div>
                           </div>

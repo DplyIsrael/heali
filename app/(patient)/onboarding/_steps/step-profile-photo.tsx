@@ -110,7 +110,7 @@ export function StepProfilePhoto({
             className="h-full w-full object-cover"
           />
         ) : (
-          <div className="flex flex-col items-center gap-2 text-muted">
+          <div className="flex flex-col items-center gap-2 text-muted-foreground">
             <Camera className="h-10 w-10" />
             <span className="text-[14px]">{t("uploadPhoto")}</span>
           </div>

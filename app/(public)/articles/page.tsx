@@ -45,12 +45,12 @@ export default function ArticlesPage() {
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-[1440px] px-4 md:px-[50px] py-6 md:py-10">
         <h1 className="text-[28px] md:text-[36px] font-bold text-black mb-2">מרכז הידע שלנו</h1>
-        <p className="text-[16px] text-muted mb-6">{total} מאמרים</p>
+        <p className="text-[16px] text-muted-foreground mb-6">{total} מאמרים</p>
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3 mb-8">
           <div className="relative flex-1 max-w-[400px]">
-            <Search className="absolute top-1/2 right-3 -translate-y-1/2 size-[18px] text-muted" />
+            <Search className="absolute top-1/2 right-3 -translate-y-1/2 size-[18px] text-muted-foreground" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -70,7 +70,7 @@ export default function ArticlesPage() {
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
-            <ChevronDown className="absolute top-1/2 left-3 -translate-y-1/2 size-4 text-muted pointer-events-none" />
+            <ChevronDown className="absolute top-1/2 left-3 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
           </div>
         </div>
 

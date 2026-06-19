@@ -48,7 +48,7 @@ export default async function ArticleDetailPage({ params }: PageProps) {
         {/* Back */}
         <Link
           href="/articles"
-          className="inline-flex items-center gap-2 mb-6 text-[16px] text-muted hover:text-black transition-colors"
+          className="inline-flex items-center gap-2 mb-6 text-[16px] text-muted-foreground hover:text-black transition-colors"
         >
           <div className="size-[36px] rounded-full border border-border flex items-center justify-center">
             <ArrowRight className="size-4" />
@@ -75,7 +75,7 @@ export default async function ArticleDetailPage({ params }: PageProps) {
               {article.categoryName}
             </span>
           )}
-          <span className="text-[14px] text-muted">{date}</span>
+          <span className="text-[14px] text-muted-foreground">{date}</span>
         </div>
 
         {/* Title */}
@@ -83,7 +83,7 @@ export default async function ArticleDetailPage({ params }: PageProps) {
           {article.title}
         </h1>
 
-        <p className="text-[16px] text-muted mb-8">
+        <p className="text-[16px] text-muted-foreground mb-8">
           פורסם ע״י {article.authorName}
         </p>
 
@@ -141,12 +141,12 @@ async function RelatedPractitioners({ categoryName }: { categoryName: string }) 
                   {p.profile_photo_url ? (
                     <Image src={p.profile_photo_url as string} alt="" fill className="object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-muted text-[14px]">{users.full_name.slice(0, 2)}</div>
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground text-[14px]">{users.full_name.slice(0, 2)}</div>
                   )}
                 </div>
                 <div>
                   <p className="text-[16px] font-medium text-black">{users.full_name}</p>
-                  <p className="text-[14px] text-muted">{(p.city as string) ?? ""}</p>
+                  <p className="text-[14px] text-muted-foreground">{(p.city as string) ?? ""}</p>
                 </div>
               </div>
               <p className="text-[13px] text-[#9f9f9f] line-clamp-2">{(p.bio as string) ?? ""}</p>

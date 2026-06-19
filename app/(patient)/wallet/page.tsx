@@ -77,7 +77,7 @@ function RefundRequestModal({
             <h2 className="text-[20px] font-semibold text-black mb-1">
               בקשת החזר כספי
             </h2>
-            <p className="text-[14px] text-muted">
+            <p className="text-[14px] text-muted-foreground">
               סכום ההחזר: <strong>₪{credit.amount.toFixed(2)}</strong>
             </p>
           </div>
@@ -85,7 +85,7 @@ function RefundRequestModal({
             type="button"
             onClick={onClose}
             aria-label="סגור"
-            className="text-muted hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground"
           >
             <X className="size-5" />
           </button>
@@ -103,7 +103,7 @@ function RefundRequestModal({
           onChange={(e) => setReason(e.target.value)}
           placeholder="למשל: לא אוכל להשתמש בזיכוי, אעדיף החזר לחשבון..."
           rows={4}
-          className="w-full rounded-[10px] border border-border-input bg-white p-3 text-[14px] text-foreground placeholder:text-muted mb-4 resize-none"
+          className="w-full rounded-[10px] border border-border-input bg-white p-3 text-[14px] text-foreground placeholder:text-muted-foreground mb-4 resize-none"
         />
 
         <div className="flex gap-3">
@@ -158,7 +158,7 @@ export default function WalletPage() {
       <h1 className="text-[28px] md:text-[36px] font-bold text-black mb-2">
         הארנק שלי
       </h1>
-      <p className="text-[15px] text-muted mb-6">
+      <p className="text-[15px] text-muted-foreground mb-6">
         זיכויים שצברת מביטולי טיפולים או זיכויים שהוענקו על ידי הצוות
       </p>
 
@@ -191,7 +191,7 @@ export default function WalletPage() {
       {/* History */}
       <h2 className="text-[20px] font-semibold text-black mb-4">היסטוריית זיכויים</h2>
       {data.credits.length === 0 ? (
-        <div className="rounded-[12px] border border-border bg-white py-16 text-center text-[15px] text-muted">
+        <div className="rounded-[12px] border border-border bg-white py-16 text-center text-[15px] text-muted-foreground">
           אין עדיין זיכויים בארנק
         </div>
       ) : (

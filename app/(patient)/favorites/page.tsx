@@ -44,7 +44,7 @@ export default function FavoritesPage() {
       <div className="mx-auto max-w-[1440px] px-4 md:px-[30px] py-6 md:py-10">
         <div className="mb-6">
           <h1 className="text-[28px] md:text-[36px] font-bold text-black">המועדפים שלי</h1>
-          <p className="mt-1 text-[16px] text-muted">
+          <p className="mt-1 text-[16px] text-muted-foreground">
             כל המטפלים שהוספת למועדפים יופיעו כאן
           </p>
         </div>

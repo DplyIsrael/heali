@@ -50,7 +50,7 @@ export default async function PractitionerProfilePage({ params }: PageProps) {
         {/* Back button */}
         <Link
           href="/discovery"
-          className="inline-flex items-center gap-2 mb-6 text-[16px] text-muted hover:text-black transition-colors"
+          className="inline-flex items-center gap-2 mb-6 text-[16px] text-muted-foreground hover:text-black transition-colors"
         >
           <div className="size-[36px] rounded-full border border-border flex items-center justify-center">
             <ArrowRight className="size-4" />
@@ -232,7 +232,7 @@ export default async function PractitionerProfilePage({ params }: PageProps) {
                       className="rounded-[8px] border border-[#f4f4f4] bg-white p-5"
                     >
                       <div className="flex items-center gap-3 mb-3">
-                        <div className="size-[42px] rounded-full bg-muted/20 flex items-center justify-center text-[16px] font-medium text-muted">
+                        <div className="size-[42px] rounded-full bg-muted/20 flex items-center justify-center text-[16px] font-medium text-muted-foreground">
                           {review.reviewerName[0]}
                         </div>
                         <div>
@@ -261,7 +261,7 @@ export default async function PractitionerProfilePage({ params }: PageProps) {
                   ))}
                 </div>
               ) : (
-                <p className="text-[16px] text-muted">אין תגובות עדיין</p>
+                <p className="text-[16px] text-muted-foreground">אין תגובות עדיין</p>
               )}
             </section>
 

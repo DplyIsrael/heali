@@ -156,7 +156,7 @@ export default function PractitionerProfilePage() {
   }
 
   if (!profile) {
-    return <div className="flex min-h-[60vh] items-center justify-center text-muted">פרופיל לא נמצא</div>;
+    return <div className="flex min-h-[60vh] items-center justify-center text-muted-foreground">פרופיל לא נמצא</div>;
   }
 
   const pricingLabel = profile.pricingModel === "per_hour" ? "לפי שעה"
@@ -201,14 +201,14 @@ export default function PractitionerProfilePage() {
                   <div className="h-[48px] rounded-[10px] border border-border-input bg-[#f9f9f9] px-3 flex items-center text-[14px] text-black">
                     {profile.domainNames.join(", ") || "לא הוגדר"}
                   </div>
-                  <p className="text-[12px] text-muted mt-1">לשינוי, צור קשר עם תמיכה</p>
+                  <p className="text-[12px] text-muted-foreground mt-1">לשינוי, צור קשר עם תמיכה</p>
                 </FormField>
 
                 <FormField label="תחום התמחות" htmlFor="specialty">
                   <div className="h-[48px] rounded-[10px] border border-border-input bg-[#f9f9f9] px-3 flex items-center text-[14px] text-black">
                     {profile.specialtyNames.join(", ") || "לא הוגדר"}
                   </div>
-                  <p className="text-[12px] text-muted mt-1">לשינוי, צור קשר עם תמיכה</p>
+                  <p className="text-[12px] text-muted-foreground mt-1">לשינוי, צור קשר עם תמיכה</p>
                 </FormField>
 
                 {/* Editable price + model */}
@@ -222,7 +222,7 @@ export default function PractitionerProfilePage() {
                       placeholder="₪"
                       className="flex-1"
                     />
-                    <div className="h-[48px] w-[147px] rounded-[10px] border border-border-input bg-[#f9f9f9] px-3 flex items-center text-[14px] text-muted">
+                    <div className="h-[48px] w-[147px] rounded-[10px] border border-border-input bg-[#f9f9f9] px-3 flex items-center text-[14px] text-muted-foreground">
                       {pricingLabel}
                     </div>
                   </div>
@@ -272,12 +272,12 @@ export default function PractitionerProfilePage() {
                             <span className="text-[14px] text-primary">{cert.name}</span>
                             <span className="text-[14px] text-[#666]">{cert.size}</span>
                           </div>
-                          <Trash2 className="size-4 text-muted hover:text-destructive cursor-pointer" />
+                          <Trash2 className="size-4 text-muted-foreground hover:text-destructive cursor-pointer" />
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-[14px] text-muted">לא הועלו תעודות</p>
+                    <p className="text-[14px] text-muted-foreground">לא הועלו תעודות</p>
                   )}
                 </div>
 
@@ -353,7 +353,7 @@ export default function PractitionerProfilePage() {
                   </div>
                 </div>
 
-                <p className="text-[12px] text-muted">פרטי בנק ישמשו לצורך העברת תשלומים. ניתן לעדכן בכל עת.</p>
+                <p className="text-[12px] text-muted-foreground">פרטי בנק ישמשו לצורך העברת תשלומים. ניתן לעדכן בכל עת.</p>
 
                 <div className="flex gap-3 mt-2">
                   <Button onClick={handleSaveBank} disabled={isSavingBank} className="bg-accent text-black w-[136px]">
@@ -379,7 +379,7 @@ export default function PractitionerProfilePage() {
 
               {/* Avatar with upload */}
               <div className="flex items-center gap-4 mb-6">
-                <label className="relative size-[100px] rounded-full bg-muted/20 flex items-center justify-center text-[28px] font-medium text-muted overflow-hidden cursor-pointer group">
+                <label className="relative size-[100px] rounded-full bg-muted/20 flex items-center justify-center text-[28px] font-medium text-muted-foreground overflow-hidden cursor-pointer group">
                   {avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
@@ -404,7 +404,7 @@ export default function PractitionerProfilePage() {
                 </label>
                 <div>
                   <p className="text-[18px] font-medium text-black">{profile.name}</p>
-                  <p className="text-[14px] text-muted">{profile.email}</p>
+                  <p className="text-[14px] text-muted-foreground">{profile.email}</p>
                   <p className="text-[12px] text-primary mt-1">לחץ על התמונה לעדכון</p>
                 </div>
               </div>
@@ -445,7 +445,7 @@ export default function PractitionerProfilePage() {
                   </div>
                 </FormField>
 
-                <p className="text-[14px] text-muted">לשינוי פרטים אישיים, צור קשר עם תמיכה</p>
+                <p className="text-[14px] text-muted-foreground">לשינוי פרטים אישיים, צור קשר עם תמיכה</p>
               </div>
             </div>
           </div>

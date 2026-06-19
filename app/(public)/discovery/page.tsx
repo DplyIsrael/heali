@@ -80,7 +80,7 @@ export default function DiscoveryPage() {
         {/* Page header */}
         <div className="mb-6 md:mb-8">
           <h1 className="text-[28px] md:text-[36px] font-bold text-black">חיפוש מטפלים</h1>
-          <p className="mt-1 text-[16px] text-muted">
+          <p className="mt-1 text-[16px] text-muted-foreground">
             {total > 0 ? `${total} מטפלים נמצאו` : "חפשו את המטפל המושלם עבורכם"}
           </p>
         </div>
@@ -107,7 +107,7 @@ export default function DiscoveryPage() {
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>
-            <ChevronDown className="absolute top-1/2 left-3 -translate-y-1/2 size-4 text-muted pointer-events-none" />
+            <ChevronDown className="absolute top-1/2 left-3 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
           </div>
         </div>
 
@@ -132,7 +132,7 @@ export default function DiscoveryPage() {
             {/* Desktop sort bar */}
             <div className="hidden lg:flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
-                <span className="text-[14px] text-muted">מיין לפי:</span>
+                <span className="text-[14px] text-muted-foreground">מיין לפי:</span>
                 {SORT_OPTIONS.map((opt) => (
                   <button
                     key={opt.value}
@@ -147,7 +147,7 @@ export default function DiscoveryPage() {
                   </button>
                 ))}
               </div>
-              <span className="text-[14px] text-muted">{total} תוצאות</span>
+              <span className="text-[14px] text-muted-foreground">{total} תוצאות</span>
             </div>
 
             {/* Loading */}
@@ -188,7 +188,7 @@ export default function DiscoveryPage() {
                         const showEllipsis = i > 0 && p - arr[i - 1] > 1;
                         return (
                           <span key={p} className="flex items-center gap-1">
-                            {showEllipsis && <span className="text-muted px-1">...</span>}
+                            {showEllipsis && <span className="text-muted-foreground px-1">...</span>}
                             <button
                               onClick={() => handlePageChange(p)}
                               className={`size-[36px] rounded-full text-[14px] transition-colors ${

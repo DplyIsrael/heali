@@ -43,24 +43,24 @@ export default function AdminPayoutsPage() {
   return (
     <div>
       <h1 className="text-[28px] md:text-[36px] font-bold text-black mb-2">תשלומים למטפלים</h1>
-      <p className="text-muted text-[14px] mb-6">
+      <p className="text-muted-foreground text-[14px] mb-6">
         טיפולים שהושלמו וחויבו ועדיין לא הועברו למטפל. סמן כשולם לאחר ביצוע ההעברה הבנקאית.
       </p>
 
       {!isLoading && groups.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="rounded-[12px] border border-border bg-white p-4">
-            <p className="text-[13px] text-muted">מטפלים בהמתנה</p>
+            <p className="text-[13px] text-muted-foreground">מטפלים בהמתנה</p>
             <p className="text-[24px] font-bold text-black">{groups.length}</p>
           </div>
           <div className="rounded-[12px] border border-border bg-white p-4">
-            <p className="text-[13px] text-muted">טיפולים בהמתנה</p>
+            <p className="text-[13px] text-muted-foreground">טיפולים בהמתנה</p>
             <p className="text-[24px] font-bold text-black">
               {groups.reduce((s, g) => s + g.bookingCount, 0)}
             </p>
           </div>
           <div className="rounded-[12px] border border-border bg-white p-4">
-            <p className="text-[13px] text-muted">סך לתשלום</p>
+            <p className="text-[13px] text-muted-foreground">סך לתשלום</p>
             <p className="text-[24px] font-bold text-primary">₪{totalOwed.toLocaleString("he-IL")}</p>
           </div>
         </div>
@@ -69,8 +69,8 @@ export default function AdminPayoutsPage() {
       {isLoading ? (
         <div className="flex justify-center py-20"><Spinner /></div>
       ) : groups.length === 0 ? (
-        <div className="rounded-[12px] border border-border bg-white py-12 text-center text-muted">
-          <Wallet className="size-10 mx-auto mb-3 text-muted/50" />
+        <div className="rounded-[12px] border border-border bg-white py-12 text-center text-muted-foreground">
+          <Wallet className="size-10 mx-auto mb-3 text-muted-foreground/50" />
           <p>אין תשלומים בהמתנה</p>
         </div>
       ) : (
@@ -90,25 +90,25 @@ export default function AdminPayoutsPage() {
                       ₪{g.amountOwed.toLocaleString("he-IL")}
                     </span>
                   </div>
-                  <p className="text-[13px] text-muted mb-3">
+                  <p className="text-[13px] text-muted-foreground mb-3">
                     {g.bookingCount} טיפולים · הישן ביותר: {g.oldestUnpaidAt ?? "—"}
                   </p>
                   {hasBankDetails ? (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[13px]">
                       <div>
-                        <div className="text-muted">בנק</div>
+                        <div className="text-muted-foreground">בנק</div>
                         <div className="text-black font-medium">{g.bankName}</div>
                       </div>
                       <div>
-                        <div className="text-muted">מס׳ בנק</div>
+                        <div className="text-muted-foreground">מס׳ בנק</div>
                         <div className="text-black font-medium">{g.bankNumber}</div>
                       </div>
                       <div>
-                        <div className="text-muted">סניף</div>
+                        <div className="text-muted-foreground">סניף</div>
                         <div className="text-black font-medium">{g.bankBranchNumber}</div>
                       </div>
                       <div>
-                        <div className="text-muted">חשבון</div>
+                        <div className="text-muted-foreground">חשבון</div>
                         <div className="text-black font-medium">{g.bankAccountNumber}</div>
                       </div>
                     </div>

@@ -123,14 +123,14 @@ export function DiscoveryFilters({
         <h3 className="text-[20px] font-semibold text-black">פילטרים</h3>
         {isMobile && onClose && (
           <button type="button" onClick={onClose}>
-            <X className="size-5 text-muted" />
+            <X className="size-5 text-muted-foreground" />
           </button>
         )}
       </div>
 
       {/* Free text search */}
       <div className="relative">
-        <Search className="absolute top-1/2 right-3 -translate-y-1/2 size-[18px] text-muted" />
+        <Search className="absolute top-1/2 right-3 -translate-y-1/2 size-[18px] text-muted-foreground" />
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -153,7 +153,7 @@ export function DiscoveryFilters({
               <option key={d.id} value={d.id}>{d.name}</option>
             ))}
           </select>
-          <ChevronDown className="absolute top-1/2 left-3 -translate-y-1/2 size-4 text-muted pointer-events-none" />
+          <ChevronDown className="absolute top-1/2 left-3 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
         </div>
       </div>
 
@@ -173,7 +173,7 @@ export function DiscoveryFilters({
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
-            <ChevronDown className="absolute top-1/2 left-3 -translate-y-1/2 size-4 text-muted pointer-events-none" />
+            <ChevronDown className="absolute top-1/2 left-3 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
           </div>
           <button
             type="button"
@@ -212,7 +212,7 @@ export function DiscoveryFilters({
               <option key={g.value} value={g.value}>{g.label}</option>
             ))}
           </select>
-          <ChevronDown className="absolute top-1/2 left-3 -translate-y-1/2 size-4 text-muted pointer-events-none" />
+          <ChevronDown className="absolute top-1/2 left-3 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
         </div>
       </div>
 
@@ -230,7 +230,7 @@ export function DiscoveryFilters({
               <option key={l} value={l}>{l}</option>
             ))}
           </select>
-          <ChevronDown className="absolute top-1/2 left-3 -translate-y-1/2 size-4 text-muted pointer-events-none" />
+          <ChevronDown className="absolute top-1/2 left-3 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
         </div>
       </div>
 
@@ -281,7 +281,7 @@ export function DiscoveryFilters({
         <Button onClick={handleApply} className="w-full bg-accent text-black hover:bg-accent/90">
           חיפוש
         </Button>
-        <Button onClick={handleReset} variant="ghost" className="w-full text-muted">
+        <Button onClick={handleReset} variant="ghost" className="w-full text-muted-foreground">
           איפוס פילטרים
         </Button>
       </div>

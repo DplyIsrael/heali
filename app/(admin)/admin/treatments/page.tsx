@@ -137,7 +137,7 @@ export default function AdminTreatmentsPage() {
       {/* Filter row */}
       <div className="flex flex-wrap items-end gap-3 mb-6">
         <div className="relative w-full max-w-[280px]">
-          <Search className="absolute top-1/2 right-3 -translate-y-1/2 size-[18px] text-muted" />
+          <Search className="absolute top-1/2 right-3 -translate-y-1/2 size-[18px] text-muted-foreground" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -147,7 +147,7 @@ export default function AdminTreatmentsPage() {
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-[12px] text-muted">תחום טיפול</label>
+          <label className="text-[12px] text-muted-foreground">תחום טיפול</label>
           <select
             value={domainFilter}
             onChange={(e) => setDomainFilter(e.target.value)}
@@ -161,11 +161,11 @@ export default function AdminTreatmentsPage() {
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-[12px] text-muted">מתאריך</label>
+          <label className="text-[12px] text-muted-foreground">מתאריך</label>
           <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-[44px]" />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-[12px] text-muted">עד תאריך</label>
+          <label className="text-[12px] text-muted-foreground">עד תאריך</label>
           <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-[44px]" />
         </div>
 
@@ -184,11 +184,11 @@ export default function AdminTreatmentsPage() {
       {!isLoading && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
           <div className="rounded-[12px] border border-border bg-white p-4">
-            <p className="text-[13px] text-muted">סך טיפולים בסינון</p>
+            <p className="text-[13px] text-muted-foreground">סך טיפולים בסינון</p>
             <p className="text-[22px] font-bold text-black">{total}</p>
           </div>
           <div className="rounded-[12px] border border-border bg-white p-4">
-            <p className="text-[13px] text-muted">הכנסה מצטברת</p>
+            <p className="text-[13px] text-muted-foreground">הכנסה מצטברת</p>
             <p className="text-[22px] font-bold text-black">₪{totalRevenue.toLocaleString("he-IL")}</p>
           </div>
         </div>
@@ -197,13 +197,13 @@ export default function AdminTreatmentsPage() {
       {isLoading ? (
         <div className="flex justify-center py-20"><Spinner /></div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-[12px] border border-border bg-white py-12 text-center text-muted">
+        <div className="rounded-[12px] border border-border bg-white py-12 text-center text-muted-foreground">
           {hasActiveFilters ? "לא נמצאו טיפולים בסינון הנוכחי" : "אין טיפולים"}
         </div>
       ) : (
         <div className="rounded-[12px] border border-border bg-white overflow-x-auto">
           <table className="w-full text-[14px]">
-            <thead><tr className="border-b border-border text-[13px] text-muted">
+            <thead><tr className="border-b border-border text-[13px] text-muted-foreground">
               <th className="text-right py-3 px-4 font-medium">מטופל</th>
               <th className="text-right py-3 px-4 font-medium">מטפל</th>
               <th className="text-right py-3 px-4 font-medium">סוג טיפול</th>
@@ -216,8 +216,8 @@ export default function AdminTreatmentsPage() {
                 <tr key={b.id} className="border-b border-border/50 last:border-0">
                   <td className="py-3 px-4 text-black">{b.patientName}</td>
                   <td className="py-3 px-4 text-black">{b.practitionerName}</td>
-                  <td className="py-3 px-4 text-muted">{b.domain}</td>
-                  <td className="py-3 px-4 text-muted">{b.scheduledDate}</td>
+                  <td className="py-3 px-4 text-muted-foreground">{b.domain}</td>
+                  <td className="py-3 px-4 text-muted-foreground">{b.scheduledDate}</td>
                   <td className="py-3 px-4"><StatusBadge status={b.status as "requested" | "confirmed" | "completed" | "canceled" | "declined"} /></td>
                   <td className="py-3 px-4 text-black">₪{b.price}</td>
                 </tr>

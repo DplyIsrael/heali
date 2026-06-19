@@ -41,7 +41,7 @@ export default async function PackagesPage({
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-[1440px] px-4 md:px-[50px] py-6 md:py-10">
         <h1 className="text-[28px] md:text-[36px] font-bold text-black mb-2">חבילות טיפול</h1>
-        <p className="text-[16px] text-muted mb-8">
+        <p className="text-[16px] text-muted-foreground mb-8">
           חסכו עם חבילות הטיפול שלנו — מחירים מוזלים לטיפולים מרובים
         </p>
 
@@ -67,7 +67,7 @@ export default async function PackagesPage({
 
         {activeTab === "all" ? (
           packages.length === 0 ? (
-            <p className="text-center text-muted py-20">חבילות טיפול יפורסמו בקרוב</p>
+            <p className="text-center text-muted-foreground py-20">חבילות טיפול יפורסמו בקרוב</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {packages.map((pkg) => {
@@ -106,7 +106,7 @@ export default async function PackagesPage({
             <h2 className="text-[22px] md:text-[24px] font-semibold text-black mb-2">
               התחברו כדי לראות את החבילות שלכם
             </h2>
-            <p className="text-[15px] font-light text-muted mb-6 max-w-[420px] mx-auto">
+            <p className="text-[15px] font-light text-muted-foreground mb-6 max-w-[420px] mx-auto">
               החבילות שתרכשו יופיעו כאן לאחר ההתחברות.
             </p>
             <Link
@@ -121,7 +121,7 @@ export default async function PackagesPage({
             <h2 className="text-[22px] md:text-[24px] font-semibold text-black mb-2">
               עדיין לא רכשתם חבילות
             </h2>
-            <p className="text-[15px] font-light text-muted mb-6 max-w-[420px] mx-auto">
+            <p className="text-[15px] font-light text-muted-foreground mb-6 max-w-[420px] mx-auto">
               כאן יופיעו החבילות שתרכשו, עם מספר הטיפולים שנותרו ותוקף השימוש.
             </p>
             <Link

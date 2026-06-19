@@ -119,7 +119,7 @@ export default function MyTreatmentsPage() {
                 <h2 className="text-[22px] font-semibold text-black">
                   איך הייתה החוויה שלך עם {rateTarget.practitionerName}?
                 </h2>
-                <button onClick={() => setRateTarget(null)}><X className="size-5 text-muted" /></button>
+                <button onClick={() => setRateTarget(null)}><X className="size-5 text-muted-foreground" /></button>
               </div>
 
               <div className="flex gap-3 mb-6">

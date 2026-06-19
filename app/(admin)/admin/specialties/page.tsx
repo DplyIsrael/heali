@@ -62,20 +62,20 @@ export default function AdminSpecialtiesPage() {
   return (
     <div>
       <h1 className="text-[28px] md:text-[36px] font-bold text-black mb-2">התמחויות לאישור</h1>
-      <p className="text-muted text-[14px] mb-6">
+      <p className="text-muted-foreground text-[14px] mb-6">
         התמחויות חדשות שהוצעו על ידי מטפלים. אישור יוסיף את ההתמחות לכל המסכים; דחייה תסיר אותה מפרופילי המטפלים שבחרו בה.
       </p>
 
       {isLoading ? (
         <div className="flex justify-center py-20"><Spinner /></div>
       ) : items.length === 0 ? (
-        <div className="rounded-[12px] border border-border bg-white py-12 text-center text-muted">
+        <div className="rounded-[12px] border border-border bg-white py-12 text-center text-muted-foreground">
           אין התמחויות הממתינות לאישור
         </div>
       ) : (
         <div className="rounded-[12px] border border-border bg-white overflow-x-auto">
           <table className="w-full text-[14px]">
-            <thead><tr className="border-b border-border text-[13px] text-muted">
+            <thead><tr className="border-b border-border text-[13px] text-muted-foreground">
               <th className="text-right py-3 px-4 font-medium">שם ההתמחות</th>
               <th className="text-right py-3 px-4 font-medium">תחום מקורי</th>
               <th className="text-right py-3 px-4 font-medium">נוצר</th>
@@ -85,8 +85,8 @@ export default function AdminSpecialtiesPage() {
               {items.map((s) => (
                 <tr key={s.id} className="border-b border-border/50 last:border-0">
                   <td className="py-3 px-4 text-black font-medium">{s.name}</td>
-                  <td className="py-3 px-4 text-muted">{s.domainName}</td>
-                  <td className="py-3 px-4 text-muted">
+                  <td className="py-3 px-4 text-muted-foreground">{s.domainName}</td>
+                  <td className="py-3 px-4 text-muted-foreground">
                     {new Date(s.createdAt).toLocaleDateString("he-IL")}
                   </td>
                   <td className="py-3 px-4">

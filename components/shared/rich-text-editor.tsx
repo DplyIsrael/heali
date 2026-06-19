@@ -139,7 +139,7 @@ export function RichTextEditor({
         <EditorContent editor={editor} />
         {editor.isEmpty && (
           <div
-            className="pointer-events-none absolute top-3 right-4 text-[15px] text-muted"
+            className="pointer-events-none absolute top-3 right-4 text-[15px] text-muted-foreground"
             aria-hidden="true"
           >
             {placeholder}

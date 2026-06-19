@@ -84,14 +84,14 @@ export default function AdminCategoriesPage() {
       </div>
 
       <div className="relative max-w-[400px] mb-6">
-        <Search className="absolute top-1/2 right-3 -translate-y-1/2 size-[18px] text-muted" />
+        <Search className="absolute top-1/2 right-3 -translate-y-1/2 size-[18px] text-muted-foreground" />
         <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="חיפוש..." className="pe-10 h-[50px]" />
       </div>
 
       {isLoading ? <div className="flex justify-center py-20"><Spinner /></div> : (
         <div className="rounded-[12px] border border-border bg-white overflow-x-auto">
           <table className="w-full text-[14px]">
-            <thead><tr className="border-b border-border text-[13px] text-muted">
+            <thead><tr className="border-b border-border text-[13px] text-muted-foreground">
               <th className="text-right py-3 px-4 font-medium">שם</th>
               <th className="text-right py-3 px-4 font-medium">נקודות</th>
               <th className="text-right py-3 px-4 font-medium">תחום דעת</th>
@@ -103,8 +103,8 @@ export default function AdminCategoriesPage() {
                 <tr key={c.id} className="border-b border-border/50 last:border-0">
                   <td className="py-3 px-4 text-black font-medium">{c.name}</td>
                   <td className="py-3 px-4 text-black">{c.pointsAmount}</td>
-                  <td className="py-3 px-4 text-muted">{c.fieldOfKnowledge || "—"}</td>
-                  <td className="py-3 px-4 text-muted">{new Date(c.createdAt).toLocaleDateString("he-IL")}</td>
+                  <td className="py-3 px-4 text-muted-foreground">{c.fieldOfKnowledge || "—"}</td>
+                  <td className="py-3 px-4 text-muted-foreground">{new Date(c.createdAt).toLocaleDateString("he-IL")}</td>
                   <td className="py-3 px-2">
                     <ThreeDotsMenu items={[
                       { label: "עריכת קטגוריה", onClick: () => { setEditTarget(c); setName(c.name); setPoints(String(c.pointsAmount)); setField(c.fieldOfKnowledge); setShowCreate(true); } },
@@ -123,7 +123,7 @@ export default function AdminCategoriesPage() {
           <div className="w-full max-w-[500px] rounded-[16px] bg-white p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-[22px] font-bold text-black">קטגוריה חדשה</h2>
-              <button onClick={() => setShowCreate(false)}><X className="size-5 text-muted" /></button>
+              <button onClick={() => setShowCreate(false)}><X className="size-5 text-muted-foreground" /></button>
             </div>
             <div className="flex flex-col gap-4">
               <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="שם הקטגוריה" />

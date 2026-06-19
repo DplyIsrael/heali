@@ -35,7 +35,7 @@ function StarRow({ rating }: { rating: number }) {
         <Star
           key={s}
           className={`size-4 ${
-            s <= rating ? "fill-[#f5c518] text-[#f5c518]" : "text-muted/30"
+            s <= rating ? "fill-[#f5c518] text-[#f5c518]" : "text-muted-foreground/30"
           }`}
         />
       ))}
@@ -91,7 +91,7 @@ export default function AdminReviewsPage() {
       <h1 className="text-[28px] md:text-[36px] font-bold text-black mb-2">
         דירוגים ותגובות
       </h1>
-      <p className="text-[16px] text-muted mb-6">
+      <p className="text-[16px] text-muted-foreground mb-6">
         ניהול דירוגים שהוגשו על ידי מטופלים — דירוגים מאושרים יופיעו בפרופיל המטפל ויעדכנו את הממוצע
       </p>
 
@@ -117,7 +117,7 @@ export default function AdminReviewsPage() {
           <Spinner />
         </div>
       ) : reviews.length === 0 ? (
-        <div className="rounded-[16px] border border-border bg-white py-16 text-center text-[15px] text-muted">
+        <div className="rounded-[16px] border border-border bg-white py-16 text-center text-[15px] text-muted-foreground">
           {statusFilter === "submitted"
             ? "אין דירוגים ממתינים לאישור"
             : statusFilter === "approved"
@@ -151,7 +151,7 @@ export default function AdminReviewsPage() {
                   {r.comment}
                 </p>
               ) : (
-                <p className="text-[14px] text-muted italic mb-3">
+                <p className="text-[14px] text-muted-foreground italic mb-3">
                   ללא תגובה כתובה
                 </p>
               )}

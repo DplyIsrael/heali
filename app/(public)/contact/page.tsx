@@ -47,7 +47,7 @@ export default function ContactPage() {
           <p className="mt-3 text-[28px] md:text-[40px] font-light text-black">
             אנחנו מאמינים בתקשורת פתוחה
           </p>
-          <p className="mt-2 text-[16px] md:text-[18px] text-muted">
+          <p className="mt-2 text-[16px] md:text-[18px] text-muted-foreground">
             מוזמנים ליצור קשר בכל נושא
           </p>
         </div>

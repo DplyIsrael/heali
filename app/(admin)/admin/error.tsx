@@ -12,7 +12,7 @@ export default function AdminError({
     <div className="flex min-h-[60vh] items-center justify-center">
       <div className="text-center">
         <h2 className="text-[20px] font-bold text-black mb-2">שגיאה</h2>
-        <p className="text-muted mb-4">אירעה שגיאה בטעינת הדף</p>
+        <p className="text-muted-foreground mb-4">אירעה שגיאה בטעינת הדף</p>
         <Button onClick={reset} className="bg-accent text-black">נסה שוב</Button>
       </div>
     </div>

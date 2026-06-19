@@ -125,13 +125,13 @@ export default function AdminArticlesPage() {
       </div>
 
       <div className="relative max-w-[400px] mb-6">
-        <Search className="absolute top-1/2 right-3 -translate-y-1/2 size-[18px] text-muted" />
+        <Search className="absolute top-1/2 right-3 -translate-y-1/2 size-[18px] text-muted-foreground" />
         <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="חיפוש..." className="pe-10 h-[50px]" />
       </div>
 
       {/* Card grid */}
       {filtered.length === 0 ? (
-        <p className="text-center text-muted py-20">אין מאמרים</p>
+        <p className="text-center text-muted-foreground py-20">אין מאמרים</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {filtered.map((article) => (
@@ -177,7 +177,7 @@ export default function AdminArticlesPage() {
           <div className="w-full max-w-[636px] rounded-[20px] bg-white p-6 md:p-8 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-[26px] md:text-[30px] font-bold text-black">יצירת מאמר חדש</h2>
-              <button onClick={() => setShowCreate(false)}><X className="size-6 text-muted" /></button>
+              <button onClick={() => setShowCreate(false)}><X className="size-6 text-muted-foreground" /></button>
             </div>
             <div className="flex flex-col gap-5">
               <div className="flex flex-col gap-1">

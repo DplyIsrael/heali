@@ -85,7 +85,7 @@ export function PatientHeader({
                 </AvatarFallback>
               </Avatar>
               <span className="hidden md:inline text-[16px] text-foreground">{userName}</span>
-              <ChevronDown className="size-4 text-muted" />
+              <ChevronDown className="size-4 text-muted-foreground" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
               <DropdownMenuItem onClick={() => router.push("/patient-profile")}>

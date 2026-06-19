@@ -93,7 +93,7 @@ export default function PractitionerArticlesPage() {
 
       {/* Search */}
       <div className="relative max-w-[520px] mb-6">
-        <Search className="absolute top-1/2 right-3 -translate-y-1/2 size-[18px] text-muted" />
+        <Search className="absolute top-1/2 right-3 -translate-y-1/2 size-[18px] text-muted-foreground" />
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -132,7 +132,7 @@ export default function PractitionerArticlesPage() {
 
                 <div className="flex gap-2 mb-2">
                   {article.categoryName && (
-                    <span className="text-[11px] px-2 py-0.5 rounded-full border border-muted/30 text-muted">
+                    <span className="text-[11px] px-2 py-0.5 rounded-full border border-muted/30 text-muted-foreground">
                       {article.categoryName}
                     </span>
                   )}
@@ -154,7 +154,7 @@ export default function PractitionerArticlesPage() {
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-[26px] md:text-[30px] font-bold text-black">יצירת מאמר חדש</h2>
               <button onClick={() => setShowCreate(false)}>
-                <X className="size-6 text-muted" />
+                <X className="size-6 text-muted-foreground" />
               </button>
             </div>
 

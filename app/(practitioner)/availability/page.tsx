@@ -94,7 +94,7 @@ function UpcomingCard({ booking }: { booking: BookingForCalendar }) {
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <div className="size-[20px] rounded-full bg-[#F6F6F6] flex items-center justify-center">
-            <Clock className="size-3 text-muted" />
+            <Clock className="size-3 text-muted-foreground" />
           </div>
           <span className="text-[13px] text-[#13D464]">{booking.scheduledTime}</span>
         </div>
@@ -194,7 +194,7 @@ export default function AvailabilityPage() {
   return (
     <div className="mx-auto max-w-[1440px] px-4 md:px-[50px] py-6 md:py-10">
       <h1 className="text-[28px] md:text-[36px] font-bold text-black mb-2">היומן שלי</h1>
-      <p className="text-[16px] text-muted mb-6">ניהול שעות קבלה ותצוגת יומן שבועי</p>
+      <p className="text-[16px] text-muted-foreground mb-6">ניהול שעות קבלה ותצוגת יומן שבועי</p>
 
       {/* Tabs */}
       <div className="flex rounded-[10px] bg-white p-[6px] mb-6 w-full max-w-[600px]">
@@ -252,7 +252,7 @@ export default function AvailabilityPage() {
 
               <div className="grid grid-cols-7 gap-1 mb-2">
                 {MINI_DAY_LETTERS.map((letter) => (
-                  <div key={letter} className="text-center text-[12px] text-muted py-1">
+                  <div key={letter} className="text-center text-[12px] text-muted-foreground py-1">
                     {letter}
                   </div>
                 ))}
@@ -290,7 +290,7 @@ export default function AvailabilityPage() {
                 טיפולים קרובים
               </h3>
               {upcomingBookings.length === 0 ? (
-                <p className="text-[14px] text-muted">אין טיפולים קרובים</p>
+                <p className="text-[14px] text-muted-foreground">אין טיפולים קרובים</p>
               ) : (
                 <div className="flex flex-col gap-4">
                   {upcomingBookings.map((b) => (
@@ -387,7 +387,7 @@ export default function AvailabilityPage() {
               const isBlocked = blockedSet.has(formatDate(date));
               return (
                 <div key={i} className={`text-center py-2 border-l border-border ${isToday ? "bg-accent/10" : ""} ${isBlocked ? "bg-red-50" : ""}`}>
-                  <p className="text-[12px] text-muted">{DAY_NAMES[date.getDay()]}</p>
+                  <p className="text-[12px] text-muted-foreground">{DAY_NAMES[date.getDay()]}</p>
                   <p className={`text-[16px] font-medium ${isToday ? "text-primary" : "text-black"}`}>{date.getDate()}</p>
                   {isBlocked && <p className="text-[10px] text-destructive">חסום</p>}
                 </div>
@@ -399,7 +399,7 @@ export default function AvailabilityPage() {
           <div className="max-h-[600px] overflow-y-auto">
             {HOURS.map((hour) => (
               <div key={hour} className="grid grid-cols-[60px_repeat(7,1fr)] min-h-[48px] border-b border-border/50">
-                <div className="flex items-start justify-center pt-1 text-[12px] text-muted border-l border-border">
+                <div className="flex items-start justify-center pt-1 text-[12px] text-muted-foreground border-l border-border">
                   {hour.toString().padStart(2, "0")}:00
                 </div>
                 {weekDates.map((date, dayIdx) => {
@@ -442,19 +442,19 @@ export default function AvailabilityPage() {
             <h2 className="text-[18px] font-semibold text-black mb-4">הוספת שעות קבלה</h2>
             <div className="flex flex-col sm:flex-row gap-3 items-end">
               <div className="flex flex-col gap-1 flex-1">
-                <label className="text-[14px] text-muted">יום</label>
+                <label className="text-[14px] text-muted-foreground">יום</label>
                 <select value={newWeekday} onChange={(e) => setNewWeekday(Number(e.target.value))} className="h-[44px] rounded-[10px] border border-border-input bg-white px-3 text-[14px]">
                   {DAY_NAMES.map((name, i) => <option key={i} value={i}>{name}</option>)}
                 </select>
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-[14px] text-muted">משעה</label>
+                <label className="text-[14px] text-muted-foreground">משעה</label>
                 <select value={newStart} onChange={(e) => setNewStart(e.target.value)} className="h-[44px] rounded-[10px] border border-border-input bg-white px-3 text-[14px]">
                   {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-[14px] text-muted">עד שעה</label>
+                <label className="text-[14px] text-muted-foreground">עד שעה</label>
                 <select value={newEnd} onChange={(e) => setNewEnd(e.target.value)} className="h-[44px] rounded-[10px] border border-border-input bg-white px-3 text-[14px]">
                   {TIME_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
                 </select>
@@ -474,7 +474,7 @@ export default function AvailabilityPage() {
                   <span className="text-[16px] font-medium text-black w-[80px] shrink-0">{dayName}</span>
                   <div className="flex flex-wrap gap-2 flex-1">
                     {slotsByDay[dayIndex].length === 0 ? (
-                      <span className="text-[14px] text-muted">לא הוגדרה זמינות</span>
+                      <span className="text-[14px] text-muted-foreground">לא הוגדרה זמינות</span>
                     ) : (
                       slotsByDay[dayIndex].map((slot) => (
                         <div key={slot.id} className="flex items-center gap-2 rounded-[8px] bg-[#e0ffed] border border-[#13d464] px-3 py-1.5">
@@ -496,7 +496,7 @@ export default function AvailabilityPage() {
             <h2 className="text-[18px] font-semibold text-black mb-4">חסימת תאריכים</h2>
             <div className="flex gap-3 items-end mb-4">
               <div className="flex flex-col gap-1 flex-1">
-                <label className="text-[14px] text-muted">תאריך לחסימה</label>
+                <label className="text-[14px] text-muted-foreground">תאריך לחסימה</label>
                 <input type="date" value={blockDate} onChange={(e) => setBlockDate(e.target.value)} className="h-[44px] rounded-[10px] border border-border-input bg-white px-3 text-[14px]" />
               </div>
               <Button onClick={handleAddBlock} className="h-[44px] bg-[#ffe0e2] text-destructive hover:bg-[#ffd0d3]">

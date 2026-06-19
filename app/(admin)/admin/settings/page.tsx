@@ -109,7 +109,7 @@ export default function AdminSettingsPage() {
         {/* Identity card */}
         <div className="rounded-[12px] border border-border bg-white p-6">
           <div className="flex items-start gap-4">
-            <label className="relative size-[100px] rounded-full bg-muted/20 flex items-center justify-center text-[28px] font-medium text-muted overflow-hidden cursor-pointer group shrink-0">
+            <label className="relative size-[100px] rounded-full bg-muted/20 flex items-center justify-center text-[28px] font-medium text-muted-foreground overflow-hidden cursor-pointer group shrink-0">
               {profile?.profilePhotoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={profile.profilePhotoUrl} alt="" className="w-full h-full object-cover" />

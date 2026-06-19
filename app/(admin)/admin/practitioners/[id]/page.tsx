@@ -180,13 +180,13 @@ export default function AdminPractitionerDetailPage() {
   };
 
   if (isLoading) return <div className="flex min-h-[60vh] items-center justify-center"><Spinner /></div>;
-  if (!practitioner) return <div className="flex min-h-[60vh] items-center justify-center text-muted">מטפל לא נמצא</div>;
+  if (!practitioner) return <div className="flex min-h-[60vh] items-center justify-center text-muted-foreground">מטפל לא נמצא</div>;
 
   const isPending = ["submitted", "pending_approval"].includes(practitioner.status);
 
   return (
     <div>
-      <button onClick={() => router.push("/admin/practitioners")} className="flex items-center gap-2 text-muted hover:text-black mb-6">
+      <button onClick={() => router.push("/admin/practitioners")} className="flex items-center gap-2 text-muted-foreground hover:text-black mb-6">
         <ArrowRight className="size-4" /> חזרה לרשימת מטפלים
       </button>
 
@@ -299,7 +299,7 @@ export default function AdminPractitionerDetailPage() {
           {isPending && (
             <div className="rounded-[12px] border border-border bg-white p-6 mb-4">
               <h2 className="text-[18px] font-semibold text-black mb-2">סיום הבדיקה</h2>
-              <p className="text-[13px] text-muted mb-4">
+              <p className="text-[13px] text-muted-foreground mb-4">
                 בלחיצה על אישור — שדות שעודכנו ייכללו במייל ההודעה למטפל יחד עם קוד QR ייעודי.
               </p>
               <Button onClick={handleApprove} disabled={isSubmitting} className="w-full mb-3 bg-accent text-black">

@@ -335,7 +335,7 @@ export default function BookingPage() {
                   <Spinner />
                 </div>
               ) : timeSlots.length === 0 ? (
-                <p className="text-center text-[16px] text-muted py-6">אין תורים פנויים ביום זה</p>
+                <p className="text-center text-[16px] text-muted-foreground py-6">אין תורים פנויים ביום זה</p>
               ) : (
                 <div className="flex flex-col gap-4 mb-6">
                   {morningSlots.length > 0 && (
