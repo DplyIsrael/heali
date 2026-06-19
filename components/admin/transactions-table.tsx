@@ -51,7 +51,7 @@ function MiniAvatar({ name, src }: { name: string; src: string }) {
         {src ? (
           <Image src={src} alt={name} fill className="object-cover" />
         ) : (
-          <span className="flex size-full items-center justify-center text-[11px] font-medium text-muted">
+          <span className="flex size-full items-center justify-center text-[11px] font-medium text-muted-foreground">
             {name.slice(0, 1)}
           </span>
         )}
@@ -149,7 +149,7 @@ export function TransactionsTable({
                     <option key={o.value} value={o.value}>הצג לפי: {o.label}</option>
                   ))}
                 </select>
-                <ChevronDown className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
+                <ChevronDown className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               </div>
               <div className="relative mb-4">
                 <input
@@ -158,7 +158,7 @@ export function TransactionsTable({
                   onChange={(e) => setPopDate(e.target.value)}
                   className="h-[44px] w-full rounded-[10px] border border-border-input bg-white pe-10 ps-4 text-[14px] text-foreground outline-none focus:border-primary"
                 />
-                <Calendar className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
+                <Calendar className="pointer-events-none absolute end-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               </div>
               <button
                 type="button"
@@ -178,7 +178,7 @@ export function TransactionsTable({
               <option key={o.value} value={o.value}>הצג לפי: {o.label}</option>
             ))}
           </select>
-          <ChevronDown className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
+          <ChevronDown className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         </div>
 
         {/* Type (client-side filter) */}
@@ -188,7 +188,7 @@ export function TransactionsTable({
               <option key={o.value} value={o.value}>הצג לפי: {o.label}</option>
             ))}
           </select>
-          <ChevronDown className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
+          <ChevronDown className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         </div>
 
         {/* Category */}
@@ -199,7 +199,7 @@ export function TransactionsTable({
               <option key={d.id} value={d.id}>{d.name}</option>
             ))}
           </select>
-          <ChevronDown className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
+          <ChevronDown className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         </div>
 
         {/* Free search */}
@@ -214,7 +214,7 @@ export function TransactionsTable({
           <button
             type="button"
             onClick={() => load({ ...filters, search: search || undefined })}
-            className="absolute start-3 top-1/2 -translate-y-1/2 text-muted hover:text-primary"
+            className="absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary"
             aria-label="חיפוש"
           >
             <Search className="size-4" />
@@ -228,13 +228,13 @@ export function TransactionsTable({
       ) : visibleRows.length === 0 ? (
         <div className="py-16 text-center">
           <p className="text-[16px] font-medium text-black">לא נמצאו עסקאות</p>
-          <p className="mt-1 text-[14px] text-muted">עסקאות יופיעו כאן ברגע שיתקיימו טיפולים במערכת</p>
+          <p className="mt-1 text-[14px] text-muted-foreground">עסקאות יופיעו כאן ברגע שיתקיימו טיפולים במערכת</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-[14px]">
             <thead>
-              <tr className="border-b border-border text-[13px] text-muted">
+              <tr className="border-b border-border text-[13px] text-muted-foreground">
                 <th className="whitespace-nowrap py-3 pe-4 text-right font-medium">סכום העסקה</th>
                 <th className="whitespace-nowrap py-3 pe-4 text-right font-medium">סטטוס תשלום</th>
                 <th className="whitespace-nowrap py-3 pe-4 text-right font-medium">סטטוס טיפול</th>

@@ -55,7 +55,7 @@ function PointsCard() {
         <span className="text-[16px] text-black">צברת 150 נקודות</span>
         <Coins className="size-[20px] text-accent" />
       </div>
-      <p className="text-[14px] font-light text-muted">עוד 120 נקודות תקבל מאיתנו טיפול חינם</p>
+      <p className="text-[14px] font-light text-muted-foreground">עוד 120 נקודות תקבל מאיתנו טיפול חינם</p>
     </div>
   );
 }
@@ -75,7 +75,7 @@ function RecentMessages() {
             <span className="rounded-[8px] bg-gradient-to-b from-[#ebecec] to-white px-3 py-1 text-[12px] font-light text-black">
               {m.time}
             </span>
-            <p className="w-full text-right text-[14px] font-light leading-[18px] text-muted line-clamp-2">
+            <p className="w-full text-right text-[14px] font-light leading-[18px] text-muted-foreground line-clamp-2">
               {m.preview}
             </p>
           </div>

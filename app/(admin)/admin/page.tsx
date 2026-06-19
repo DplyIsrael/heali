@@ -43,7 +43,7 @@ export default async function AdminDashboardPage() {
         <h1 className="text-[28px] md:text-[36px] font-bold text-black">
           {greeting()} {name}!
         </h1>
-        <p className="mt-1 text-[15px] text-muted">סקירה כללית של הפעילות במערכת Heali</p>
+        <p className="mt-1 text-[15px] text-muted-foreground">סקירה כללית של הפעילות במערכת Heali</p>
       </div>
 
       {/* KPI cards */}
@@ -51,13 +51,13 @@ export default async function AdminDashboardPage() {
         {kpis.map((kpi) => (
           <div key={kpi.label} className="rounded-[16px] border border-border bg-white p-5">
             <div className="flex items-start justify-between gap-2">
-              <p className="text-[14px] leading-snug text-muted">{kpi.label}</p>
+              <p className="text-[14px] leading-snug text-muted-foreground">{kpi.label}</p>
               <div className={`flex size-[48px] shrink-0 items-center justify-center rounded-[12px] ${kpi.iconClass}`}>
                 <kpi.icon className="size-5" />
               </div>
             </div>
             <p className="mt-3 text-[28px] font-bold text-black">{kpi.value.toLocaleString()}</p>
-            <p className="mt-2 text-[13px] text-muted">
+            <p className="mt-2 text-[13px] text-muted-foreground">
               <span className={kpi.trend >= 0 ? "text-green-600" : "text-destructive"}>
                 {kpi.trend >= 0 ? "+" : ""}{kpi.trend}%
               </span>{" "}
