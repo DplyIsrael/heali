@@ -39,6 +39,13 @@ export async function fetchProfileData(): Promise<PractitionerProfileData | null
 
   if (!profile) return null;
 
+  // Bank details live in a separate admin/service-role-only table.
+  const { data: bank } = await admin
+    .from("practitioner_bank_details")
+    .select("bank_name, bank_account_number, bank_branch_number, bank_number")
+    .eq("practitioner_id", profile.id)
+    .maybeSingle();
+
   const { data: userData } = await admin
     .from("users")
     .select("full_name, email")
@@ -90,10 +97,10 @@ export async function fetchProfileData(): Promise<PractitionerProfileData | null
     qrCodeUrl: profile.qr_code_url ?? "",
     profilePhotoUrl: profile.profile_photo_url ?? "",
     certificates,
-    bankName: profile.bank_name ?? "",
-    bankAccountNumber: profile.bank_account_number ?? "",
-    bankBranchNumber: profile.bank_branch_number ?? "",
-    bankNumber: profile.bank_number ?? "",
+    bankName: bank?.bank_name ?? "",
+    bankAccountNumber: bank?.bank_account_number ?? "",
+    bankBranchNumber: bank?.bank_branch_number ?? "",
+    bankNumber: bank?.bank_number ?? "",
   };
 }
 
@@ -108,16 +115,26 @@ export async function updateBankDetails(params: {
   if (!user) return { success: false, error: "לא מחובר" };
 
   const admin = createAdminClient();
-  const { error } = await admin
+  const { data: profile } = await admin
     .from("practitioner_profiles")
-    .update({
-      bank_name: params.bankName.trim() || null,
-      bank_account_number: params.bankAccountNumber.trim() || null,
-      bank_branch_number: params.bankBranchNumber.trim() || null,
-      bank_number: params.bankNumber.trim() || null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("user_id", user.id);
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
+  if (!profile) return { success: false, error: "פרופיל לא נמצא" };
+
+  const { error } = await admin
+    .from("practitioner_bank_details")
+    .upsert(
+      {
+        practitioner_id: profile.id,
+        bank_name: params.bankName.trim() || null,
+        bank_account_number: params.bankAccountNumber.trim() || null,
+        bank_branch_number: params.bankBranchNumber.trim() || null,
+        bank_number: params.bankNumber.trim() || null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "practitioner_id" }
+    );
 
   if (error) return { success: false, error: "שגיאה בעדכון פרטי הבנק" };
   return { success: true };

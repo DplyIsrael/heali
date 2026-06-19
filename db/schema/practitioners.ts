@@ -30,11 +30,6 @@ export const practitionerProfiles = pgTable("practitioner_profiles", {
   area: text("area"),
   profilePhotoUrl: text("profile_photo_url"),
   qrCodeUrl: text("qr_code_url"),
-  // Bank details for payouts. Plain-text — Supabase encrypts at rest.
-  bankName: text("bank_name"),
-  bankAccountNumber: text("bank_account_number"),
-  bankBranchNumber: text("bank_branch_number"),
-  bankNumber: text("bank_number"),
   verificationStatus: practitionerStatusEnum("verification_status").notNull().default("draft"),
   rejectionReason: text("rejection_reason"),
   isPubliclyVisible: boolean("is_publicly_visible").notNull().default(false),
@@ -42,6 +37,20 @@ export const practitionerProfiles = pgTable("practitioner_profiles", {
   totalReviews: integer("total_reviews").notNull().default(0),
   agreementSignedAt: timestamp("agreement_signed_at", { withTimezone: true }),
   onboardingStep: integer("onboarding_step").notNull().default(1),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+// Bank details for payouts — isolated in an admin/service-role-only table so
+// they are NOT exposed via the public practitioner_profiles read policy.
+export const practitionerBankDetails = pgTable("practitioner_bank_details", {
+  practitionerId: uuid("practitioner_id")
+    .primaryKey()
+    .references(() => practitionerProfiles.id, { onDelete: "cascade" }),
+  bankName: text("bank_name"),
+  bankAccountNumber: text("bank_account_number"),
+  bankBranchNumber: text("bank_branch_number"),
+  bankNumber: text("bank_number"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });

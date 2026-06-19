@@ -37,7 +37,6 @@ export async function fetchPendingPayouts(): Promise<PayoutGroup[]> {
       id, practitioner_id, price_at_booking, scheduled_date,
       practitioner_profiles!inner (
         user_id,
-        bank_name, bank_account_number, bank_branch_number, bank_number,
         users!inner (full_name)
       )
     `)
@@ -53,10 +52,6 @@ export async function fetchPendingPayouts(): Promise<PayoutGroup[]> {
     const row = b as Record<string, unknown>;
     const profile = row.practitioner_profiles as unknown as {
       user_id: string;
-      bank_name: string | null;
-      bank_account_number: string | null;
-      bank_branch_number: string | null;
-      bank_number: string | null;
       users: { full_name: string };
     };
     const id = row.practitioner_id as string;
@@ -65,10 +60,10 @@ export async function fetchPendingPayouts(): Promise<PayoutGroup[]> {
         practitionerId: id,
         practitionerUserId: profile.user_id,
         practitionerName: profile.users?.full_name ?? "",
-        bankName: profile.bank_name ?? "",
-        bankAccountNumber: profile.bank_account_number ?? "",
-        bankBranchNumber: profile.bank_branch_number ?? "",
-        bankNumber: profile.bank_number ?? "",
+        bankName: "",
+        bankAccountNumber: "",
+        bankBranchNumber: "",
+        bankNumber: "",
         bookingIds: [],
         bookingCount: 0,
         amountOwed: 0,
@@ -81,6 +76,24 @@ export async function fetchPendingPayouts(): Promise<PayoutGroup[]> {
     const scheduled = row.scheduled_date as string;
     if (!groups[id].oldestUnpaidAt || scheduled < groups[id].oldestUnpaidAt) {
       groups[id].oldestUnpaidAt = scheduled;
+    }
+  }
+
+  // Bank details live in a separate admin-only table — merge them in.
+  const ids = Object.keys(groups);
+  if (ids.length > 0) {
+    const { data: banks } = await supabase
+      .from("practitioner_bank_details")
+      .select("practitioner_id, bank_name, bank_account_number, bank_branch_number, bank_number")
+      .in("practitioner_id", ids);
+    for (const bk of banks ?? []) {
+      const g = groups[bk.practitioner_id as string];
+      if (g) {
+        g.bankName = (bk.bank_name as string) ?? "";
+        g.bankAccountNumber = (bk.bank_account_number as string) ?? "";
+        g.bankBranchNumber = (bk.bank_branch_number as string) ?? "";
+        g.bankNumber = (bk.bank_number as string) ?? "";
+      }
     }
   }
 
