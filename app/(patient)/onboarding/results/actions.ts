@@ -49,7 +49,7 @@ export async function fetchMatchedPractitioners(
       average_rating,
       total_reviews,
       domain_ids,
-      users!inner ( full_name )
+      display_name
     `)
     .eq("verification_status", "approved")
     .eq("is_publicly_visible", true)
@@ -84,12 +84,11 @@ export async function fetchMatchedPractitioners(
 
   // Map to the wire shape + apply city-first ranking.
   const mapped: MatchedPractitioner[] = (profiles as Record<string, unknown>[]).map((p) => {
-    const u = p.users as { full_name?: string } | undefined;
     const domainIds = (p.domain_ids as string[] | null) ?? [];
     const firstDomain = domainIds.map((id) => domainNameMap[id]).find(Boolean) ?? "";
     return {
       id: p.id as string,
-      name: u?.full_name ?? "מטפל/ת",
+      name: (p.display_name as string) ?? "מטפל/ת",
       domain: firstDomain,
       city: (p.city as string) ?? "",
       rating: Number(p.average_rating ?? 0),

@@ -28,6 +28,9 @@ export const practitionerProfiles = pgTable("practitioner_profiles", {
   clinicAddresses: text("clinic_addresses").array().notNull().default([]),
   homeVisits: boolean("home_visits").notNull().default(false),
   area: text("area"),
+  // Denormalized from users.full_name (kept in sync by a DB trigger) so public
+  // reads don't need to join users — keeps practitioner emails out of anon reads.
+  displayName: text("display_name"),
   profilePhotoUrl: text("profile_photo_url"),
   qrCodeUrl: text("qr_code_url"),
   verificationStatus: practitionerStatusEnum("verification_status").notNull().default("draft"),

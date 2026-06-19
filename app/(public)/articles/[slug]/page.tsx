@@ -120,7 +120,7 @@ async function RelatedPractitioners({ categoryName }: { categoryName: string }) 
 
   const { data: practitioners } = await supabase
     .from("practitioner_profiles")
-    .select("id, user_id, price, city, average_rating, total_reviews, bio, profile_photo_url, domain_ids, users!inner(full_name)")
+    .select("id, user_id, price, city, average_rating, total_reviews, bio, profile_photo_url, domain_ids, display_name")
     .eq("verification_status", "approved")
     .eq("is_publicly_visible", true)
     .overlaps("domain_ids", domainIds)
@@ -133,7 +133,7 @@ async function RelatedPractitioners({ categoryName }: { categoryName: string }) 
       <h2 className="text-[24px] font-semibold text-black mb-6">מטפלים מהתחום</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {practitioners.map((p: Record<string, unknown>) => {
-          const users = p.users as unknown as { full_name: string };
+          const displayName = (p.display_name as string) ?? "";
           return (
             <Link key={p.id as string} href={`/practitioners/${p.id}`} className="rounded-[16px] border border-border bg-white p-4 hover:shadow-md transition-shadow">
               <div className="flex items-center gap-3 mb-2">
@@ -141,11 +141,11 @@ async function RelatedPractitioners({ categoryName }: { categoryName: string }) 
                   {p.profile_photo_url ? (
                     <Image src={p.profile_photo_url as string} alt="" fill className="object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-muted-foreground text-[14px]">{users.full_name.slice(0, 2)}</div>
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground text-[14px]">{displayName.slice(0, 2)}</div>
                   )}
                 </div>
                 <div>
-                  <p className="text-[16px] font-medium text-black">{users.full_name}</p>
+                  <p className="text-[16px] font-medium text-black">{displayName}</p>
                   <p className="text-[14px] text-muted-foreground">{(p.city as string) ?? ""}</p>
                 </div>
               </div>

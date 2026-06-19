@@ -18,7 +18,7 @@ export async function confirmAttendance(qrCode: string): Promise<AttendanceResul
   // Find practitioner by QR code URL
   const { data: practitioner } = await supabase
     .from("practitioner_profiles")
-    .select("id, qr_code_url, users!inner(full_name)")
+    .select("id, qr_code_url, display_name")
     .eq("qr_code_url", qrCode)
     .single();
 
@@ -72,6 +72,5 @@ export async function confirmAttendance(qrCode: string): Promise<AttendanceResul
     console.error("[scan] inngest send failed:", err);
   }
 
-  const users = practitioner.users as unknown as { full_name: string };
-  return { success: true, practitionerName: users.full_name };
+  return { success: true, practitionerName: (practitioner.display_name as string) ?? "" };
 }

@@ -68,9 +68,7 @@ export async function searchPractitioners(
       is_publicly_visible,
       verification_status,
       created_at,
-      users!inner (
-        full_name
-      )
+      display_name
     `, { count: "exact" })
     .eq("verification_status", "approved")
     .eq("is_publicly_visible", true);
@@ -153,13 +151,12 @@ export async function searchPractitioners(
   }
 
   const practitioners: PractitionerListItem[] = (data ?? []).map((p: Record<string, unknown>) => {
-    const users = p.users as { full_name: string } | null;
     const domainIds = (p.domain_ids as string[]) || [];
 
     return {
       id: p.id as string,
       userId: p.user_id as string,
-      name: users?.full_name ?? "",
+      name: (p.display_name as string) ?? "",
       domainNames: domainIds.map((id: string) => domainMap[id] ?? "").filter(Boolean),
       price: Number(p.price) || 0,
       pricingModel: p.pricing_model as string,

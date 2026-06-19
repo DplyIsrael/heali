@@ -51,9 +51,7 @@ export async function fetchPractitionerById(id: string): Promise<PractitionerPro
       profile_photo_url,
       languages,
       verification_status,
-      users!inner (
-        full_name
-      )
+      display_name
     `)
     .eq("id", id)
     .single();
@@ -82,13 +80,12 @@ export async function fetchPractitionerById(id: string): Promise<PractitionerPro
     specialtyNames = (specialties ?? []).map((s: { name: string }) => s.name);
   }
 
-  const users = data.users as unknown as { full_name: string };
   const avgRating = Number(data.average_rating || 0);
 
   return {
     id: data.id,
     userId: data.user_id,
-    name: users.full_name,
+    name: (data.display_name as string) ?? "",
     domainNames,
     specialtyNames,
     price: Number(data.price),
@@ -154,9 +151,7 @@ export async function fetchSimilarPractitioners(practitionerId: string, domainId
       total_reviews,
       bio,
       profile_photo_url,
-      users!inner (
-        full_name
-      )
+      display_name
     `)
     .eq("verification_status", "approved")
     .eq("is_publicly_visible", true)
@@ -180,11 +175,10 @@ export async function fetchSimilarPractitioners(practitionerId: string, domainId
   }
 
   return (data ?? []).map((p: Record<string, unknown>) => {
-    const users = p.users as { full_name: string };
     const pDomainIds = (p.domain_ids as string[]) || [];
     return {
       id: p.id as string,
-      name: users.full_name,
+      name: (p.display_name as string) ?? "",
       domain: pDomainIds.map((id: string) => domainMap[id] ?? "").filter(Boolean)[0] ?? "",
       price: Number(p.price),
       city: (p.city as string) ?? "",
