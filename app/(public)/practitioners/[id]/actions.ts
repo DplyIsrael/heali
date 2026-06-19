@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export interface PractitionerProfile {
   id: string;
@@ -106,9 +107,10 @@ export async function fetchPractitionerById(id: string): Promise<PractitionerPro
 
 export async function fetchPractitionerReviews(practitionerId: string): Promise<PractitionerReview[]> {
   const supabase = await createClient();
+  const admin = createAdminClient();
 
   // Get bookings for this practitioner, then their reviews
-  const { data: bookings } = await supabase
+  const { data: bookings } = await admin
     .from("bookings")
     .select("id")
     .eq("practitioner_id", practitionerId);

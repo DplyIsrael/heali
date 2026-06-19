@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 interface ActionResult {
   success: boolean;
@@ -61,6 +62,7 @@ export async function fetchFavoriteIds(): Promise<string[]> {
 
 export async function fetchFavoritePractitioners() {
   const supabase = await createClient();
+  const admin = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) return [];
@@ -74,7 +76,7 @@ export async function fetchFavoritePractitioners() {
 
   const practitionerIds = favs.map((f: { practitioner_id: string }) => f.practitioner_id);
 
-  const { data: practitioners } = await supabase
+  const { data: practitioners } = await admin
     .from("practitioner_profiles")
     .select(`
       id,

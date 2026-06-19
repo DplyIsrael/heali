@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export interface PublicArticle {
   id: string;
@@ -20,6 +21,7 @@ export async function fetchPublicArticles(params?: {
   limit?: number;
 }): Promise<{ articles: PublicArticle[]; total: number }> {
   const supabase = await createClient();
+  const admin = createAdminClient();
   const page = params?.page ?? 1;
   const limit = params?.limit ?? 12;
   const offset = (page - 1) * limit;
@@ -27,8 +29,7 @@ export async function fetchPublicArticles(params?: {
   let query = supabase
     .from("articles")
     .select(`
-      id, title, content, slug, category_id, background_image_url, created_at,
-      users!articles_author_id_fkey (full_name)
+      id, title, content, slug, category_id, background_image_url, created_at, author_id
     `, { count: "exact" })
     .eq("status", "approved")
     .order("created_at", { ascending: false })
@@ -53,15 +54,23 @@ export async function fetchPublicArticles(params?: {
     catMap = (cats ?? []).reduce((acc: Record<string, string>, c: { id: string; name: string }) => { acc[c.id] = c.name; return acc; }, {});
   }
 
+  // Fetch author names via admin client (authors may be admins or non-approved
+  // practitioners with no anon read policy on users)
+  const authorIds = [...new Set((data ?? []).map((a: Record<string, unknown>) => a.author_id as string).filter(Boolean))];
+  let authorMap: Record<string, string> = {};
+  if (authorIds.length > 0) {
+    const { data: authors } = await admin.from("users").select("id, full_name").in("id", authorIds);
+    authorMap = (authors ?? []).reduce((acc: Record<string, string>, u: { id: string; full_name: string }) => { acc[u.id] = u.full_name; return acc; }, {});
+  }
+
   const articles: PublicArticle[] = (data ?? []).map((a: Record<string, unknown>) => {
-    const author = a.users as { full_name: string } | null;
     return {
       id: a.id as string,
       title: a.title as string,
       content: a.content as string,
       slug: a.slug as string,
       categoryName: catMap[a.category_id as string] ?? "",
-      authorName: author?.full_name ?? "",
+      authorName: authorMap[a.author_id as string] ?? "",
       backgroundImageUrl: (a.background_image_url as string) ?? "",
       createdAt: a.created_at as string,
     };
@@ -72,12 +81,12 @@ export async function fetchPublicArticles(params?: {
 
 export async function fetchArticleBySlug(slug: string): Promise<PublicArticle | null> {
   const supabase = await createClient();
+  const admin = createAdminClient();
 
   const { data, error } = await supabase
     .from("articles")
     .select(`
-      id, title, content, slug, category_id, background_image_url, created_at,
-      users!articles_author_id_fkey (full_name)
+      id, title, content, slug, category_id, background_image_url, created_at, author_id
     `)
     .eq("slug", slug)
     .eq("status", "approved")
@@ -91,7 +100,13 @@ export async function fetchArticleBySlug(slug: string): Promise<PublicArticle | 
     categoryName = cat?.name ?? "";
   }
 
-  const author = data.users as unknown as { full_name: string } | null;
+  // Fetch author name via admin client (authors may be admins or non-approved
+  // practitioners with no anon read policy on users)
+  let authorName = "";
+  if (data.author_id) {
+    const { data: author } = await admin.from("users").select("full_name").eq("id", data.author_id).single();
+    authorName = author?.full_name ?? "";
+  }
 
   return {
     id: data.id,
@@ -99,7 +114,7 @@ export async function fetchArticleBySlug(slug: string): Promise<PublicArticle | 
     content: data.content,
     slug: data.slug,
     categoryName,
-    authorName: author?.full_name ?? "",
+    authorName,
     backgroundImageUrl: data.background_image_url ?? "",
     createdAt: data.created_at,
   };

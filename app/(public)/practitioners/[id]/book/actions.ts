@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email/client";
 import { practitionerNewBookingEmail } from "@/lib/email/templates";
 import { isCardcomEnabled, createLowProfile } from "@/lib/payments/cardcom";
@@ -27,6 +28,7 @@ export interface DayAvailability {
 
 export async function fetchPractitionerAvailability(practitionerId: string, startDate: string, endDate: string) {
   const supabase = await createClient();
+  const admin = createAdminClient();
 
   // Get weekly schedule
   const { data: weeklySlots } = await supabase
@@ -45,7 +47,7 @@ export async function fetchPractitionerAvailability(practitionerId: string, star
     .lte("blocked_date", endDate);
 
   // Get existing bookings in range
-  const { data: existingBookings } = await supabase
+  const { data: existingBookings } = await admin
     .from("bookings")
     .select("scheduled_date, scheduled_time")
     .eq("practitioner_id", practitionerId)
@@ -73,6 +75,7 @@ export async function getTimeSlotsForDate(
   weekday: number
 ): Promise<AvailableSlot[]> {
   const supabase = await createClient();
+  const admin = createAdminClient();
 
   // Get weekly slots for this weekday
   const { data: slots } = await supabase
@@ -94,7 +97,7 @@ export async function getTimeSlotsForDate(
   if (blocked && blocked.length > 0) return [];
 
   // Get existing bookings for this date
-  const { data: existingBookings } = await supabase
+  const { data: existingBookings } = await admin
     .from("bookings")
     .select("scheduled_time")
     .eq("practitioner_id", practitionerId)
@@ -161,6 +164,7 @@ export async function createBooking(
   applyCredits: boolean = false
 ): Promise<ActionResult> {
   const supabase = await createClient();
+  const admin = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "לא מחובר" };
 
@@ -205,7 +209,7 @@ export async function createBooking(
   }
 
   // Validate the slot is still available
-  const { data: existing } = await supabase
+  const { data: existing } = await admin
     .from("bookings")
     .select("id")
     .eq("practitioner_id", practitionerId)
@@ -289,19 +293,19 @@ export async function createBooking(
   // was bounded by listedPrice so we can't over-spend.
   if (applyCredits && appliedCreditAmount > 0) {
     if (creditsToConsumeFully.length > 0) {
-      const { error: spentErr } = await supabase
+      const { error: spentErr } = await admin
         .from("credits")
         .update({ status: "used" })
         .in("id", creditsToConsumeFully);
       if (spentErr) console.error("[createBooking] credit-spent update failed:", spentErr);
     }
     if (partialCredit) {
-      const { error: partialErr } = await supabase
+      const { error: partialErr } = await admin
         .from("credits")
         .update({ amount: partialCredit.usedAmount, status: "used" })
         .eq("id", partialCredit.id);
       if (partialErr) console.error("[createBooking] partial-credit update failed:", partialErr);
-      const { error: splitErr } = await supabase.from("credits").insert({
+      const { error: splitErr } = await admin.from("credits").insert({
         patient_id: user.id,
         amount: partialCredit.leftover,
         status: "active",
@@ -359,8 +363,8 @@ export async function createBooking(
       .single();
     if (pracProfile) {
       const [{ data: pracUser }, { data: patientUser }, { data: domain }] = await Promise.all([
-        supabase.from("users").select("full_name, email").eq("id", pracProfile.user_id).single(),
-        supabase.from("users").select("full_name").eq("id", user.id).single(),
+        admin.from("users").select("full_name, email").eq("id", pracProfile.user_id).single(),
+        admin.from("users").select("full_name").eq("id", user.id).single(),
         supabase.from("treatment_domains").select("name").eq("id", domainId).single(),
       ]);
       if (pracUser?.email) {

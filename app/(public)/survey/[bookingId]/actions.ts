@@ -18,10 +18,11 @@ export interface SurveyBookingInfo {
 
 export async function fetchSurveyBooking(bookingId: string): Promise<SurveyBookingInfo | null> {
   const supabase = await createClient();
+  const admin = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: booking } = await supabase
+  const { data: booking } = await admin
     .from("bookings")
     .select(`
       id,

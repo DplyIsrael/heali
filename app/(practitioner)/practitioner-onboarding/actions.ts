@@ -432,7 +432,8 @@ export async function addCustomDomain(name: string): Promise<{ success: boolean;
     return { success: true, id: existing[0].id };
   }
 
-  const { data, error } = await supabase
+  const admin = createAdminClient();
+  const { data, error } = await admin
     .from("treatment_domains")
     .insert({ name, is_active: true })
     .select("id")
@@ -463,7 +464,8 @@ export async function addCustomSpecialty(
 
   // New custom submission — insert as pending (is_active=false). Admin must
   // approve before it appears for other practitioners.
-  const { data, error } = await supabase
+  const admin = createAdminClient();
+  const { data, error } = await admin
     .from("specialties")
     .insert({ name, domain_id: domainId, is_active: false })
     .select("id")
@@ -472,7 +474,6 @@ export async function addCustomSpecialty(
   if (error) return { success: false, error: "שגיאה בהוספת התמחות" };
 
   // Notify admins so they see something to review
-  const admin = createAdminClient();
   const { data: admins } = await admin.from("users").select("id").eq("role", "admin");
   if (admins && admins.length > 0) {
     await admin.from("notifications").insert(

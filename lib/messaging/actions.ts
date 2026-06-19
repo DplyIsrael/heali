@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export interface ConversationListItem {
   id: string;
@@ -34,6 +35,7 @@ interface ActionResult<T = unknown> {
  */
 export async function fetchConversations(): Promise<ConversationListItem[]> {
   const supabase = await createClient();
+  const admin = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
 
@@ -53,7 +55,7 @@ export async function fetchConversations(): Promise<ConversationListItem[]> {
     )
   );
 
-  const { data: otherUsers } = await supabase
+  const { data: otherUsers } = await admin
     .from("users")
     .select("id, full_name, profile_photo_url")
     .in("id", otherIds);
@@ -175,13 +177,14 @@ export async function getOrCreateConversation(
   otherUserId: string
 ): Promise<ActionResult<{ id: string }>> {
   const supabase = await createClient();
+  const admin = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "לא מחובר" };
   if (otherUserId === user.id) return { success: false, error: "לא ניתן לשלוח הודעה לעצמך" };
 
   // Resolve roles: figure out which one is the patient vs the practitioner
   // so the (patient_id, practitioner_user_id) pair is consistent.
-  const { data: rows } = await supabase
+  const { data: rows } = await admin
     .from("users")
     .select("id, role")
     .in("id", [user.id, otherUserId]);

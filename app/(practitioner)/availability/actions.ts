@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 interface ActionResult {
   success: boolean;
@@ -203,8 +204,8 @@ export async function fetchBookingsForRange(
   const practitionerId = await getPractitionerProfileId();
   if (!practitionerId) return [];
 
-  const supabase = await createClient();
-  const { data } = await supabase
+  const admin = createAdminClient();
+  const { data } = await admin
     .from("bookings")
     .select(`
       id, scheduled_date, scheduled_time, status, price_at_booking,
@@ -241,8 +242,8 @@ export async function fetchUpcomingBookingsForPractitioner(
 
   const today = new Date().toISOString().split("T")[0];
 
-  const supabase = await createClient();
-  const { data } = await supabase
+  const admin = createAdminClient();
+  const { data } = await admin
     .from("bookings")
     .select(`
       id, scheduled_date, scheduled_time, status, price_at_booking,

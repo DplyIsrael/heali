@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { isCardcomEnabled, chargeToken } from "@/lib/payments/cardcom";
 import { sendEmail } from "@/lib/email/client";
 import { bookingConfirmedEmail } from "@/lib/email/templates";
@@ -29,6 +30,7 @@ export async function fetchDashboardData(): Promise<{
   practitionerName: string;
 }> {
   const supabase = await createClient();
+  const admin = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { stats: { totalClosed: 0, totalActive: 0, totalPatients: 0, totalRevenue: 0 }, recentBookings: [], practitionerName: "" };
 
@@ -45,7 +47,7 @@ export async function fetchDashboardData(): Promise<{
   if (!profile) return { stats: { totalClosed: 0, totalActive: 0, totalPatients: 0, totalRevenue: 0 }, recentBookings: [], practitionerName: userData?.full_name ?? "" };
 
   // Fetch all bookings for this practitioner
-  const { data: bookings } = await supabase
+  const { data: bookings } = await admin
     .from("bookings")
     .select(`
       id,
@@ -127,6 +129,7 @@ export async function approveBooking(bookingId: string) {
   if (!practitionerId) return { success: false, error: "לא מורשה" };
 
   const supabase = await createClient();
+  const admin = createAdminClient();
 
   // Load the booking so we have token + price for the CardCom charge, plus
   // the scheduling fields the confirmation email + Google Calendar link need.
@@ -159,7 +162,7 @@ export async function approveBooking(bookingId: string) {
       }
     } else {
       // Fetch patient identity for the receipt.
-      const { data: patientUser } = await supabase
+      const { data: patientUser } = await admin
         .from("users")
         .select("full_name, email")
         .eq("id", booking.patient_id)
@@ -214,7 +217,7 @@ export async function approveBooking(bookingId: string) {
 
     if (pracProfile) {
       const [{ data: patientUser }, { data: pracUser }, { data: domain }] = await Promise.all([
-        supabase.from("users").select("full_name, email").eq("id", booking.patient_id).single(),
+        admin.from("users").select("full_name, email").eq("id", booking.patient_id).single(),
         supabase.from("users").select("full_name").eq("id", pracProfile.user_id).single(),
         supabase.from("treatment_domains").select("name").eq("id", booking.domain_id).single(),
       ]);

@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { isCardcomEnabled, refundTransaction } from "@/lib/payments/cardcom";
 import { sendEmail } from "@/lib/email/client";
 import { bookingCanceledEmail } from "@/lib/email/templates";
@@ -29,10 +30,11 @@ export async function fetchMyBookings(): Promise<{
   canceled: BookingItem[];
 }> {
   const supabase = await createClient();
+  const admin = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { active: [], completed: [], canceled: [] };
 
-  const { data: bookings } = await supabase
+  const { data: bookings } = await admin
     .from("bookings")
     .select(`
       id,
@@ -110,6 +112,7 @@ export async function fetchMyBookings(): Promise<{
 
 export async function cancelBooking(bookingId: string, reason?: string): Promise<ActionResult> {
   const supabase = await createClient();
+  const admin = createAdminClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "לא מחובר" };
 
@@ -149,7 +152,7 @@ export async function cancelBooking(bookingId: string, reason?: string): Promise
     newPaymentStatus = "refunded";
   } else if (wasCharged && isLate) {
     // Late cancellation — credit only
-    await supabase.from("credits").insert({
+    await admin.from("credits").insert({
       patient_id: user.id,
       amount: booking.price_at_booking,
       source_booking_id: bookingId,
@@ -158,7 +161,7 @@ export async function cancelBooking(bookingId: string, reason?: string): Promise
     newPaymentStatus = "credited";
   } else if (wasCharged && !isCardcomEnabled()) {
     // CardCom is off (mock environment). Fall back to credit.
-    await supabase.from("credits").insert({
+    await admin.from("credits").insert({
       patient_id: user.id,
       amount: booking.price_at_booking,
       source_booking_id: bookingId,
