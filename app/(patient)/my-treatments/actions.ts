@@ -13,6 +13,7 @@ interface ActionResult {
 
 export interface BookingItem {
   id: string;
+  practitionerId: string;
   orderNumber: string;
   practitionerName: string;
   practitionerImage: string;
@@ -83,6 +84,7 @@ export async function fetchMyBookings(): Promise<{
 
     return {
       id: b.id as string,
+      practitionerId: (b.practitioner_id as string) ?? "",
       orderNumber: (b.id as string).slice(0, 8).toUpperCase(),
       practitionerName: practUser?.full_name ?? "",
       practitionerImage: (profile?.profile_photo_url as string) ?? "/images/practitioners/practitioner-1.jpg",

@@ -254,7 +254,7 @@ function BookingCard({
               דרג את הטיפול
             </button>
             <Link
-              href={`/practitioners/${booking.id}/book`}
+              href={`/practitioners/${booking.practitionerId}/book`}
               className="flex items-center justify-center gap-1.5 flex-1 sm:w-full h-[40px] rounded-[8px] bg-primary text-[14px] text-white"
             >
               <RotateCw className="size-3.5" />

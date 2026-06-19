@@ -26,7 +26,9 @@ export async function confirmAttendance(qrCode: string): Promise<AttendanceResul
     return { success: false, error: "קוד QR לא תקין" };
   }
 
-  // Find the nearest upcoming confirmed booking for this patient with this practitioner
+  // Only allow completing a booking on/after its scheduled date — never a
+  // future appointment (prevents a patient self-completing early to unlock the
+  // review flow). Pick the most recent eligible confirmed booking.
   const today = new Date().toISOString().split("T")[0];
 
   const { data: booking } = await supabase
@@ -35,9 +37,9 @@ export async function confirmAttendance(qrCode: string): Promise<AttendanceResul
     .eq("patient_id", user.id)
     .eq("practitioner_id", practitioner.id)
     .eq("status", "confirmed")
-    .gte("scheduled_date", today)
-    .order("scheduled_date", { ascending: true })
-    .order("scheduled_time", { ascending: true })
+    .lte("scheduled_date", today)
+    .order("scheduled_date", { ascending: false })
+    .order("scheduled_time", { ascending: false })
     .limit(1)
     .single();
 

@@ -21,7 +21,11 @@ export async function GET(request: Request) {
         status: "canceled",
         updated_at: new Date().toISOString(),
       })
-      .eq("id", bookingId);
+      .eq("id", bookingId)
+      // Only a still-pending (never-tokenized) booking may be failed here.
+      // Prevents an unauthenticated GET from canceling a charged/confirmed
+      // booking by guessing its id.
+      .eq("payment_status", "pending");
   }
 
   return NextResponse.redirect(new URL(`/my-treatments?payment=failed`, request.url));

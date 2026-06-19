@@ -80,6 +80,14 @@ export async function submitReview(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "לא מחובר" };
 
+  // Server-side validation: rating must be an integer 1–5; cap comment length.
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    return { success: false, error: "דירוג חייב להיות מספר שלם בין 1 ל-5" };
+  }
+  if (comment && comment.length > 2000) {
+    return { success: false, error: "התגובה ארוכה מדי (עד 2000 תווים)" };
+  }
+
   // Validate booking belongs to user and is completed
   const { data: booking } = await supabase
     .from("bookings")

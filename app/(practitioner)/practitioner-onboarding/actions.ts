@@ -52,6 +52,11 @@ export async function savePricing(
   const userId = await getAuthUserId();
   if (!userId) return { success: false, error: "לא מחובר" };
 
+  const priceNum = Number(price);
+  if (!Number.isFinite(priceNum) || priceNum < 0) {
+    return { success: false, error: "מחיר לא תקין" };
+  }
+
   const admin = createAdminClient();
   const { error } = await admin
     .from("practitioner_profiles")

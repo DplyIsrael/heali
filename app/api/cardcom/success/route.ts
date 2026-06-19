@@ -40,7 +40,10 @@ export async function GET(request: Request) {
       payment_status: "tokenized",
       updated_at: new Date().toISOString(),
     })
-    .eq("id", bookingId);
+    .eq("id", bookingId)
+    // Only tokenize a still-pending booking — never clobber a later state
+    // (e.g. "charged"), matching the webhook guard.
+    .eq("payment_status", "pending");
 
   return NextResponse.redirect(new URL(`/my-treatments?payment=ok&bookingId=${bookingId}`, request.url));
 }
