@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 function daysAgoIso(days: number): string {
   const d = new Date();
@@ -14,6 +15,7 @@ function pctChange(last: number, prev: number): number {
 }
 
 export async function fetchAdminStats() {
+  await requireAdmin();
   const supabase = createAdminClient();
 
   const [usersRes, practRes, patientsRes, bookingsRes] = await Promise.all([
@@ -105,6 +107,7 @@ export interface TransactionFilters {
 export async function fetchAdminTransactions(
   filters: TransactionFilters = {}
 ): Promise<AdminTransaction[]> {
+  await requireAdmin();
   try {
     const supabase = createAdminClient();
 
@@ -188,6 +191,7 @@ export async function fetchAdminTransactions(
 }
 
 export async function fetchTreatmentDomains(): Promise<{ id: string; name: string }[]> {
+  await requireAdmin();
   try {
     const supabase = createAdminClient();
     const { data } = await supabase.from("treatment_domains").select("id, name").order("name");

@@ -186,6 +186,24 @@ export async function createBooking(
     return { success: false, error: "החשבון שלך חסום, אנא צור קשר עם התמיכה" };
   }
 
+  // Price is server-authoritative: read the practitioner's listed price from
+  // the DB and ignore any client-supplied amount (prevents price tampering).
+  const { data: prac } = await supabase
+    .from("practitioner_profiles")
+    .select("price")
+    .eq("id", practitionerId)
+    .single();
+  if (!prac) return { success: false, error: "מטפל לא נמצא" };
+  const listedPrice = Number(prac.price);
+  if (!Number.isFinite(listedPrice) || listedPrice < 0) {
+    return { success: false, error: "מחיר לא תקין" };
+  }
+  if (Number(priceAtBooking) !== listedPrice) {
+    console.warn(
+      `[createBooking] client price ${priceAtBooking} != listed ${listedPrice} (practitioner ${practitionerId})`
+    );
+  }
+
   // Validate the slot is still available
   const { data: existing } = await supabase
     .from("bookings")
@@ -208,7 +226,7 @@ export async function createBooking(
   // confirmation email, etc.). The last partially-consumed credit is split:
   // its existing row is marked spent at the used amount, and a new active
   // credit row is inserted with the leftover.
-  let priceAfterCredit = priceAtBooking;
+  let priceAfterCredit = listedPrice;
   const creditsToConsumeFully: string[] = [];
   let partialCredit:
     | { id: string; usedAmount: number; leftover: number }
@@ -223,7 +241,7 @@ export async function createBooking(
       .eq("status", "active")
       .order("created_at", { ascending: true });
 
-    let remaining = priceAtBooking;
+    let remaining = listedPrice;
     for (const c of activeCredits ?? []) {
       if (remaining <= 0) break;
       const amt = Number(c.amount);
@@ -241,7 +259,7 @@ export async function createBooking(
         remaining = 0;
       }
     }
-    priceAfterCredit = Math.max(0, Number((priceAtBooking - appliedCreditAmount).toFixed(2)));
+    priceAfterCredit = Math.max(0, Number((listedPrice - appliedCreditAmount).toFixed(2)));
   }
 
   // Create the booking (payment is mocked — goes straight to pending approval)

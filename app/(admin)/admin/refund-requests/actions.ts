@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 interface ActionResult {
   success: boolean;
@@ -24,6 +25,7 @@ export interface RefundRequest {
 export async function fetchRefundRequests(
   statusFilter: RefundRequest["status"] = "pending"
 ): Promise<RefundRequest[]> {
+  await requireAdmin();
   const supabase = await createClient();
 
   // Tolerate the case where the migration hasn't been applied yet —
@@ -80,6 +82,7 @@ export async function approveRefundRequest(
   requestId: string,
   adminNotes?: string
 ): Promise<ActionResult> {
+  await requireAdmin();
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "לא מחובר" };
@@ -121,6 +124,7 @@ export async function rejectRefundRequest(
   requestId: string,
   adminNotes?: string
 ): Promise<ActionResult> {
+  await requireAdmin();
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "לא מחובר" };
@@ -151,6 +155,7 @@ export async function rejectRefundRequest(
 }
 
 export async function fetchPendingRefundCount(): Promise<number> {
+  await requireAdmin();
   const supabase = await createClient();
   const { count } = await supabase
     .from("refund_requests")

@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 export interface PayoutGroup {
   practitionerId: string;
@@ -27,6 +28,7 @@ interface ActionResult {
  * paid_out_at is still NULL.
  */
 export async function fetchPendingPayouts(): Promise<PayoutGroup[]> {
+  await requireAdmin();
   const supabase = createAdminClient();
 
   const { data: bookings } = await supabase
@@ -91,6 +93,7 @@ export async function fetchPendingPayouts(): Promise<PayoutGroup[]> {
  * platform.
  */
 export async function markPayoutAsPaid(bookingIds: string[]): Promise<ActionResult> {
+  await requireAdmin();
   if (bookingIds.length === 0) return { success: false, error: "אין טיפולים לסימון" };
   const supabase = createAdminClient();
   const { error } = await supabase

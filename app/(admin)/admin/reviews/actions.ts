@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 interface ActionResult {
   success: boolean;
@@ -26,6 +27,7 @@ export interface PendingReview {
 export async function fetchPendingReviews(
   statusFilter: PendingReview["status"] = "submitted"
 ): Promise<PendingReview[]> {
+  await requireAdmin();
   const supabase = await createClient();
 
   const { data: reviews } = await supabase
@@ -142,6 +144,7 @@ async function recalcPractitionerRating(practitionerId: string): Promise<void> {
 }
 
 export async function approveReview(reviewId: string): Promise<ActionResult> {
+  await requireAdmin();
   const supabase = await createClient();
 
   const { data: review } = await supabase
@@ -168,6 +171,7 @@ export async function approveReview(reviewId: string): Promise<ActionResult> {
 }
 
 export async function rejectReview(reviewId: string): Promise<ActionResult> {
+  await requireAdmin();
   const supabase = await createClient();
 
   const { data: review } = await supabase
@@ -197,6 +201,7 @@ export async function rejectReview(reviewId: string): Promise<ActionResult> {
 }
 
 export async function fetchPendingReviewsCount(): Promise<number> {
+  await requireAdmin();
   const supabase = await createClient();
   const { count } = await supabase
     .from("reviews")

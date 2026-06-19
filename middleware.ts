@@ -1,8 +1,35 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PROTECTED_PREFIXES = ["/patient", "/practitioner", "/admin", "/home"];
+// Every protected route prefix mapped to the roles allowed to access it.
+// `admin` is allowed everywhere. Keep this in sync with the route groups.
+const ROUTE_ROLES: Record<string, string[]> = {
+  "/admin": ["admin"],
+  // practitioner
+  "/dashboard": ["practitioner", "admin"],
+  "/profile": ["practitioner", "admin"],
+  "/availability": ["practitioner", "admin"],
+  "/my-patients": ["practitioner", "admin"],
+  "/practitioner-onboarding": ["practitioner", "admin"],
+  "/practitioner-articles": ["practitioner", "admin"],
+  "/practitioner-messages": ["practitioner", "admin"],
+  // patient
+  "/home": ["patient", "admin"],
+  "/onboarding": ["patient", "admin"],
+  "/patient-profile": ["patient", "admin"],
+  "/patient-messages": ["patient", "admin"],
+  "/my-treatments": ["patient", "admin"],
+  "/wallet": ["patient", "admin"],
+  "/favorites": ["patient", "admin"],
+};
+// Require any authenticated user (row-level ownership is enforced in the action).
+const AUTH_ONLY_PREFIXES = ["/scan", "/survey"];
 const AUTH_PAGES = ["/login", "/register"];
+
+const prefixMatches = (pathname: string, p: string) =>
+  pathname === p || pathname.startsWith(p + "/");
+const matchRoleRoute = (pathname: string) =>
+  Object.keys(ROUTE_ROLES).find((p) => prefixMatches(pathname, p));
 
 const supabaseConfigured =
   !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
@@ -43,86 +70,70 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
-  const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
+  const matchedPrefix = matchRoleRoute(pathname);
+  const isAuthOnly = AUTH_ONLY_PREFIXES.some((p) => prefixMatches(pathname, p));
+  const isProtected = !!matchedPrefix || isAuthOnly;
   const isAuthPage = AUTH_PAGES.some((p) => pathname.startsWith(p));
 
-  // Redirect unauthenticated users away from protected routes
+  // Build a redirect that carries over any auth cookies set on supabaseResponse
+  // (so a session refresh — or signOut() below — is preserved through the redirect).
+  const redirectTo = (path: string, search = "") => {
+    const url = request.nextUrl.clone();
+    url.pathname = path;
+    url.search = search;
+    const res = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach((c) => res.cookies.set(c));
+    return res;
+  };
+
+  // Unauthenticated users may not reach protected routes.
   if (isProtected && !user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+    return redirectTo("/login");
   }
 
-  // Redirect authenticated users away from login/register
-  // Also redirect from home page if onboarding is incomplete
-  const shouldCheckRedirect = isAuthPage || pathname === "/";
-
-  if (shouldCheckRedirect && user) {
-    const { data: profile } = await supabase
+  // Load role / onboarding / blocked state once, only when needed.
+  const needProfile = !!user && (isProtected || isAuthPage || pathname === "/");
+  let profile: { role: string; onboarding_completed: boolean; is_blocked: boolean } | null = null;
+  if (needProfile) {
+    const { data } = await supabase
       .from("users")
-      .select("role, onboarding_completed")
-      .eq("id", user.id)
+      .select("role, onboarding_completed, is_blocked")
+      .eq("id", user!.id)
       .single();
+    profile = data;
+  }
 
-    if (profile) {
-      const url = request.nextUrl.clone();
+  // Blocked accounts: terminate the session and bounce to login. signOut()
+  // clears the cookies onto supabaseResponse, which redirectTo() copies across,
+  // so the next request is unauthenticated (no redirect loop).
+  if (profile?.is_blocked) {
+    await supabase.auth.signOut();
+    return redirectTo("/login", "blocked=1");
+  }
 
-      if (profile.role === "admin") {
-        if (isAuthPage) {
-          url.pathname = "/admin";
-          return NextResponse.redirect(url);
+  // Authenticated users on auth pages / landing -> their role home.
+  if ((isAuthPage || pathname === "/") && profile) {
+    if (profile.role === "admin") {
+      if (isAuthPage) return redirectTo("/admin");
+    } else if (profile.role === "practitioner") {
+      if (!profile.onboarding_completed) {
+        if (!prefixMatches(pathname, "/practitioner-onboarding")) {
+          return redirectTo("/practitioner-onboarding");
         }
-      } else if (profile.role === "practitioner") {
-        if (!profile.onboarding_completed) {
-          // Always redirect to onboarding if not complete
-          if (pathname !== "/practitioner-onboarding" && !pathname.startsWith("/practitioner-onboarding")) {
-            url.pathname = "/practitioner-onboarding";
-            return NextResponse.redirect(url);
-          }
-        } else if (isAuthPage) {
-          url.pathname = "/dashboard";
-          return NextResponse.redirect(url);
-        }
-      } else if (profile.role === "patient") {
-        // A patient's home is the /home dashboard — send them there from the
-        // auth pages AND from the public landing ("/"). Incomplete onboarding
-        // takes priority.
-        if (!profile.onboarding_completed) {
-          if (isAuthPage || pathname === "/") {
-            url.pathname = "/onboarding";
-            return NextResponse.redirect(url);
-          }
-        } else if (isAuthPage || pathname === "/") {
-          url.pathname = "/home";
-          return NextResponse.redirect(url);
-        }
+      } else if (isAuthPage) {
+        return redirectTo("/dashboard");
       }
+    } else if (profile.role === "patient") {
+      if (!profile.onboarding_completed) {
+        return redirectTo("/onboarding");
+      }
+      return redirectTo("/home");
     }
   }
 
-  // Role-based route protection: prevent wrong role from accessing other role's routes
-  if (user && isProtected) {
-    const { data: profile } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    const role = profile?.role;
-    const url = request.nextUrl.clone();
-
-    if (pathname.startsWith("/admin") && role !== "admin") {
-      url.pathname = "/";
-      return NextResponse.redirect(url);
-    }
-    if (pathname.startsWith("/practitioner") && role !== "practitioner" && role !== "admin") {
-      url.pathname = "/";
-      return NextResponse.redirect(url);
-    }
-    if (pathname.startsWith("/patient") && role !== "patient" && role !== "admin") {
-      url.pathname = "/";
-      return NextResponse.redirect(url);
-    }
+  // Role gating: a matched protected route the caller's role can't access -> landing.
+  if (matchedPrefix && profile && !ROUTE_ROLES[matchedPrefix].includes(profile.role)) {
+    return redirectTo("/");
   }
 
   return supabaseResponse;

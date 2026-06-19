@@ -80,9 +80,15 @@ export async function signIn(
   if (user) {
     const { data: profile } = await supabase
       .from("users")
-      .select("role, onboarding_completed")
+      .select("role, onboarding_completed, is_blocked")
       .eq("id", user.id)
       .single();
+
+    // Blocked accounts cannot establish a session.
+    if (profile?.is_blocked) {
+      await supabase.auth.signOut();
+      return { success: false, error: "החשבון שלך חסום. אנא צור קשר עם התמיכה." };
+    }
 
     if (profile?.role === "admin") {
       return { success: true, redirectTo: "/admin" };

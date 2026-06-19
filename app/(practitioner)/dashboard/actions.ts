@@ -132,11 +132,15 @@ export async function approveBooking(bookingId: string) {
   // the scheduling fields the confirmation email + Google Calendar link need.
   const { data: booking } = await supabase
     .from("bookings")
-    .select("id, practitioner_id, price_at_booking, payment_token, payment_status, patient_id, scheduled_date, scheduled_time, domain_id")
+    .select("id, status, practitioner_id, price_at_booking, payment_token, payment_status, patient_id, scheduled_date, scheduled_time, domain_id")
     .eq("id", bookingId)
     .eq("practitioner_id", practitionerId)
     .maybeSingle();
   if (!booking) return { success: false, error: "לא מורשה" };
+  // Only a booking awaiting the practitioner's decision may be approved.
+  if (booking.status !== "pending_practitioner_approval") {
+    return { success: false, error: "ניתן לאשר רק בקשות הממתינות לאישור" };
+  }
 
   // When CardCom is on, charge the tokenized card now. If we don't have a
   // token (e.g. the patient never completed the payment page) we surface a
@@ -192,6 +196,7 @@ export async function approveBooking(bookingId: string) {
     })
     .eq("id", bookingId)
     .eq("practitioner_id", practitionerId)
+    .eq("status", "pending_practitioner_approval")
     .select("id")
     .maybeSingle();
   if (error) return { success: false, error: "שגיאה באישור הטיפול" };
@@ -256,6 +261,7 @@ export async function declineBooking(bookingId: string) {
     .update({ status: "declined", updated_at: new Date().toISOString() })
     .eq("id", bookingId)
     .eq("practitioner_id", practitionerId)
+    .eq("status", "pending_practitioner_approval")
     .select("id")
     .maybeSingle();
   if (error) return { success: false, error: "שגיאה בדחיית הטיפול" };

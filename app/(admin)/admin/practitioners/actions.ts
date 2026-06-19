@@ -2,6 +2,7 @@
 
 import QRCode from "qrcode";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/auth/require-admin";
 import { sendEmail } from "@/lib/email/client";
 import { practitionerApprovedEmail, practitionerRejectedEmail } from "@/lib/email/templates";
 
@@ -49,6 +50,7 @@ export interface AdminPractitioner {
 }
 
 export async function fetchAllPractitioners(statusFilter?: string): Promise<AdminPractitioner[]> {
+  await requireAdmin();
   const supabase = createAdminClient();
 
   let query = supabase
@@ -100,6 +102,7 @@ export async function approvePractitioner(
   practitionerId: string,
   edits: PractitionerEdits = {}
 ) {
+  await requireAdmin();
   const supabase = createAdminClient();
 
   const { data: before } = await supabase
@@ -165,6 +168,7 @@ export async function approvePractitioner(
 }
 
 export async function rejectPractitioner(practitionerId: string, reason: string) {
+  await requireAdmin();
   const supabase = createAdminClient();
 
   const { data: before } = await supabase

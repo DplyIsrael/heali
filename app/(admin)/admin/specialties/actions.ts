@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 interface PendingSpecialty {
   id: string;
@@ -10,6 +11,7 @@ interface PendingSpecialty {
 }
 
 export async function fetchPendingSpecialties(): Promise<PendingSpecialty[]> {
+  await requireAdmin();
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("specialties")
@@ -38,6 +40,7 @@ export async function fetchPendingSpecialties(): Promise<PendingSpecialty[]> {
 export async function approvePendingSpecialty(
   specialtyId: string
 ): Promise<{ success: boolean; error?: string }> {
+  await requireAdmin();
   const supabase = createAdminClient();
 
   // Load the pending row to get its name
@@ -84,6 +87,7 @@ export async function approvePendingSpecialty(
 export async function rejectPendingSpecialty(
   specialtyId: string
 ): Promise<{ success: boolean; error?: string }> {
+  await requireAdmin();
   const supabase = createAdminClient();
 
   // Remove this specialty from every practitioner profile that selected it,

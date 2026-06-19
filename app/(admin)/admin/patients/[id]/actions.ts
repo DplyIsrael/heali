@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 interface ActionResult {
   success: boolean;
@@ -16,6 +17,7 @@ export async function addCreditToPatient(
   patientId: string,
   amount: number
 ): Promise<ActionResult> {
+  await requireAdmin();
   if (!Number.isFinite(amount) || amount <= 0) {
     return { success: false, error: "סכום לא תקין" };
   }
@@ -33,6 +35,7 @@ export async function setPatientBlocked(
   patientId: string,
   blocked: boolean
 ): Promise<ActionResult> {
+  await requireAdmin();
   const supabase = createAdminClient();
   const { error } = await supabase
     .from("users")
