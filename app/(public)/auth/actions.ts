@@ -13,37 +13,55 @@ interface ActionResult {
 }
 
 /**
- * Recover an orphan unconfirmed auth user so a fresh signup can proceed.
- * Returns true when we found-and-deleted the orphan (caller should retry the
- * signup). Returns false when no orphan was found, OR the orphan IS confirmed
- * (a real duplicate — caller should surface the duplicate-email error).
+ * Reclaim an existing auth user with this email so a fresh signup can proceed,
+ * by deleting the old account (and its cascaded rows) before it is recreated.
  *
- * The "orphan" scenarios this handles:
+ * Default behavior reclaims only ORPHAN unconfirmed accounts (abandoned signups
+ * that never verified) — genuine confirmed users are never touched:
  *   - auth.users has the email, email_confirmed_at IS NULL — abandoned signup
  *   - public.users may or may not have a mirror row; we delete both to be safe
+ *
+ * TEMPORARY (ALLOW_DUPLICATE_SIGNUPS=true): also reclaims CONFIRMED accounts so
+ * the same email can be enlisted repeatedly — each re-signup replaces the prior
+ * account. Admin accounts are NEVER deleted, to avoid nuking the ops login.
+ * Set ALLOW_DUPLICATE_SIGNUPS back to unset/false to restore strict uniqueness.
+ *
+ * Returns true when an account was found-and-deleted (caller should retry the
+ * signup). Returns false when nothing was reclaimed (caller should surface the
+ * duplicate-email error).
  */
-async function recoverOrphanUnconfirmedAuthUser(
+async function reclaimExistingAuthUser(
   admin: ReturnType<typeof createAdminClient>,
   email: string
 ): Promise<boolean> {
   try {
+    const allowDuplicate = process.env.ALLOW_DUPLICATE_SIGNUPS === "true";
     // listUsers is paginated; the lowest-pain way to find by email is the
-    // page-1 default which Supabase sorts by created_at desc. Most orphans
+    // page-1 default which Supabase sorts by created_at desc. Most matches
     // sit on the first page; fall back to no-op if not found there.
     const { data: list } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
     const lower = email.trim().toLowerCase();
-    const orphan = list?.users?.find(
+    const existing = list?.users?.find(
       (u) => (u.email ?? "").toLowerCase() === lower
     );
-    if (!orphan) return false;
-    if (orphan.email_confirmed_at) return false; // genuine confirmed user — don't delete
+    if (!existing) return false;
+    // Confirmed account: only reclaim when the temporary duplicate-signups flag
+    // is on; otherwise it's a genuine duplicate and must not be deleted.
+    if (existing.email_confirmed_at && !allowDuplicate) return false;
+    // Never delete an admin account, even in duplicate-signups mode.
+    const { data: mirror } = await admin
+      .from("users")
+      .select("role")
+      .eq("id", existing.id)
+      .single();
+    if (mirror?.role === "admin") return false;
     // Drop the public.users mirror first (FKs cascade from auth.users delete
     // for some tables but not all — be explicit).
-    await admin.from("users").delete().eq("id", orphan.id);
-    await admin.auth.admin.deleteUser(orphan.id);
+    await admin.from("users").delete().eq("id", existing.id);
+    await admin.auth.admin.deleteUser(existing.id);
     return true;
   } catch (err) {
-    console.error("[recoverOrphanUnconfirmedAuthUser] failed:", err);
+    console.error("[reclaimExistingAuthUser] failed:", err);
     return false;
   }
 }
@@ -156,7 +174,7 @@ export async function signUpPatient(
     }
     // DUPLICATE — try orphan recovery first.
     if (msg.includes("already been registered") || msg.includes("already exists") || msg.includes("already registered")) {
-      const recovered = await recoverOrphanUnconfirmedAuthUser(admin, email);
+      const recovered = await reclaimExistingAuthUser(admin, email);
       if (recovered) {
         const retry = await admin.auth.admin.createUser({
           email,
@@ -278,7 +296,7 @@ export async function signUpPractitioner(
       msg.includes("already exists") ||
       msg.includes("already registered")
     ) {
-      const recovered = await recoverOrphanUnconfirmedAuthUser(admin, email);
+      const recovered = await reclaimExistingAuthUser(admin, email);
       if (recovered) {
         const retry = await admin.auth.admin.createUser({
           email,
